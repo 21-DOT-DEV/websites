@@ -1,0 +1,69 @@
+{
+  "originHash" : "a37ff4db6dc245e5178e646de4e9166c061a95959c6660024f406ba05f522e51",
+  "pins" : [
+    {
+      "identity" : "slipstream",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/ClutchEngineering/slipstream",
+      "state" : {
+        "branch" : "v2.0",
+        "revision" : "8c215192675d339ce26cf78a1eb9999d3cf47941"
+      }
+    },
+    {
+      "identity" : "swift-artifact-parser",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/21-DOT-DEV/swift-artifact-parser",
+      "state" : {
+        "revision" : "7b8b38ccf544bcce62387990777f7622d1c9ba44",
+        "version" : "0.0.1"
+      }
+    },
+    {
+      "identity" : "swift-cmark",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/swiftlang/swift-cmark.git",
+      "state" : {
+        "branch" : "gfm",
+        "revision" : "b97d09472e847a416629f026eceae0e2afcfad65"
+      }
+    },
+    {
+      "identity" : "swift-markdown",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/apple/swift-markdown.git",
+      "state" : {
+        "branch" : "main",
+        "revision" : "5ad49ed3219261b085e86da832d0657752bba63c"
+      }
+    },
+    {
+      "identity" : "swift-plugin-tailwindcss",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/21-DOT-DEV/swift-plugin-tailwindcss",
+      "state" : {
+        "revision" : "c0862f33b06b2b56a55f8623839968a36e7e4b4d",
+        "version" : "3.4.17"
+      }
+    },
+    {
+      "identity" : "swift-secp256k1",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/21-DOT-DEV/swift-secp256k1",
+      "state" : {
+        "revision" : "8c62aba8a3011c9bcea232e5ee007fb0b34a15e2",
+        "version" : "0.21.1"
+      }
+    },
+    {
+      "identity" : "swiftsoup",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/scinfu/SwiftSoup.git",
+      "state" : {
+        "revision" : "a81b1a5ac933dee8c6cfccf05d5ffcc5eb8c7ec4",
+        "version" : "2.10.0"
+      }
+    }
+  ],
+  "version" : 3
+}

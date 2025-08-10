@@ -1,0 +1,32 @@
+name: 21-dev
+
+on:
+  pull_request:
+    types:
+      - closed
+      - opened
+      - synchronize
+      - reopened
+    branches:
+      - 'main'
+    paths:
+      - '.github/workflows/cloudflare-deployment.yml'
+      - '.github/workflows/21-dev.yml'
+      - 'Sources/21-dev/**'
+      - 'Resources/21-dev/**'
+      - 'Sources/DesignSystem/**'
+      - 'Tests/**'
+      - 'Package.swift'
+
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+jobs:
+  trigger:
+    uses: ./.github/workflows/cloudflare-deployment.yml
+    with:
+      website: 21-dev
+      deploy-to-production: ${{ github.event.pull_request.merged }}
+    secrets:
+      cloudflare-api-token: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      cloudflare-account-id: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
