@@ -13,7 +13,18 @@ import Slipstream
 import DesignSystem
 
 let homepage = BasePage(title: "21.dev - Bitcoin Development Tools") {
-  PlaceholderView(text: "Equipping developers with the tools they need today to build the Bitcoin apps of tomorrow. 📱")
+  VStack {
+    Header(
+      logoText: "21.dev",
+      navigationLinks: [
+        NavigationLink(title: "Home", href: "/"),
+        NavigationLink(title: "Blog", href: "/blog/"),
+        NavigationLink(title: "P256K", href: "/p256k/"),
+        NavigationLink(title: "Docs", href: "https://docs.21.dev/", isExternal: true)
+      ]
+    )
+    PlaceholderView(text: "Equipping developers with the tools they need today to build the Bitcoin apps of tomorrow. 📱")
+  }
 }
 
 let sitemap: Sitemap = [

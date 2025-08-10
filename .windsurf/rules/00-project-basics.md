@@ -23,8 +23,8 @@ description: >
 - **ORGANIZE** tests in `Tests/DesignSystemTests/` (unit tests) and `Tests/IntegrationTests/` (site tests)
 - **OUTPUT** generated HTML to `Websites/<SiteName>/` (git-ignored)
 
-### Essential Build Commands
-**See @build-and-test workflow** for daily development commands including:
+#### Always Reference Build Commands
+**See /build-and-test workflow** for essential development commands including:
 - Building the project with Swift 6.1
 - Running tests (all tests, specific test suites)
 - Generating site HTML
@@ -32,7 +32,9 @@ description: >
 - Verifying complete build output
 
 ## Component Development & Debugging
-**See @component-development workflow** for best practices for creating, testing, and integrating DesignSystem components including:
+
+#### Always Reference Component Development Workflow
+**See /component-development workflow** for best practices for creating, testing, and integrating DesignSystem components including:
 - Component design and architecture (simple APIs, avoiding complex generics)
 - Step-by-step development process from design to integration
 - TestUtils-based testing with templates and validation patterns
@@ -41,7 +43,9 @@ description: >
 - Common issues and solutions (silent failures, styling problems, type complexity)
 
 ## Site Generation Architecture
-**See @site-generation workflow** for comprehensive site generation guidance including:
+
+#### Always Reference Site Generation Workflow
+**See /site-generation workflow** for comprehensive site generation guidance including:
 - Proper URL construction to prevent CI runtime failures
 - Step-by-step site generation process and output verification
 - HTML content validation and structure checking
@@ -109,31 +113,36 @@ TestUtils.normalizeHTML(html)                 // Normalize whitespace for compar
 
 ## Slipstream Development Patterns
 
-### Idiomatic Styling (PREFERRED)
-**ALWAYS use** structured Slipstream APIs instead of raw class names:
-- **Typography**: `.fontSize(.sevenXLarge)`, `.textAlignment(.center)`, `.fontDesign(.sans)`
-- **Layout**: `.display(.flex)`, `.justifyContent(.center)`, `.alignItems(.center)`
-- **Sizing**: `.frame(height: .screen)` for viewport height
+#### Always Reference Slipstream Best Practices Workflow
+**See /slipstream-best-practices workflow** for comprehensive Slipstream development guidance including:
+- SwiftUI-like component usage (VStack, HStack, Container) with decision trees
+- API-first development patterns and systematic API discovery
+- Local Slipstream codebase exploration and troubleshooting strategies
+- CSS integration and Tailwind configuration best practices
+- Component architecture guidelines and styling consistency
+- Performance optimization and build troubleshooting
 
-### Local API Reference Paths
-**Consult these local directories** for Slipstream APIs:
-- **General Tailwind APIs**: `.build/checkouts/slipstream/Sources/Slipstream/TailwindCSS/`
-- **Typography**: `.build/checkouts/slipstream/Sources/Slipstream/TailwindCSS/Typography/`
-- **Layout**: `.build/checkouts/slipstream/Sources/Slipstream/TailwindCSS/Layout/`
-- **Flexbox/Grid**: `.build/checkouts/slipstream/Sources/Slipstream/TailwindCSS/FlexboxAndGrid/`
-- **Sizing**: `.build/checkouts/slipstream/Sources/Slipstream/TailwindCSS/Sizing/`
+### CRITICAL: Slipstream API Usage Rules
+**ALWAYS use Slipstream APIs before resorting to ClassModifier**:
+1. **SEARCH** `.build/checkouts/slipstream/Sources/Slipstream/TailwindCSS/` for existing APIs
+2. **DOCUMENT** missing APIs with TODO comments and issues in component files
+3. **ONLY USE** `.modifier(ClassModifier(add: ...))` as absolute last resort
+4. **TRACK** all ClassModifier usage for future Slipstream API contributions
 
-**Key API Files**:
-- `View+fontSize.swift` - Font sizing (.sixXLarge, .sevenXLarge, etc.)
-- `View+textAlignment.swift` - Text alignment (.center, .left, .right)
-- `View+display.swift` - Display types (.flex, .block, etc.)
-- `View+justifyContent.swift` - Flexbox main axis alignment
-- `View+alignItems.swift` - Flexbox cross axis alignment
-- `View+frame.swift` - Sizing and viewport dimensions
+### Missing Slipstream API Documentation Pattern
+When you must use `.modifier(ClassModifier(add: ...))`, document it:
 
-### CSS Integration
-**ALWAYS link stylesheets** using: `Stylesheet(URL(string: "static/style.output.css"))`
-**NEVER use** absolute paths like `/static/style.output.css` (breaks local file URLs)
+```swift
+// TODO: Need Slipstream API for hover states and transitions
+// MISSING APIs: .hover(.opacity(0.8)), .transition(.opacity)
+// ClassModifier used for: hover:opacity-80 transition-opacity
+.modifier(ClassModifier(add: "hover:opacity-80 transition-opacity"))
+
+// TODO: Need Slipstream API for responsive visibility
+// MISSING APIs: .hidden(condition: .belowMedium), .flex(condition: .mediumAndAbove)  
+// ClassModifier used for: hidden md:flex
+.modifier(ClassModifier(add: "hidden md:flex"))
+```
 
 ## Tailwind Configuration
 
@@ -164,23 +173,24 @@ swift package --disable-sandbox tailwindcss build \
   -o Websites/<SiteName>/static/style.output.css
 ```
 
-### Common Layout Patterns
-```swift
-// Viewport-centered content
-Div {
-  Text("Content")
-}
-.frame(height: .screen)      // Full viewport height
-.display(.flex)              // Flexbox container
-.alignItems(.center)         // Vertical centering
-.justifyContent(.center)     // Horizontal centering
-.fontSize(.sevenXLarge)      // Large text
-.textAlignment(.center)      // Text alignment
-.fontDesign(.sans)          // Sans-serif font
+### CRITICAL: Build Command Requirements
+**NEVER use bare "swift build" in conversations** - it breaks chat flow:
+```bash
+# ✅ CORRECT - Always use nocorrect prefix
+nocorrect swift build
+nocorrect swift build --configuration release  
+nocorrect swift run 21-dev
+nocorrect swift test
+
+# ❌ WRONG - Causes zsh autocorrect interruption  
+swift build
+swift run 21-dev
 ```
 
 ## Troubleshooting
-**See @troubleshooting-common-issues workflow** for systematic debugging guidance including:
+
+#### Always Reference Troubleshooting Workflow
+**See /troubleshooting-common-issues workflow** for systematic debugging guidance including:
 - Component rendering failures and debugging strategies
 - TestUtils compilation errors and import rule violations  
 - SwiftPM plugin issues and resolution steps

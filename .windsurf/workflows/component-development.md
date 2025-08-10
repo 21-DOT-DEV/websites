@@ -149,259 +149,222 @@ struct PlaceholderViewTests {
             TestUtils.assertContainsText(html, texts: [testText])
         }
     }
-    
-    @Test("generates expected HTML structure")
-    func testHTMLStructure() throws {
-        let placeholder = PlaceholderView(text: "Structure Test")
-        let html = TestUtils.renderHTML(placeholder)
-        
-        // Verify div > p structure
-        #expect(html.contains("<div"))
-        #expect(html.contains("<p>Structure Test</p>"))
-        #expect(html.contains("</div>"))
-        
-        // Ensure proper nesting
-        let divIndex = html.firstIndex(of: "<")
-        let pIndex = html.range(of: "<p>")?.lowerBound
-        #expect(divIndex != nil && pIndex != nil)
-        #expect(divIndex! < pIndex!)
+}
+```
+
+### Step 4: Test Component in Isolation
+```bash
+# Run component-specific tests
+nocorrect swift test --filter PlaceholderViewTests
+
+# Verify TestUtils integration
+nocorrect swift test --filter DesignSystemTests
+```
+
+### Step 5: Integrate with Site
+
+#### Add to Site Temporarily for Visual Testing
+```swift
+// In Sources/21-dev/main.swift
+let homepage = BasePage(title: "Testing Component") {
+    VStack {
+        PlaceholderView(text: "Testing New Component")
+        // Add existing content below...
     }
 }
 ```
 
-### Step 4: Run Component Tests
-
-```bash
-# Test specific component
-swift test --filter PlaceholderViewTests
-
-# Test all DesignSystem components
-swift test --filter DesignSystemTests
-
-# Verify no TestUtils import issues
-swift test
-```
-
-### Step 5: Integration with Site Structure
-
-#### Update Site Main.swift
-```swift
-import Foundation
-import Slipstream
-import DesignSystem
-
-// Create page using new component
-let homepage = BasePage(title: "21.dev - Bitcoin Development Tools") {
-    PlaceholderView(text: "Equipping developers with the tools they need today to build the Bitcoin apps of tomorrow. 📱")
-}
-
-let sitemap: Sitemap = [
-    "index.html": homepage
-]
-```
-
-#### Test Site Generation
+#### Generate and Test Site
 ```bash
 # Generate site with new component
-swift run 21-dev
-
-# Verify output includes component
-cat Websites/21-dev/index.html | grep "Bitcoin apps"
-```
-
-### Step 6: Styling Integration
-
-#### Verify Tailwind Classes in Output
-```bash
-# Check that component classes appear in generated HTML
-grep -o 'class="[^"]*"' Websites/21-DEV/index.html
-
-# Compile CSS to ensure classes are processed
+nocorrect swift run 21-dev && \
 swift package --disable-sandbox tailwindcss \
   --input Resources/21-dev/static/style.css \
   --output Websites/21-dev/static/style.output.css \
   --config Resources/21-dev/tailwind.config.cjs
+
+# Open in browser to verify visual appearance
 ```
 
-#### Visual Verification
-```bash
-# Open in browser for visual confirmation
-open Websites/21-dev/index.html
+### Step 6: Component Documentation
+
+#### Document Missing Slipstream APIs
+When you must use `.modifier(ClassModifier(add: ...))`, document it:
+
+```swift
+public var body: some View {
+    Div {
+        Text(title)
+            .fontSize(.extraExtraLarge)
+            .fontWeight(.bold)
+            .textColor(.palette(.gray, darkness: 900))
+            
+            // TODO: Need Slipstream API for hover states and transitions
+            // MISSING APIs: .hover(.opacity(0.8)), .transition(.opacity)
+            // Issue: Slipstream lacks pseudo-state modifiers for interactive elements
+            // ClassModifier used for: hover:opacity-80 transition-opacity
+            .modifier(ClassModifier(add: "hover:opacity-80 transition-opacity"))
+    }
+}
+```
+
+#### Update Component Documentation
+```swift
+/// A generic navigation header component with configurable branding and links.
+/// Provides responsive design with proper spacing and accessibility.
+/// 
+/// Example usage:
+/// ```swift
+/// Header(
+///     logoText: "My Site", 
+///     navigationLinks: [
+///         .init(title: "Home", href: "/"),
+///         .init(title: "About", href: "/about")
+///     ]
+/// )
+/// ```
+///
+/// ## Missing Slipstream APIs Used
+/// - `hover:opacity-80 transition-opacity` - Interactive hover states
+/// - `hidden md:flex` - Responsive visibility controls
+/// - `sticky top-0 z-50` - Fixed positioning with z-index
+public struct Header: View {
+    // Component implementation...
+}
+```
+
+### Step 7: Follow Referenced Workflows
+
+#### Always Reference Related Workflows
+Before component development:
+1. **See /slipstream-best-practices workflow** for API usage patterns
+2. **See /build-and-test workflow** for proper command usage
+3. **See /troubleshooting-common-issues workflow** for debugging strategies
+
+#### Critical API Usage Rules from /slipstream-best-practices
+1. **SEARCH** `.build/checkouts/slipstream/Sources/Slipstream/TailwindCSS/` for existing APIs
+2. **ONLY USE** `.modifier(ClassModifier(add: ...))` after confirming no Slipstream API exists
+3. **DOCUMENT** all missing APIs with TODO comments and specific API suggestions
+4. **TRACK** ClassModifier usage for future Slipstream contributions
+
+## Generic Component Design Patterns
+
+### Make Components Site-Agnostic
+```swift
+// ✅ GOOD - Generic, reusable across sites
+public struct Header: View {
+    let logoText: String
+    let navigationLinks: [NavigationLink]
+    
+    public init(logoText: String, navigationLinks: [NavigationLink]) {
+        self.logoText = logoText
+        self.navigationLinks = navigationLinks
+    }
+}
+
+// ❌ AVOID - Site-specific, not reusable
+public struct TwentyOneDevHeader: View {
+    // Hardcoded 21.dev specific content...
+}
+```
+
+### Configurable Navigation Pattern
+```swift
+public struct NavigationLink {
+    public let title: String
+    public let href: String
+    public let isExternal: Bool
+    
+    public init(title: String, href: String, isExternal: Bool = false) {
+        self.title = title
+        self.href = href
+        self.isExternal = isExternal
+    }
+}
 ```
 
 ## Advanced Component Patterns
 
-### Complex Content Components
+### Flexible Content with ViewBuilder
 ```swift
-// For components that need flexible content
-public struct FlexibleComponent: View {
-    private let content: any View
+public struct Card<Content: View>: View {
+    let content: Content
     
-    public init(@ViewBuilder content: () -> any View) {
-        self.content = AnyView(content())
+    public init(@ViewBuilder content: () -> Content) {
+        self.content = content()
     }
     
     public var body: some View {
         Div {
             content
         }
-        .padding(.medium)
+        .backgroundColor(.white)
+        .padding(.all, 16)
+        .border(.palette(.gray, darkness: 200), width: 1)
     }
 }
 ```
 
 ### Layout Components
 ```swift
-// Base page layout with consistent structure
-public struct BasePage: View {
-    public let title: String
-    private let content: any View
+public struct Section<Content: View>: View {
+    let content: Content
+    let backgroundColor: Color?
     
-    public init(title: String, @ViewBuilder content: () -> any View) {
-        self.title = title
-        self.content = AnyView(content())
-    }
-    
-    public var body: some View {
-        HTML {
-            Head {
-                Title(title)
-                Stylesheet(URL(string: "static/style.output.css"))
-            }
-            Body {
-                content
-            }
-        }
-    }
-}
-```
-
-### Utility Components
-```swift
-// Helper components for common patterns
-public struct CenteredContent: View {
-    private let content: any View
-    
-    public init(@ViewBuilder content: () -> any View) {
-        self.content = AnyView(content())
+    public init(backgroundColor: Color? = nil, @ViewBuilder content: () -> Content) {
+        self.content = content()
+        self.backgroundColor = backgroundColor
     }
     
     public var body: some View {
         Div {
-            content
+            Container {
+                content
+            }
+            .padding(.vertical, 64)
+            .padding(.horizontal, 16)
         }
-        .frame(height: .screen)
-        .display(.flex)
-        .alignItems(.center)
-        .justifyContent(.center)
+        .background(backgroundColor ?? .transparent)
     }
-}
-```
-
-## Testing Strategies
-
-### TestUtils Best Practices
-```swift
-// Create reusable test utilities for common patterns
-extension TestUtils {
-    static let centeredContentClasses = [
-        "h-screen", "flex", "items-center", "justify-center"
-    ]
-    
-    static func assertCenteredContent(_ html: String) {
-        assertContainsTailwindClasses(html, classes: centeredContentClasses)
-    }
-}
-```
-
-### Integration Testing
-```swift
-// Test components within site context
-@Test("component renders in site context")
-func testSiteIntegration() throws {
-    let page = BasePage(title: "Test") {
-        PlaceholderView(text: "Integration test")
-    }
-    
-    let html = TestUtils.renderHTML(page)
-    
-    TestUtils.assertValidHTMLDocument(html)
-    TestUtils.assertValidTitle(html, expectedTitle: "Test")
-    TestUtils.assertContainsStylesheet(html)
-    TestUtils.assertContainsText(html, texts: ["Integration test"])
 }
 ```
 
 ## Common Issues and Solutions
 
-### Silent Component Failures
-**Symptoms**: Component doesn't appear in generated HTML
-**Debug Process**:
-1. Test component in isolation with TestUtils
-2. Check for complex generic patterns
-3. Verify all imports are present
-4. Add incrementally to site structure
+### Issue: Component Doesn't Fill Width
+**Problem**: Component appears narrow or doesn't span full container width.
+**Solution**: Ensure proper Container usage and check for missing width constraints.
 
-### Styling Not Applied
-**Symptoms**: Component renders but lacks visual styling
-**Solutions**:
-1. Verify Tailwind classes using TestUtils validation
-2. Ensure CSS compilation includes component classes
-3. Check content glob in `tailwind.config.cjs`
-4. Use browser developer tools to inspect applied styles
-
-### TestUtils Import Errors
-**Symptoms**: Test compilation fails with module errors
-**Solution**: Ensure proper imports in test files:
 ```swift
-import Foundation
-import Testing
-import Slipstream
-import DesignSystem
-import TestUtils
+// ✅ CORRECT - Full width header
+Div {
+    Container {
+        HStack { /* navigation content */ }
+    }
+}
+
+// ❌ WRONG - May not fill width properly  
+HStack { /* navigation content directly */ }
 ```
 
-### Type Complexity Errors
-**Symptoms**: Complex ViewBuilder expressions cause compilation errors
-**Solution**: Use `any View` with `AnyView` wrapper:
+### Issue: Responsive Design Not Working
+**Problem**: Components don't adapt properly on different screen sizes.
+**Solution**: Use proper breakpoint conditions and responsive utilities.
+
 ```swift
-// Instead of complex generics
-private let content: any View = AnyView(content())
+// ✅ CORRECT - Responsive padding
+.padding(.horizontal, 16)
+.padding(.horizontal, 24, condition: Condition(startingAt: .medium))
+.padding(.horizontal, 32, condition: Condition(startingAt: .large))
 ```
 
-## Component Checklist
+### Issue: Silent Component Failures
+**Problem**: Component compiles but doesn't render as expected.
+**Solution**: Use TestUtils to validate HTML output and check for missing APIs.
 
-### Before Creating Component
-- [ ] Design simple, focused API
-- [ ] Choose appropriate DesignSystem subfolder
-- [ ] Plan TestUtils validation strategy
-
-### During Development
-- [ ] Write TestUtils-based tests first
-- [ ] Use Slipstream APIs for styling
-- [ ] Validate HTML structure and classes
-- [ ] Test various input scenarios
-
-### Integration Phase
-- [ ] Add to site structure incrementally
-- [ ] Generate site and verify output
-- [ ] Compile CSS and check styling
-- [ ] Perform visual verification
-
-### Maintenance
-- [ ] Update tests when component changes
-- [ ] Maintain TestUtils consistency
-- [ ] Document breaking changes
-- [ ] Review for optimization opportunities
-
-## Integration with Existing Workflows
-
-### Before Site Generation
-- Run component tests: `@build-and-test` workflow
-- Ensure TestUtils validation passes
-
-### After Component Updates
-- Follow `@site-generation` workflow for output verification
-- Use `@troubleshooting-common-issues` for debugging
-
-This workflow ensures reliable, testable, and maintainable component development within the Slipstream ecosystem.
+```swift
+// Add comprehensive tests with TestUtils
+let html = TestUtils.renderHTML(component)
+TestUtils.assertValidHTMLDocument(html)
+TestUtils.assertContainsTailwindClasses(html, expectedClasses)
+```

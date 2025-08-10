@@ -21,15 +21,13 @@ public struct PlaceholderView: View {
     }
     
     public var body: some View {
-        Div {
+        VStack(alignment: .center) {
             Text(text)
+                .fontSize(.sevenXLarge)
+                .textAlignment(.center)
+                .fontDesign(.sans)
         }
         .frame(height: .screen)
-        .display(.flex)
-        .alignItems(.center)
         .justifyContent(.center)
-        .fontSize(.sevenXLarge)
-        .textAlignment(.center)
-        .fontDesign(.sans)
     }
 }
