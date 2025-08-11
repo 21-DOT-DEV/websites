@@ -23,7 +23,21 @@ let homepage = BasePage(title: "21.dev - Bitcoin Development Tools") {
         NavigationLink(title: "Docs", href: "https://docs.21.dev/", isExternal: true)
       ]
     )
-    PlaceholderView(text: "Equipping developers with the tools they need today to build the Bitcoin apps of tomorrow. 📱")
+    HeroSection(
+      headline: "Equipping developers with the tools they need today to build the Bitcoin apps of tomorrow. 📱",
+      primaryButton: HeroCTAButton(
+        text: "Get Started",
+        href: "https://docs.21.dev/",
+        style: .primary,
+        isExternal: true
+      ),
+      secondaryButton: HeroCTAButton(
+        text: "View on GitHub",
+        href: "https://github.com/21-dot-dev",
+        style: .secondary,
+        isExternal: true
+      )
+    )
   }
 }
 

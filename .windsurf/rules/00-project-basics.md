@@ -116,32 +116,54 @@ TestUtils.normalizeHTML(html)                 // Normalize whitespace for compar
 #### Always Reference Slipstream Best Practices Workflow
 **See /slipstream-best-practices workflow** for comprehensive Slipstream development guidance including:
 - SwiftUI-like component usage (VStack, HStack, Container) with decision trees
-- API-first development patterns and systematic API discovery
-- Local Slipstream codebase exploration and troubleshooting strategies
+- **CRITICAL API discovery workflow** - systematic process to find existing APIs before ClassModifier
+- Local Slipstream codebase exploration and directory-specific search strategies
+- **Common patterns reference** - quick lookup for layout, flexbox, interactive, and typography APIs
 - CSS integration and Tailwind configuration best practices
 - Component architecture guidelines and styling consistency
 - Performance optimization and build troubleshooting
 
 ### CRITICAL: Slipstream API Usage Rules
-**ALWAYS use Slipstream APIs before resorting to ClassModifier**:
-1. **SEARCH** `.build/checkouts/slipstream/Sources/Slipstream/TailwindCSS/` for existing APIs
-2. **DOCUMENT** missing APIs with TODO comments and issues in component files
-3. **ONLY USE** `.modifier(ClassModifier(add: ...))` as absolute last resort
-4. **TRACK** all ClassModifier usage for future Slipstream API contributions
+**ALWAYS use the systematic API discovery workflow before resorting to ClassModifier**:
 
-### Missing Slipstream API Documentation Pattern
-When you must use `.modifier(ClassModifier(add: ...))`, document it:
+#### Step 1: Search Slipstream Source Directories
+```bash
+# REQUIRED: Search category-specific directories first
+ls .build/checkouts/slipstream/Sources/Slipstream/TailwindCSS/Sizing/
+ls .build/checkouts/slipstream/Sources/Slipstream/TailwindCSS/FlexboxAndGrid/
+ls .build/checkouts/slipstream/Sources/Slipstream/TailwindCSS/Layout/
+```
 
+#### Step 2: Check Common Patterns Reference
+**See /slipstream-best-practices workflow** for quick reference tables covering:
+- Layout & Sizing: `w-full` → `.frame(width: .full)`, `min-h-screen` → `.frame(minHeight: .screen)`
+- Flexbox: `justify-between` → `.justifyContent(.between)`, `items-center` → `.alignItems(.center)`
+- Interactive States: `hover:*` → State/Condition APIs, `transition-*` → `.transition()` APIs
+
+#### Step 3: Document Missing APIs Properly
 ```swift
-// TODO: Need Slipstream API for hover states and transitions
-// MISSING APIs: .hover(.opacity(0.8)), .transition(.opacity)
-// ClassModifier used for: hover:opacity-80 transition-opacity
-.modifier(ClassModifier(add: "hover:opacity-80 transition-opacity"))
+// TODO: Missing Slipstream API for [specific functionality]
+// MISSING APIs: [list the ideal API calls that should exist]
+// ClassModifier used for: [exact CSS classes used]
+.modifier(ClassModifier(add: "text-3xl cursor-pointer"))
+```
 
-// TODO: Need Slipstream API for responsive visibility
-// MISSING APIs: .hidden(condition: .belowMedium), .flex(condition: .mediumAndAbove)  
-// ClassModifier used for: hidden md:flex
-.modifier(ClassModifier(add: "hidden md:flex"))
+#### Step 4: Track for Future Contribution
+- **HIGH PRIORITY**: Cursor styles, large typography, z-index
+- **MEDIUM PRIORITY**: Focus rings, advanced positioning, backdrop effects
+
+### CRITICAL: Slipstream API Discovery Commands
+**Most frequently needed search commands**:
+```bash
+# For sizing/layout needs (most common)
+cat .build/checkouts/slipstream/Sources/Slipstream/TailwindCSS/Sizing/View+frame.swift
+cat .build/checkouts/slipstream/Sources/Slipstream/TailwindCSS/FlexboxAndGrid/View+justifyContent.swift
+
+# For interactive states
+cat .build/checkouts/slipstream/Sources/Slipstream/TailwindCSS/State.swift
+
+# General grep searches
+grep -r "hover\|State\|Condition" .build/checkouts/slipstream/Sources/Slipstream/TailwindCSS/
 ```
 
 ## Tailwind Configuration

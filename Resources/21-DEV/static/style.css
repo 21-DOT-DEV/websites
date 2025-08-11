@@ -1,3 +1,60 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* 
+   CSS-only Mobile Menu Toggle - Requires Slipstream Input/Label API
+   
+   DESIRED SLIPSTREAM API USAGE:
+   
+   // In Header.swift:
+   Input()
+       .type(.checkbox)
+       .name("menu-toggle")
+       .id("menu-toggle")
+       .modifier(ClassModifier(add: "hidden"))
+   
+   Label {
+       Text("☰")
+   }
+   .htmlFor("menu-toggle")
+   .modifier(ClassModifier(add: "menu-button cursor-pointer text-3xl md:hidden"))
+   
+   // This would generate:
+   // <input type="checkbox" name="menu-toggle" id="menu-toggle" class="hidden">
+   // <label for="menu-toggle" class="menu-button cursor-pointer text-3xl md:hidden">☰</label>
+   
+   // Then this CSS would work perfectly with the :has() selector:
+*/
+
+@media (max-width: 767px) {
+    /* Hide navigation by default on mobile */
+    .menu-items {
+        display: none;
+        flex-direction: column;
+        width: 100%;
+        position: absolute;
+        top: 100%;
+        left: 0;
+        background: white;
+        border-top: 1px solid #e5e7eb;
+        padding: 1rem;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        z-index: 1000;
+    }
+
+    /* Show menu when checkbox is checked - CSS-only approach */
+    /* This would work with proper Input/Label Slipstream APIs: */
+    div:has(#menu-toggle:checked) .menu-items {
+        display: flex;
+    }
+
+    /* Style the hamburger button */
+    .menu-button {
+        display: block;
+        cursor: pointer;
+        background: none;
+        border: none;
+        padding: 0.5rem;
+    }
+}

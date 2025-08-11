@@ -49,34 +49,20 @@ VStack(alignment: .center, spacing: 16) {
 .justifyContent(.center)
 ```
 
-**AVOID: Manual flex styling**
+**AVOID: Manual flexbox layouts**
 ```swift
-// ❌ Don't manually configure flex properties
+// ❌ Don't manually create flex layouts
 Div {
-    Text("Content")
+    Text("Title")
+    Text("Subtitle")  
 }
-.display(.flex)
-.alignItems(.center)
-.justifyContent(.center)
+.modifier(ClassModifier(add: "flex flex-col items-center space-y-4"))
 ```
 
-### 3. Component Architecture Checklist
-
-Before creating a new component, verify:
-
-- [ ] **Simple API**: Component accepts minimal, focused parameters
-- [ ] **Stack-based**: Uses VStack/HStack/Container for layout
-- [ ] **API styling**: All styling uses Slipstream modifiers, no raw CSS classes
-- [ ] **Composable**: Works well with other Slipstream components
-- [ ] **Testable**: Renders properly with TestUtils.renderHTML()
-
-## Styling & Layout
-
-### Typography APIs (Always Use These)
+## Typography APIs (Always Use These)
 
 ```swift
-// Font sizing
-.fontSize(.extraSmall)     // xs
+// Font sizing - Tailwind equivalent in comments
 .fontSize(.small)          // sm  
 .fontSize(.base)           // base (default)
 .fontSize(.large)          // lg
@@ -124,207 +110,196 @@ Stylesheet(URL(string: "static/style.output.css"))
 Stylesheet(URL(string: "/static/style.output.css"))
 ```
 
-## API Discovery
+## CRITICAL: API Discovery Workflow
 
-### 1. When You Don't Know the Right API
+### Step-by-Step Process (REQUIRED Before ClassModifier)
 
-Follow this systematic search process:
+**ALWAYS follow this process before using `.modifier(ClassModifier(add: ...))`:**
 
-1. **Search by category** in `.build/checkouts/slipstream/Sources/Slipstream/TailwindCSS/`:
-   ```bash
-   # Typography APIs
-   ls .build/checkouts/slipstream/Sources/Slipstream/TailwindCSS/Typography/
-   
-   # Layout APIs  
-   ls .build/checkouts/slipstream/Sources/Slipstream/TailwindCSS/Layout/
-   
-   # Flexbox/Grid APIs
-   ls .build/checkouts/slipstream/Sources/Slipstream/TailwindCSS/FlexboxAndGrid/
-   
-   # Sizing APIs
-   ls .build/checkouts/slipstream/Sources/Slipstream/TailwindCSS/Sizing/
-   ```
+#### 1. Search Slipstream Source Directories
 
-2. **Examine key API files**:
-   - `View+fontSize.swift` - Font sizing options
-   - `View+textAlignment.swift` - Text alignment
-   - `View+background.swift` - Background colors and effects
-   - `View+border.swift` - Border styling
-   - `View+padding.swift` - Spacing and padding
-
-3. **Search for specific functionality**:
-   ```bash
-   # Find hover-related APIs
-   grep -r "hover" .build/checkouts/slipstream/Sources/Slipstream/TailwindCSS/
-   
-   # Find responsive APIs
-   grep -r "Condition\|Breakpoint" .build/checkouts/slipstream/Sources/Slipstream/TailwindCSS/
-   
-   # Find positioning APIs
-   grep -r "position\|sticky" .build/checkouts/slipstream/Sources/Slipstream/TailwindCSS/
-   ```
-
-## CRITICAL: ClassModifier Usage Rules
-
-### Before Using ClassModifier - Required Steps
-
-1. **ALWAYS search** for existing Slipstream APIs first
-2. **DOCUMENT** why ClassModifier is necessary  
-3. **LIST** specific missing APIs that should be added to Slipstream
-4. **TRACK** usage for future contributions
-
-### Proper ClassModifier Documentation Pattern
-
-When you must use `.modifier(ClassModifier(add: ...))`, document it properly:
-
-```swift
-public var body: some View {
-    Link(URL(string: href)) {
-        Text(title)
-            .fontSize(.extraExtraLarge)
-            .fontWeight(.bold)
-            .textColor(.palette(.gray, darkness: 900))
-            
-            // TODO: Need Slipstream API for interactive hover states
-            // MISSING APIs: 
-            // - .hover(.opacity(0.8))
-            // - .transition(.opacity, duration: .short)
-            // Issue: Slipstream v2.0 lacks pseudo-state modifier support
-            // ClassModifier used for: hover:opacity-80 transition-opacity
-            .modifier(ClassModifier(add: "hover:opacity-80 transition-opacity"))
-    }
-}
-```
-
-### Common Missing APIs to Document
-
-Track these commonly missing Slipstream APIs:
-
-```swift
-// Interactive States (most commonly missing)
-// TODO: Need Slipstream hover/focus/active state APIs
-.modifier(ClassModifier(add: "hover:opacity-80"))        // .hover(.opacity(0.8))
-.modifier(ClassModifier(add: "focus:ring-2"))            // .focus(.ring(width: 2))
-.modifier(ClassModifier(add: "active:transform"))        // .active(.scale(0.95))
-
-// Responsive Visibility (commonly missing)  
-// TODO: Need Slipstream responsive display APIs
-.modifier(ClassModifier(add: "hidden md:flex"))          // .display(.hidden, condition: .belowMedium)
-.modifier(ClassModifier(add: "block lg:hidden"))         // .display(.block, condition: .belowLarge)
-
-// Positioning and Z-Index (commonly missing)
-// TODO: Need Slipstream positioning APIs
-.modifier(ClassModifier(add: "sticky top-0 z-50"))       // .position(.sticky, top: 0).zIndex(50)
-.modifier(ClassModifier(add: "absolute inset-0"))        // .position(.absolute, inset: 0)
-
-// Transitions and Animations (commonly missing)
-// TODO: Need Slipstream transition APIs
-.modifier(ClassModifier(add: "transition-all"))          // .transition(.all)
-.modifier(ClassModifier(add: "duration-300"))            // .duration(.milliseconds(300))
-.modifier(ClassModifier(add: "ease-in-out"))             // .timingFunction(.easeInOut)
-```
-
-### Creating API Gap Issues
-
-For each missing API, create structured documentation:
-
-```swift
-// TODO: SLIPSTREAM API GAP - Hover States
-// Current: .modifier(ClassModifier(add: "hover:opacity-80"))
-// Needed: .hover(.opacity(0.8))
-// Priority: HIGH - Interactive components are essential
-// Tailwind classes: hover:opacity-{value}, hover:bg-{color}, hover:text-{color}
-// Suggested API pattern:
-//   extension View {
-//     func hover<T>(_ modifier: (Self) -> T) -> some View where T: View
-//   }
-```
-
-## Performance and Build Troubleshooting
-
-### Component Rendering Issues
-
-**Problem**: Component compiles but renders unexpectedly
-**Solution**: Use TestUtils to validate HTML output
-
-```swift
-// Validate component HTML output
-let html = TestUtils.renderHTML(component)
-TestUtils.assertValidHTMLDocument(html)
-TestUtils.assertContainsTailwindClasses(html, expectedClasses)
-
-// Check for missing or incorrect CSS classes  
-print("Generated HTML: \(html)")
-```
-
-### Build Performance
+Search the specific category directories in `.build/checkouts/slipstream/Sources/Slipstream/TailwindCSS/`:
 
 ```bash
-# Build only specific targets during development
-nocorrect swift build --target 21-dev
-nocorrect swift build --target DesignSystem
+# Layout & Sizing (most common)
+ls .build/checkouts/slipstream/Sources/Slipstream/TailwindCSS/Sizing/
+ls .build/checkouts/slipstream/Sources/Slipstream/TailwindCSS/Layout/
 
-# Parallel testing for faster feedback
-nocorrect swift test --parallel
+# Flexbox & Grid (very common)  
+ls .build/checkouts/slipstream/Sources/Slipstream/TailwindCSS/FlexboxAndGrid/
+
+# Typography (common)
+ls .build/checkouts/slipstream/Sources/Slipstream/TailwindCSS/Typography/
+
+# Colors & Effects (common)
+ls .build/checkouts/slipstream/Sources/Slipstream/TailwindCSS/Backgrounds/
+ls .build/checkouts/slipstream/Sources/Slipstream/TailwindCSS/Borders/
+
+# Interactive States (often missing)
+ls .build/checkouts/slipstream/Sources/Slipstream/TailwindCSS/TransitionsAndAnimations/
 ```
 
-### Common API Discovery Mistakes
+#### 2. Examine Key API Files
 
-```swift
-// ❌ WRONG - Using ClassModifier without searching
-.modifier(ClassModifier(add: "text-2xl"))
-
-// ✅ CORRECT - Use discovered Slipstream API
-.fontSize(.extraExtraLarge)
-
-// ❌ WRONG - Combining manual CSS with Slipstream
-.fontSize(.large)
-.modifier(ClassModifier(add: "font-bold"))
-
-// ✅ CORRECT - Use proper Slipstream APIs
-.fontSize(.large)
-.fontWeight(.bold)
-```
-
-## Local Development Patterns
-
-### API Exploration Commands
-
+Look inside relevant files for the API you need:
 ```bash
-# Explore available Slipstream APIs by category
-find .build/checkouts/slipstream/Sources/Slipstream/TailwindCSS/ -name "*.swift" -exec basename {} \; | sort
+# For sizing needs
+cat .build/checkouts/slipstream/Sources/Slipstream/TailwindCSS/Sizing/View+frame.swift
 
-# Search for specific API patterns
-grep -r "func.*Color" .build/checkouts/slipstream/Sources/Slipstream/TailwindCSS/
-grep -r "extension View" .build/checkouts/slipstream/Sources/Slipstream/TailwindCSS/
+# For flexbox needs  
+cat .build/checkouts/slipstream/Sources/Slipstream/TailwindCSS/FlexboxAndGrid/View+justifyContent.swift
 
-# Find examples of API usage in Slipstream tests
-find .build/checkouts/slipstream/Tests/ -name "*.swift" -exec grep -l "fontSize\|textColor" {} \;
+# For interactive states
+cat .build/checkouts/slipstream/Sources/Slipstream/TailwindCSS/State.swift
 ```
 
-### Integration Testing
+#### 3. Search for Specific Functionality
+
+Use grep to find related APIs:
+```bash
+# Find hover/interactive APIs
+grep -r "hover\|State\|Condition" .build/checkouts/slipstream/Sources/Slipstream/TailwindCSS/
+
+# Find responsive APIs
+grep -r "Condition\|startingAt" .build/checkouts/slipstream/Sources/Slipstream/TailwindCSS/
+
+# Find positioning APIs
+grep -r "position\|sticky" .build/checkouts/slipstream/Sources/Slipstream/TailwindCSS/
+```
+
+#### 4. Test Official API First
+
+Always test the official API before falling back to ClassModifier:
+```swift
+// ✅ PREFERRED - Official API discovered through search
+.frame(width: .full)           // instead of ClassModifier(add: "w-full")
+.justifyContent(.between)      // instead of ClassModifier(add: "justify-between")
+.transition(.colors)           // instead of ClassModifier(add: "transition-colors")
+```
+
+## Common Patterns Reference
+
+Based on real refactoring experience, these are the most frequently encountered patterns:
+
+### Layout & Sizing (High Priority - Almost Always Available)
+
+| Tailwind Class | Slipstream API | Notes |
+|----------------|----------------|--------|
+| `w-full` | `.frame(width: .full)` | ✅ Available |
+| `h-screen` | `.frame(height: .screen)` | ✅ Available |  
+| `min-h-screen` | `.frame(minHeight: .screen)` | ✅ Available |
+| `w-52 h-12` | `.frame(width: 208, height: 48)` | ✅ Available |
+
+### Flexbox Layout (High Priority - Usually Available)
+
+| Tailwind Class | Slipstream API | Notes |
+|----------------|----------------|--------|
+| `justify-between` | `.justifyContent(.between)` | ✅ Available |
+| `justify-center` | `.justifyContent(.center)` | ✅ Available |
+| `items-center` | `.alignItems(.center)` | ✅ Available |
+| `flex-col` | `.flexDirection(.y)` | ✅ Available |
+| `flex-row` | `.flexDirection(.x)` | ✅ Available |
+
+### Interactive States (Medium Priority - Often Available)
+
+| Tailwind Class | Slipstream API | Notes |
+|----------------|----------------|--------|
+| `hover:opacity-80` | `.opacity(0.8, condition: .hover)` | ✅ Available via State |
+| `transition-colors` | `.transition(.colors)` | ✅ Available |
+| `transition-opacity` | `.transition(.opacity)` | ✅ Available |
+
+### Typography (Medium Priority - Mixed Availability)
+
+| Tailwind Class | Slipstream API | Notes |
+|----------------|----------------|--------|
+| `text-center` | `.textAlignment(.center)` | ✅ Available |
+| `font-bold` | `.fontWeight(.bold)` | ✅ Available |
+| `text-3xl` | `.modifier(ClassModifier(add: "text-3xl"))` | ❌ Missing - Use TODO |
+
+### Positioning (Low Priority - Often Missing)
+
+| Tailwind Class | Slipstream API | Notes |
+|----------------|----------------|--------|
+| `sticky top-0` | `.position(.sticky)` + TODO | ⚠️ Partial - position available, offset missing |
+| `z-50` | `.modifier(ClassModifier(add: "z-50"))` | ❌ Missing - Use TODO |
+
+## ClassModifier Usage Rules
+
+### Required Documentation Pattern
+
+When you must use `.modifier(ClassModifier(add: ...))`, document it this way:
 
 ```swift
-// Test components with realistic site integration
-let testPage = BasePage(title: "Component Test") {
-    VStack(spacing: 32) {
-        Header(logoText: "Test Site", navigationLinks: testLinks)
-        Section {
-            PlaceholderView(text: "Testing Integration")
-        }
-    }
-}
-
-let html = TestUtils.renderHTML(testPage)
-TestUtils.assertValidHTMLDocument(html)
+// TODO: Missing Slipstream API for [specific functionality]
+// MISSING APIs: [list the ideal API calls that should exist]
+// ClassModifier used for: [exact CSS classes used]
+.modifier(ClassModifier(add: "text-3xl cursor-pointer"))
 ```
 
-## Summary: API-First Development Workflow
+**Example from real code:**
+```swift
+Text("☰")
+    // TODO: Missing Slipstream API for text-3xl and cursor styles  
+    // MISSING APIs: .fontSize(.threeXLarge), .cursor(.pointer)
+    // ClassModifier used for: text-3xl cursor-pointer
+    .modifier(ClassModifier(add: "text-3xl cursor-pointer"))
+```
 
-1. **Design component** using SwiftUI-like patterns (VStack/HStack/Container)
-2. **Search for APIs** in `.build/checkouts/slipstream/Sources/Slipstream/TailwindCSS/`
-3. **Use Slipstream APIs** for all styling (colors, typography, spacing, layout)
-4. **Document missing APIs** when ClassModifier is required
-5. **Test with TestUtils** to validate HTML output
-6. **Integrate gradually** with existing site structure
-7. **Track API gaps** for future Slipstream contributions
+### ClassModifier Categories to Track
+
+**HIGH PRIORITY for Slipstream contribution:**
+- Cursor styles: `cursor-pointer`, `cursor-not-allowed`
+- Large typography: `text-3xl`, `text-4xl`, `text-5xl`
+- Z-index: `z-10`, `z-50`, `z-auto`
+
+**MEDIUM PRIORITY for Slipstream contribution:**
+- Focus rings: `focus:ring-2`, `focus:ring-offset-2`
+- Advanced positioning: `inset-0`, `top-4`, `left-8`
+- Backdrop effects: `backdrop-blur-sm`, `bg-opacity-90`
+
+## Performance and Build Considerations
+
+### TailwindCSS Configuration
+
+Ensure your `tailwind.config.cjs` includes only generated HTML:
+```javascript
+// ✅ CORRECT - Only include generated HTML output
+content: ["./Websites/<SiteName>/**/*.html"]
+
+// ❌ WRONG - Don't include Swift source files
+content: ["./Sources/**/*.swift", "./Websites/<SiteName>/**/*.html"]
+```
+
+### Build Command Consistency
+
+Use identical Tailwind commands locally and in CI:
+```bash
+# ✅ CORRECT - Include --config flag
+swift package --disable-sandbox tailwindcss \
+  --input Resources/<SiteName>/static/style.css \
+  --output Websites/<SiteName>/static/style.output.css \
+  --config Resources/<SiteName>/tailwind.config.cjs
+
+# ❌ WRONG - Missing --config causes style failures
+swift package --disable-sandbox tailwindcss build \
+  -i Resources/<SiteName>/static/style.css \
+  -o Websites/<SiteName>/static/style.output.css
+```
+
+## Troubleshooting
+
+### Component Rendering Failures
+
+When components fail silently:
+1. **Test with inline HTML** first to verify basic rendering
+2. **Add components incrementally** to isolate the problem  
+3. **Check generic constraints** - avoid complex generics
+4. **Verify proper `any View` usage** with `AnyView` wrapper
+
+### Missing API Debugging
+
+When you suspect an API exists but can't find it:
+1. **Search broader directory patterns**: `find .build/checkouts/slipstream -name "*.swift" | xargs grep -l "keyword"`
+2. **Check enum definitions**: Look for enum cases that match your need
+3. **Examine View+extensions**: Most APIs are in `View+<functionality>.swift` files
+4. **Test similar APIs**: If `.frame(width:)` exists, try `.frame(height:)`

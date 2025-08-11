@@ -58,48 +58,78 @@ public struct Header: View {
     public var body: some View {
         Div {
             Container {
-                HStack(alignment: .center, spacing: 32) {
+                // Single flex container for logo, hamburger, and navigation (matches working example)
+                HStack(alignment: .center, spacing: 0) {
                     // Logo/Site Title
                     Link(URL(string: "/")) {
                         Text(logoText)
-                            .fontSize(.extraExtraLarge)
+                            // TODO: Missing Slipstream API for text-3xl (large typography)
+                            .modifier(ClassModifier(add: "text-3xl"))
                             .fontWeight(.bold)
                             .textColor(.palette(.gray, darkness: 900))
-                            
-                            // TODO: Need Slipstream API for interactive hover states
-                            // MISSING APIs: .hover(.opacity(0.8)), .transition(.opacity)
-                            // Issue: Slipstream v2.0 lacks pseudo-state modifier support
-                            // ClassModifier used for: hover:opacity-80 transition-opacity
-                            .modifier(ClassModifier(add: "hover:opacity-80 transition-opacity"))
                     }
                     
-                    Div { /* Spacer */ }
-                        // TODO: Need Slipstream API for flex-grow
-                        // MISSING APIs: .flexGrow(1) or .flex(.grow)
-                        // ClassModifier used for: flex-1
-                        .modifier(ClassModifier(add: "flex-1"))
+                    // Mobile Menu Toggle (visible only on mobile)
+                    HeaderMobileToggleComplete()
                     
-                    // Navigation Links
+                    // Navigation Links (visible only on desktop, positioned to the right)
                     HeaderNavigationLinks(links: navigationLinks)
                 }
-                .padding(.vertical, 16)
-                .padding(.horizontal, 16)
-                .padding(.horizontal, 24, condition: Condition(startingAt: .medium))
-                .padding(.horizontal, 32, condition: Condition(startingAt: .large))
+                .justifyContent(.between) // justify-between
+                .alignItems(.center)      // items-center
+                .frame(width: .full)      // w-full
+                .padding(.horizontal, 32)  // px-8 equivalent
+                .padding(.vertical, 20)    // py-5 equivalent (consistent with working example)
+                .frame(width: .full)       // w-full
             }
         }
-        // TODO: Need Slipstream API for full width
-        // MISSING APIs: .frame(width: .full) or .width(.full)
-        // ClassModifier used for: w-full to ensure header spans browser width
-        .modifier(ClassModifier(add: "w-full"))
+        .frame(width: .full)
         .background(.white)
         .border(.palette(.gray, darkness: 200), width: 1, edges: .bottom)
-        
-        // TODO: Need Slipstream API for positioning, z-index, and backdrop effects
-        // MISSING APIs: .position(.sticky, top: 0), .zIndex(50), .backdropBlur(.small), .backgroundOpacity(0.9)
-        // Issue: Complex positioning and backdrop effects not available in Slipstream
-        // ClassModifier used for: sticky top-0 z-50 backdrop-blur-sm bg-opacity-90
-        .modifier(ClassModifier(add: "sticky top-0 z-50 backdrop-blur-sm bg-opacity-90"))
+        .position(.sticky)
+        // TODO: Missing Slipstream APIs for z-index and backdrop effects
+        .modifier(ClassModifier(add: "top-0 z-50 backdrop-blur-sm bg-opacity-90"))
+    }
+}
+
+/// A mobile menu toggle component for header navigation.
+/// 
+/// DESIRED SLIPSTREAM INPUT/LABEL API:
+/// This component should generate the following HTML structure for CSS-only mobile menu toggle:
+/// 
+/// ```html
+/// <input type="checkbox" name="menu-toggle" id="menu-toggle" class="hidden">
+/// <label for="menu-toggle" class="menu-button cursor-pointer text-3xl md:hidden">☰</label>
+/// ```
+/// 
+/// PROPOSED SLIPSTREAM API:
+/// ```swift
+/// VStack {
+///     Input()
+///         .type(.checkbox)
+///         .name("menu-toggle")
+///         .id("menu-toggle")
+///         .modifier(ClassModifier(add: "hidden"))
+///     
+///     Label {
+///         Text("☰")
+///             .fontSize(.extraLarge)
+///             .textColor(.palette(.gray, darkness: 700))
+///     }
+///     .htmlFor("menu-toggle")
+///     .modifier(ClassModifier(add: "menu-button cursor-pointer text-3xl md:hidden"))
+/// }
+/// ```
+/// 
+/// CURRENT IMPLEMENTATION: Placeholder until APIs are available
+private struct HeaderMobileToggleComplete: View {
+    var body: some View {
+        // Placeholder implementation - shows hamburger icon but no toggle functionality
+        Text("☰")
+            // TODO: Missing Slipstream API for text-3xl and cursor styles  
+            .modifier(ClassModifier(add: "text-3xl cursor-pointer")) // Match logo text-3xl size
+            .textColor(.palette(.gray, darkness: 700))
+            .hidden(condition: Condition(startingAt: .medium)) // md:hidden (only visible on mobile)
     }
 }
 
@@ -125,10 +155,9 @@ private struct HeaderNavigationLinks: View {
                 )
             }
         }
-        // TODO: Need Slipstream API for responsive visibility
-        // MISSING APIs: .display(.hidden, condition: .belowMedium), .display(.flex, condition: .mediumAndAbove)
-        // ClassModifier used for: hidden md:flex
-        .modifier(ClassModifier(add: "hidden md:flex"))
+        .hidden() // hidden by default on mobile
+        .display(.flex, condition: Condition(startingAt: .medium)) // md:flex (visible on desktop)
+        .alignItems(.center) // Align with logo height
     }
 }
 
@@ -152,15 +181,10 @@ private struct HeaderNavigationLink: View {
             .textColor(.palette(.gray, darkness: 700))
             .fontWeight(.medium)
             
-            // TODO: Need Slipstream API for hover color states and transitions
-            // MISSING APIs: .hover(.textColor(.palette(.orange, darkness: 500))), .transition(.colors)
-            // Issue: Interactive pseudo-states and transition effects not available
-            // ClassModifier used for: hover:text-orange-500 transition-colors
-            .modifier(ClassModifier(add: "hover:text-orange-500 transition-colors"))
+            .textColor(.palette(.orange, darkness: 500), condition: .hover)
+            .transition(.colors)
             
-            // TODO: Need Slipstream API for accessibility attributes
-            // MISSING APIs: .accessibilityLabel(), .ariaCurrent()
-            // ClassModifier used for: aria-current="page" attribute
+            // TODO: Missing Slipstream API for accessibility attributes
             .modifier(ClassModifier(add: isActive ? "aria-current-page" : ""))
     }
 }
