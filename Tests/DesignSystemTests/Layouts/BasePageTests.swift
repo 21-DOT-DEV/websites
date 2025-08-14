@@ -30,6 +30,19 @@ struct BasePageTests {
         TestUtils.assertContainsStylesheet(html)
     }
     
+    @Test("BasePage includes mobile-friendly viewport meta tag")
+    func testBasePageViewportMetaTag() throws {
+        let page = BasePage(title: "Mobile Page") {
+            Text("Mobile Content")
+        }
+        let html = try TestUtils.renderHTML(page)
+        
+        // Verify viewport meta tag is present with correct mobile-friendly attributes
+        TestUtils.assertContainsText(html, texts: [
+            "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\" />"
+        ])
+    }
+    
     @Test("BasePage accepts custom stylesheet parameter")
     func testBasePageCustomStylesheet() throws {
         let customStylesheet = "custom/styles.css"

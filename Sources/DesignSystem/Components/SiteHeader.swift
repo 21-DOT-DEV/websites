@@ -174,11 +174,12 @@ private struct SiteHeaderMobileToggle: View {
         Checkbox(name: "menu-toggle", id: "menu-toggle")
             .hidden()                               // hidden
         Label("☰", htmlFor: "menu-toggle")
-            .fontSize(.extraExtraLarge)                // text-2xl
-            .hidden(condition: .startingAt(.medium))    // md:hidden
             // TODO: Missing Slipstream APIs - using ClassModifier for:
-            // - cursor-pointer (cursor style)
-            .modifier(ClassModifier(add: "menu-button cursor-pointer"))
+            // - cursor-pointer (cursor style) 
+            // - exact max-width: 767px responsive breakpoint (matches working example)
+            .modifier(ClassModifier(add: "menu-button cursor-pointer md:hidden"))
+            .fontSize(.extraExtraExtraLarge)                // text-3xl
+            .modifier(ClassModifier(add: "md:hidden"))
     }
 }
 

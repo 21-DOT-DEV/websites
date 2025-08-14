@@ -51,6 +51,7 @@ public struct BasePage: View {
             Head {
                 Charset(.utf8)
                 Title(title)
+                Viewport.mobileFriendly
                 Stylesheet(URL(string: stylesheet))
             }
             Body {
