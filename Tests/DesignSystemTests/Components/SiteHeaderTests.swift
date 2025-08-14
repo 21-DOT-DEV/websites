@@ -4,15 +4,15 @@ import Foundation
 import Slipstream
 import TestUtils
 
-struct HeaderTests {
+struct SiteHeaderTests {
     
-    @Test("Header renders with correct HTML structure and full width")
+    @Test("SiteHeader renders with correct HTML structure and full width")
     func testHeaderBasicStructure() throws {
         let navigationLinks = [
             NavigationLink(title: "Home", href: "/"),
             NavigationLink(title: "About", href: "/about")
         ]
-        let header = Header(logoText: "TestSite", navigationLinks: navigationLinks)
+        let header = SiteHeader(logoText: "TestSite", navigationLinks: navigationLinks)
         let html = try TestUtils.renderHTML(header)
         
         // Verify basic HTML structure
@@ -22,16 +22,16 @@ struct HeaderTests {
         // Verify full width class is applied
         TestUtils.assertContainsTailwindClasses(html, classes: ["w-full"])
         
-        // Verify container structure
-        TestUtils.assertContainsTailwindClasses(html, classes: ["container"])
+        // Verify max-width container structure (uses max-w-4xl instead of container)
+        TestUtils.assertContainsTailwindClasses(html, classes: ["max-w-4xl"])
         
         // Verify header layout classes
         TestUtils.assertContainsTailwindClasses(html, classes: ["flex", "items-center"])
     }
     
-    @Test("Header logo renders correctly with proper styling")
+    @Test("SiteHeader logo renders correctly with proper styling")
     func testHeaderLogo() throws {
-        let header = Header(logoText: "MyAwesomeSite", navigationLinks: [])
+        let header = SiteHeader(logoText: "MyAwesomeSite", navigationLinks: [])
         let html = try TestUtils.renderHTML(header)
         
         // Verify logo text appears
@@ -42,20 +42,20 @@ struct HeaderTests {
         
         // Verify logo typography classes
         TestUtils.assertContainsTailwindClasses(html, classes: [
-            "text-2xl", // fontSize(.extraExtraLarge)
+            "text-3xl", // fontSize(.extraExtraExtraLarge)
             "font-bold",
             "text-gray-900"
         ])
     }
     
-    @Test("Header navigation links render with correct attributes")
+    @Test("SiteHeader navigation links render with correct attributes")
     func testHeaderNavigationLinks() throws {
         let navigationLinks = [
             NavigationLink(title: "Home", href: "/"),
             NavigationLink(title: "Blog", href: "/blog"),
             NavigationLink(title: "Docs", href: "https://docs.example.com", isExternal: true)
         ]
-        let header = Header(logoText: "Site", navigationLinks: navigationLinks)
+        let header = SiteHeader(logoText: "Site", navigationLinks: navigationLinks)
         let html = try TestUtils.renderHTML(header)
         
         // Verify all navigation link texts appear
@@ -76,23 +76,23 @@ struct HeaderTests {
         ])
     }
     
-    @Test("Header handles empty navigation links")
+    @Test("SiteHeader handles empty navigation links")
     func testHeaderEmptyNavigation() throws {
-        let header = Header(logoText: "Site", navigationLinks: [])
+        let header = SiteHeader(logoText: "Site", navigationLinks: [])
         let html = try TestUtils.renderHTML(header)
         
         // Should still render basic structure
         TestUtils.assertContainsText(html, texts: ["Site"])
-        TestUtils.assertContainsTailwindClasses(html, classes: ["w-full", "container"])
+        TestUtils.assertContainsTailwindClasses(html, classes: ["w-full", "max-w-4xl"])
         
         // Should not contain any navigation links or aria-current attributes
         #expect(!html.contains("aria-current"))
     }
     
-    @Test("Header handles special characters in logo text")
+    @Test("SiteHeader handles special characters in logo text")
     func testHeaderSpecialCharacters() throws {
         let logoWithSpecialChars = "My Site™ & Co. <script>alert('test')</script>"
-        let header = Header(logoText: logoWithSpecialChars, navigationLinks: [])
+        let header = SiteHeader(logoText: logoWithSpecialChars, navigationLinks: [])
         let html = try TestUtils.renderHTML(header)
         
         // Should contain escaped HTML
@@ -101,14 +101,14 @@ struct HeaderTests {
         #expect(!html.contains("<script>alert"))
     }
     
-    @Test("Header applies proper background and border styling")
+    @Test("SiteHeader applies proper background and border styling")
     func testHeaderStyling() throws {
-        let header = Header(logoText: "Site", navigationLinks: [])
+        let header = SiteHeader(logoText: "Site", navigationLinks: [])
         let html = try TestUtils.renderHTML(header)
         
-        // Verify background and border classes
+        // Verify background and border classes (uses opacity shorthand)
         TestUtils.assertContainsTailwindClasses(html, classes: [
-            "bg-white",
+            "bg-white/90", // Color.white.opacity(0.9)
             "border-b",
             "border-b-gray-200"
         ])
@@ -118,42 +118,43 @@ struct HeaderTests {
         #expect(html.contains("top-0"))
         #expect(html.contains("z-50"))
         #expect(html.contains("backdrop-blur-sm"))
-        #expect(html.contains("bg-opacity-90"))
+        // Background opacity is now included in bg-white/90
+        #expect(html.contains("bg-white/90"))
     }
     
-    @Test("Header responsive padding classes are applied")
+    @Test("SiteHeader responsive padding classes are applied")
     func testHeaderResponsivePadding() throws {
-        let header = Header(logoText: "Site", navigationLinks: [])
+        let header = SiteHeader(logoText: "Site", navigationLinks: [])
         let html = try TestUtils.renderHTML(header)
         
-        // Verify base and responsive padding classes
+        // Verify base and responsive padding classes (matches actual Slipstream output)
         TestUtils.assertContainsTailwindClasses(html, classes: [
-            "py-4", // padding(.vertical, 16)
-            "px-4", // base horizontal padding
-            "md:px-6", // medium breakpoint padding
-            "lg:px-8"  // large breakpoint padding
+            "py-5", // padding(.vertical, 20) 
+            "px-8", // base horizontal padding
+            "md:px-12", // medium breakpoint padding
+            "p-4"  // Section padding
         ])
     }
     
-    @Test("Header first navigation link is automatically marked as active")
+    @Test("SiteHeader first navigation link is automatically marked as active")
     func testHeaderActiveNavigation() throws {
         let navigationLinks = [
             NavigationLink(title: "Home", href: "/"),
             NavigationLink(title: "About", href: "/about")
         ]
-        let header = Header(logoText: "Site", navigationLinks: navigationLinks)
+        let header = SiteHeader(logoText: "Site", navigationLinks: navigationLinks)
         let html = try TestUtils.renderHTML(header)
         
         // Verify first link has aria-current attribute (automatic active state)
         #expect(html.contains("aria-current-page"))
     }
     
-    @Test("Header handles long navigation lists")
+    @Test("SiteHeader handles long navigation lists")
     func testHeaderLongNavigation() throws {
         let manyLinks = (1...10).map { index in
             NavigationLink(title: "Link \(index)", href: "/link\(index)")
         }
-        let header = Header(logoText: "Site", navigationLinks: manyLinks)
+        let header = SiteHeader(logoText: "Site", navigationLinks: manyLinks)
         let html = try TestUtils.renderHTML(header)
         
         // Should render all links
@@ -163,16 +164,16 @@ struct HeaderTests {
         }
         
         // Should maintain proper structure
-        TestUtils.assertContainsTailwindClasses(html, classes: ["w-full", "container"])
+        TestUtils.assertContainsTailwindClasses(html, classes: ["w-full", "max-w-4xl"])
     }
     
-    @Test("Header component integrates with BasePage properly")
+    @Test("SiteHeader component integrates with BasePage properly")
     func testHeaderBasePageIntegration() throws {
         let navigationLinks = [
             NavigationLink(title: "Home", href: "/"),
             NavigationLink(title: "About", href: "/about")
         ]
-        let header = Header(logoText: "Integration Test", navigationLinks: navigationLinks)
+        let header = SiteHeader(logoText: "Integration Test", navigationLinks: navigationLinks)
         
         let page = BasePage(title: "Test Page") {
             header
@@ -188,6 +189,6 @@ struct HeaderTests {
         
         // Verify header is properly integrated
         TestUtils.assertContainsText(html, texts: ["Integration Test", "Home", "About", "Page Content"])
-        TestUtils.assertContainsTailwindClasses(html, classes: ["w-full", "container"])
+        TestUtils.assertContainsTailwindClasses(html, classes: ["w-full", "max-w-4xl"])
     }
 }

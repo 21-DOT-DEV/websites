@@ -1,13 +1,13 @@
 {
-  "originHash" : "a37ff4db6dc245e5178e646de4e9166c061a95959c6660024f406ba05f522e51",
+  "originHash" : "e02a0ef5d07fff691c9c4b4b3afd79302f4b3280b560a1b4174de9afcf516e6f",
   "pins" : [
     {
       "identity" : "slipstream",
       "kind" : "remoteSourceControl",
-      "location" : "https://github.com/ClutchEngineering/slipstream",
+      "location" : "https://github.com/21-DOT-DEV/slipstream",
       "state" : {
-        "branch" : "v2.0",
-        "revision" : "8c215192675d339ce26cf78a1eb9999d3cf47941"
+        "branch" : "NEW-INPUT-TYPES",
+        "revision" : "da41f03f0b0ab35e82a74cf44c594bf06cb13267"
       }
     },
     {
@@ -60,8 +60,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/scinfu/SwiftSoup.git",
       "state" : {
-        "revision" : "a81b1a5ac933dee8c6cfccf05d5ffcc5eb8c7ec4",
-        "version" : "2.10.0"
+        "revision" : "04a5da442816f764b2a8513c38420b4e6605145b",
+        "version" : "2.10.1"
       }
     }
   ],
