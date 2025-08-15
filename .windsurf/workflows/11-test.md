@@ -1,6 +1,6 @@
 ---
-description: >
-  Run all test suites for the repository.
+description: Run all test suites for the repository.
+auto_execution_mode: 3
 ---
 
 # Test

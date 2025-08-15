@@ -1,6 +1,6 @@
 ---
-description: >
-  Generate and then verify the site in a single workflow.
+description: Generate and then verify the site in a single workflow.
+auto_execution_mode: 1
 ---
 
 # Site Generate and Verify

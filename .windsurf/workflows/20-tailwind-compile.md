@@ -1,6 +1,6 @@
 ---
-description: >
-  Compile Tailwind CSS for the target site.
+description: Compile Tailwind CSS for the target site.
+auto_execution_mode: 1
 ---
 
 # Tailwind Compile

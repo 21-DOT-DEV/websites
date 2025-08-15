@@ -1,6 +1,6 @@
 ---
-description: >
-  Full local check before PR: build, test, compile CSS, generate and verify site.
+description: Full local check before PR: build, test, compile CSS, generate and verify site.
+auto_execution_mode: 1
 ---
 
 # Local Full Check

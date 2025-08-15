@@ -1,6 +1,6 @@
 ---
-description: >
-  Scaffold a new page for the 21-dev site.
+description: Scaffold a new page for the 21-dev site.
+auto_execution_mode: 3
 ---
 
 # Page Scaffold

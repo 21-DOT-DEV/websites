@@ -1,6 +1,6 @@
 ---
-description: >
-  Build all Swift packages for the selected site.
+description: Build all Swift packages for the selected site.
+auto_execution_mode: 3
 ---
 
 # Build
