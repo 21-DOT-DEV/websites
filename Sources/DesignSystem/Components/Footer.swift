@@ -76,28 +76,6 @@ public struct Footer: View {
         self.backgroundColor = backgroundColor
     }
     
-    private var resourceLinksHTML: String {
-        resourceLinks.map { link in
-            let target = link.isExternal ? " target=\"_blank\" rel=\"noopener\"" : ""
-            return "<a href=\"\(link.href)\"\(target) class=\"text-gray-400 hover:text-white transition-colors block mb-2\">\(link.text)</a>"
-        }.joined(separator: "")
-    }
-    
-    private var socialLinksHTML: String {
-        socialLinks.map { socialLink in
-            let target = " target=\"_blank\" rel=\"noopener\""
-            if let platform = socialLink.platform {
-                if let displayText = platform.displayText {
-                    return "<a href=\"\(socialLink.url)\"\(target) class=\"text-gray-400 hover:text-white transition-colors font-mono text-sm mb-3 block\" aria-label=\"\(socialLink.ariaLabel)\">\(displayText)</a>"
-                } else if !platform.svgPath.isEmpty {
-                    return "<a href=\"\(socialLink.url)\"\(target) class=\"text-gray-400 hover:text-white transition-colors mb-3 block\" aria-label=\"\(socialLink.ariaLabel)\"><svg class=\"w-6 h-6\" fill=\"currentColor\" viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"\(platform.svgPath)\"/></svg></a>"
-                }
-            } else if let customSVG = socialLink.customSVG {
-                return "<a href=\"\(socialLink.url)\"\(target) class=\"text-gray-400 hover:text-white transition-colors mb-3 block\" aria-label=\"\(socialLink.ariaLabel)\">\(customSVG)</a>"
-            }
-            return ""
-        }.joined(separator: "")
-    }
     
     public var body: some View {
         Div {
@@ -125,8 +103,11 @@ public struct Footer: View {
                             .margin(.bottom, 16)
                             .modifier(ClassModifier(add: "text-white"))
                         
-                        // TODO: Simplify for now - will enhance with proper loop handling
-                        RawHTML(resourceLinksHTML)
+                        // TODO: Use for-loop pattern once Slipstream supports ForEach
+                        RawHTML(resourceLinks.map { link in
+                            let target = link.isExternal ? " target=\"_blank\" rel=\"noopener\"" : ""
+                            return "<a href=\"\(link.href)\"\(target) class=\"text-gray-400 hover:text-white transition-colors block mb-2\">\(link.text)</a>"
+                        }.joined(separator: ""))
                     }
                     
                     // Contact column
@@ -160,8 +141,20 @@ public struct Footer: View {
                             .margin(.bottom, 16)
                             .modifier(ClassModifier(add: "text-white"))
                         
-                        // TODO: Simplify for now - will enhance with proper loop handling  
-                        RawHTML(socialLinksHTML)
+                        // TODO: Use ForEach pattern once Slipstream supports it
+                        RawHTML(socialLinks.map { socialLink in
+                            let target = " target=\"_blank\" rel=\"noopener\""
+                            if let platform = socialLink.platform {
+                                if let displayText = platform.displayText {
+                                    return "<a href=\"\(socialLink.url)\"\(target) class=\"text-gray-400 hover:text-white transition-colors font-mono text-sm mb-3 block\" aria-label=\"\(socialLink.ariaLabel)\">\(displayText)</a>"
+                                } else if !platform.svgPath.isEmpty {
+                                    return "<a href=\"\(socialLink.url)\"\(target) class=\"text-gray-400 hover:text-white transition-colors mb-3 block\" aria-label=\"\(socialLink.ariaLabel)\"><svg class=\"w-6 h-6\" fill=\"currentColor\" viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"\(platform.svgPath)\"/></svg></a>"
+                                }
+                            } else if let customSVG = socialLink.customSVG {
+                                return "<a href=\"\(socialLink.url)\"\(target) class=\"text-gray-400 hover:text-white transition-colors mb-3 block\" aria-label=\"\(socialLink.ariaLabel)\">\(customSVG)</a>"
+                            }
+                            return ""
+                        }.joined(separator: ""))
                     }
                 }
                 // TODO: Missing Slipstream API - using ClassModifier for grid layout
