@@ -8,26 +8,6 @@
 import Foundation
 import Slipstream
 
-/// A call-to-action button component for various sections.
-/// Handles both internal and external links with proper styling options.
-public struct CTAButton: Sendable {
-    public let text: String
-    public let href: String
-    public let style: ButtonStyle
-    public let isExternal: Bool
-    
-    public enum ButtonStyle: Sendable {
-        case primary   // Orange background, white text
-        case secondary // Gray border, gray text
-    }
-    
-    public init(text: String, href: String, style: ButtonStyle = .primary, isExternal: Bool = false) {
-        self.text = text
-        self.href = href
-        self.style = style
-        self.isExternal = isExternal
-    }
-}
 
 /// A container component for rendering multiple call-to-action buttons.
 /// Handles responsive layout and proper button spacing.
@@ -92,17 +72,6 @@ public struct CTAButtonView: View {
     }
     
     private var buttonClasses: String {
-        switch button.style {
-        case .primary:
-            return """
-            bg-orange-500 hover:bg-orange-600 text-white rounded-lg \
-            focus:ring-2 focus:ring-orange-500 focus:ring-offset-2
-            """
-        case .secondary:
-            return """
-            border border-gray-300 hover:border-gray-400 text-gray-700 rounded-lg \
-            focus:ring-2 focus:ring-gray-500 focus:ring-offset-2
-            """
-        }
+        return button.style.cssClasses
     }
 }

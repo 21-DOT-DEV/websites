@@ -8,32 +8,6 @@
 import Foundation
 import Slipstream
 
-/// A generic navigation link for header components.
-/// 
-/// Handles both internal and external links with proper accessibility.
-/// Use this structure to define navigation links that will be rendered
-/// in the site header with appropriate styling and behavior.
-/// 
-/// - Note: External links automatically open in new tabs for better UX.
-public struct NavigationLink: Sendable {
-    /// The display text for the navigation link
-    public let title: String
-    /// The URL or path the link points to
-    public let href: String
-    /// Whether this link points to an external domain
-    public let isExternal: Bool
-    
-    /// Creates a new navigation link.
-    /// - Parameters:
-    ///   - title: The display text for the link
-    ///   - href: The URL or path the link points to
-    ///   - isExternal: Whether this link points to an external domain (defaults to false)
-    public init(title: String, href: String, isExternal: Bool = false) {
-        self.title = title
-        self.href = href
-        self.isExternal = isExternal
-    }
-}
 
 /// A responsive header component with configurable branding and navigation links.
 /// 
@@ -203,13 +177,12 @@ private struct HeaderNavigationLinks: View {
     
     var body: some View {
         Navigation {
-            // Render all navigation links dynamically without HStack wrapper
-            // This allows proper vertical stacking in mobile menu
-            for (index, link) in links.enumerated() {
+            // Use ForEach for type-safe navigation link rendering
+            ForEach(links, id: \.href) { (link: NavigationLink) in
                 HeaderNavigationLink(
                     title: link.title,
                     href: link.href,
-                    isActive: index == 0, // First link is active
+                    isActive: link.href == links.first?.href, // First link is active
                     isExternal: link.isExternal
                 )
             }
@@ -279,6 +252,6 @@ private struct HeaderNavigationLink: View {
             // - hover:text-orange-500 (hover text color)
             // - transition-colors (transitions)
             // - aria-current-page (conditional active state)
-            .modifier(ClassModifier(add: ["hover:text-orange-500", "transition-colors"] + (isActive ? ["aria-current-page"] : [])))
+            .modifier(ClassModifier(add: Set(["hover:text-orange-500", "transition-colors"] + (isActive ? ["aria-current-page"] : []))))
     }
 }

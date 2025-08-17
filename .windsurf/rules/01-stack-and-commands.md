@@ -20,12 +20,12 @@ description: >
   - `nocorrect swift test`
 - Keep local and CI **exactly** aligned on Tailwind CLI commands and flags.
 - Use `swift run` for executable targets; **never** run compiled binaries directly from `.build`.
-- Always commit with a clean build (`build-and-test` workflow passing) before opening a PR.
+- Always commit with a clean build (`/85-local-full-check` workflow passing) before opening a PR.
 
 ## Anti-Churn & Clarity
 - Do **not** modify unrelated files or perform refactors unless explicitly requested.
 - If unsure about a command, environment, or target — **ask clarifying questions before execution**.
 
 ## Related Workflows
-- **build-and-test** — Compile Swift targets and run all tests.
-- **site-generation** — Build site HTML/CSS/JS outputs.
+- **`/85-local-full-check`** — Complete build, test, compile CSS, and site generation.
+- **`/32-site-generate-and-verify`** — Build site HTML/CSS/JS outputs with verification.

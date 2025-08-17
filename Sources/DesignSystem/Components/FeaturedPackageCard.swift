@@ -18,17 +18,6 @@ public struct FeaturedPackageCard: View {
     public let backgroundColor: Slipstream.Color
     public let maxWidth: MaxWidth
     
-    public enum CardStyle: Sendable {
-        case elevated   // White background with border and rounded corners (default)
-        case outlined   // Border only, transparent background
-        case filled     // Solid background, no border
-    }
-    
-    public enum MaxWidth: Sendable {
-        case fourXL    // max-w-4xl (matches original)
-        case sixXL     // max-w-6xl
-        case full      // max-w-full
-    }
     
     /// Creates a featured package card with configurable content and styling.
     /// - Parameters:
@@ -84,9 +73,8 @@ public struct FeaturedPackageCard: View {
             .padding(.horizontal, 16)
             .padding(.horizontal, 24, condition: Condition(startingAt: .small))
             .padding(.horizontal, 32, condition: Condition(startingAt: .large))
-            // TODO: Missing Slipstream APIs - using ClassModifier for:
-            // - max-w-* (max-width utilities)
-            .modifier(ClassModifier(add: maxWidthClassName))
+            // TODO: Missing Slipstream API - using ClassModifier for max-width constraint
+            .modifier(ClassModifier(add: maxWidth.cssClass))
             .margin(.horizontal, .auto)
         }
         .padding(.vertical, 64) // py-16 equivalent (16 * 4 = 64pt)
@@ -104,14 +92,4 @@ public struct FeaturedPackageCard: View {
         }
     }
     
-    private var maxWidthClassName: String {
-        switch maxWidth {
-        case .fourXL:
-            "max-w-4xl"
-        case .sixXL:
-            "max-w-6xl"  
-        case .full:
-            "max-w-full"
-        }
-    }
 }

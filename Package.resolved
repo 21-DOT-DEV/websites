@@ -7,7 +7,7 @@
       "location" : "https://github.com/21-DOT-DEV/slipstream",
       "state" : {
         "branch" : "NEW-INPUT-TYPES",
-        "revision" : "da41f03f0b0ab35e82a74cf44c594bf06cb13267"
+        "revision" : "dea05756e970aad7322a149de6fa1129b20a94df"
       }
     },
     {
@@ -60,8 +60,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/scinfu/SwiftSoup.git",
       "state" : {
-        "revision" : "04a5da442816f764b2a8513c38420b4e6605145b",
-        "version" : "2.10.1"
+        "revision" : "3a439f9eccc391b264d54516ce640251552eb0c4",
+        "version" : "2.10.3"
       }
     }
   ],

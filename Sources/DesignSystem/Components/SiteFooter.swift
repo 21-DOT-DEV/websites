@@ -14,7 +14,7 @@ import Slipstream
 ///
 /// Example usage:
 /// ```swift
-/// Footer(
+/// SiteFooter(
 ///     companyName: "21.dev",
 ///     companyDescription: "Building the tools developers need for Bitcoin applications.",
 ///     resourceLinks: [
@@ -27,16 +27,18 @@ import Slipstream
 ///         SocialLink(url: "https://github.com/21-dot-dev", ariaLabel: "GitHub", platform: .github),
 ///         SocialLink(url: "https://x.com/21dotdev", ariaLabel: "X (Twitter)", platform: .twitter)
 ///     ],
-///     copyrightText: "2025 21.dev. All rights reserved."
+///     copyrightText: " 2025 21.dev. All rights reserved."
 /// )
 /// ```
 ///
-/// ## Missing Slipstream APIs Used
-/// - `grid-cols-1 md:grid-cols-4` - Responsive grid layout
-/// - SVG rendering and paths
-/// - `border-t` - Top border styling
-/// - Custom spacing and hover states
-public struct Footer: View {
+/// ## Features
+/// - **Responsive 4-column grid layout** using CSS Grid
+/// - **Type-safe social platform icons** with built-in SVG paths
+/// - **Custom SVG support** for unique social platforms
+/// - **Accessibility-first** with proper ARIA labels and semantic HTML
+/// - **Consistent styling** with hover states and transitions
+/// - **External link handling** with automatic `target="_blank"` and `rel="noopener"`
+public struct SiteFooter: View {
     public let companyName: String
     public let companyDescription: String
     public let resourceLinks: [FooterLink]
@@ -103,11 +105,11 @@ public struct Footer: View {
                             .margin(.bottom, 16)
                             .modifier(ClassModifier(add: "text-white"))
                         
-                        // TODO: Use for-loop pattern once Slipstream supports ForEach
-                        RawHTML(resourceLinks.map { link in
-                            let target = link.isExternal ? " target=\"_blank\" rel=\"noopener\"" : ""
-                            return "<a href=\"\(link.href)\"\(target) class=\"text-gray-400 hover:text-white transition-colors block mb-2\">\(link.text)</a>"
-                        }.joined(separator: ""))
+                        // Use ForEach for type-safe resource link rendering
+                        ForEach(resourceLinks, id: \.href) { (link: FooterLink) in
+                            Link(link.text, destination: URL(string: link.href), openInNewTab: link.isExternal)
+                                .modifier(ClassModifier(add: Set(["text-gray-400", "hover:text-white", "transition-colors", "block", "mb-2"])))
+                        }
                     }
                     
                     // Contact column
@@ -141,20 +143,10 @@ public struct Footer: View {
                             .margin(.bottom, 16)
                             .modifier(ClassModifier(add: "text-white"))
                         
-                        // TODO: Use ForEach pattern once Slipstream supports it
-                        RawHTML(socialLinks.map { socialLink in
-                            let target = " target=\"_blank\" rel=\"noopener\""
-                            if let platform = socialLink.platform {
-                                if let displayText = platform.displayText {
-                                    return "<a href=\"\(socialLink.url)\"\(target) class=\"text-gray-400 hover:text-white transition-colors font-mono text-sm mb-3 block\" aria-label=\"\(socialLink.ariaLabel)\">\(displayText)</a>"
-                                } else if !platform.svgPath.isEmpty {
-                                    return "<a href=\"\(socialLink.url)\"\(target) class=\"text-gray-400 hover:text-white transition-colors mb-3 block\" aria-label=\"\(socialLink.ariaLabel)\"><svg class=\"w-6 h-6\" fill=\"currentColor\" viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"\(platform.svgPath)\"/></svg></a>"
-                                }
-                            } else if let customSVG = socialLink.customSVG {
-                                return "<a href=\"\(socialLink.url)\"\(target) class=\"text-gray-400 hover:text-white transition-colors mb-3 block\" aria-label=\"\(socialLink.ariaLabel)\">\(customSVG)</a>"
-                            }
-                            return ""
-                        }.joined(separator: ""))
+                        // Use ForEach for type-safe social link rendering
+                        ForEach(socialLinks, id: \.url) { socialLink in
+                            SocialLinkView(socialLink: socialLink)
+                        }
                     }
                 }
                 // TODO: Missing Slipstream API - using ClassModifier for grid layout
@@ -177,68 +169,6 @@ public struct Footer: View {
         }
         .padding(.vertical, 48) // py-12
         .modifier(ClassModifier(add: "bg-gray-900"))
-    }
-}
-
-/// Represents a footer navigation link.
-public struct FooterLink: Sendable {
-    public let text: String
-    public let href: String
-    public let isExternal: Bool
-    
-    public init(text: String, href: String, isExternal: Bool = false) {
-        self.text = text
-        self.href = href
-        self.isExternal = isExternal
-    }
-}
-
-/// Represents a social media link with built-in platform icons or custom SVG support.
-public struct SocialLink: Sendable {
-    public let url: String
-    public let ariaLabel: String
-    public let platform: SocialPlatform?
-    public let customSVG: String?
-    
-    public init(url: String, ariaLabel: String, platform: SocialPlatform) {
-        self.url = url
-        self.ariaLabel = ariaLabel
-        self.platform = platform
-        self.customSVG = nil
-    }
-    
-    public init(url: String, ariaLabel: String, customSVG: String) {
-        self.url = url
-        self.ariaLabel = ariaLabel
-        self.platform = nil
-        self.customSVG = customSVG
-    }
-}
-
-/// Supported social media platforms with built-in SVG icons.
-public enum SocialPlatform: Sendable {
-    case github
-    case twitter
-    case nostr
-    
-    var svgPath: String {
-        switch self {
-        case .github:
-            return "M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"
-        case .twitter:
-            return "M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"
-        case .nostr:
-            return "" // Nostr will use text fallback
-        }
-    }
-    
-    var displayText: String? {
-        switch self {
-        case .nostr:
-            return "nostr"
-        default:
-            return nil
-        }
     }
 }
 

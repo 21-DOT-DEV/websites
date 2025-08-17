@@ -56,7 +56,7 @@ struct Homepage {
                     isExternal: true
                 )
             )
-            Footer(
+            SiteFooter(
                 companyName: "21.dev",
                 companyDescription: "Building the tools developers need for Bitcoin applications.",
                 resourceLinks: [

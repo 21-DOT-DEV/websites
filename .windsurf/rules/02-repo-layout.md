@@ -10,7 +10,7 @@ description: >
 ## Target Layout
 - **CREATE** each site as a standalone Swift executable target in `Sources/<SiteName>/`.
 - **CURRENT TARGETS**: 21-dev.
-- **PLACE** shared code in `Sources/DesignSystem/` (with subfolders: Components/, Layouts/, Tags/, Utilities/).
+- **PLACE** shared code in `Sources/DesignSystem/` (with subfolders: Components/, Icons/, Layouts/, Models/, Tokens/, Utilities/).
 - **PLACE** shared test utilities in `Tests/TestUtils/` (used across all test targets).
 
 ## Test Organization

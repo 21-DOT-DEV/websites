@@ -16,11 +16,6 @@ public struct AboutSection: View {
     public let backgroundColor: Slipstream.Color
     public let maxWidth: MaxWidth
     
-    public enum MaxWidth: Sendable {
-        case fourXL    // max-w-4xl (matches original)
-        case sixXL     // max-w-6xl
-        case full      // max-w-full
-    }
     
     /// Creates an about section with title and content paragraphs.
     /// - Parameters:
@@ -86,23 +81,12 @@ public struct AboutSection: View {
             .padding(.horizontal, 16)
             .padding(.horizontal, 24, condition: Condition(startingAt: .small))
             .padding(.horizontal, 32, condition: Condition(startingAt: .large))
-            // TODO: Missing Slipstream APIs - using ClassModifier for:
-            // - max-w-* (max-width utilities)
-            .modifier(ClassModifier(add: maxWidthClassName))
+            // TODO: Missing Slipstream API - using ClassModifier for max-width constraint
+            .modifier(ClassModifier(add: maxWidth.cssClass))
             .margin(.horizontal, .auto)
         }
         .padding(.vertical, 64)
         .background(backgroundColor)
     }
     
-    private var maxWidthClassName: String {
-        switch maxWidth {
-        case .fourXL:
-            "max-w-4xl"
-        case .sixXL:
-            "max-w-6xl"  
-        case .full:
-            "max-w-full"
-        }
-    }
 }
