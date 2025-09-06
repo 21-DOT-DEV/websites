@@ -19,11 +19,11 @@ public struct BasePage: View {
     /// Creates a base page with the specified title and custom body content.
     /// - Parameters:
     ///   - title: The page title to display in the browser tab
-    ///   - stylesheet: CSS file path (defaults to "static/style.output.css")
+    ///   - stylesheet: CSS file path (defaults to "./static/style.output.css")
     ///   - bodyContent: The page body content
     public init<Content: View>(
         title: String,
-        stylesheet: String = "static/style.output.css",
+        stylesheet: String = "./static/style.css",
         @ViewBuilder bodyContent: () -> Content
     ) {
         self.title = title
@@ -34,11 +34,11 @@ public struct BasePage: View {
     /// Creates a base page with default placeholder content.
     /// - Parameters:
     ///   - title: The page title to display in the browser tab
-    ///   - stylesheet: CSS file path (defaults to "static/style.output.css")
+    ///   - stylesheet: CSS file path (defaults to "./static/style.output.css")
     ///   - text: The placeholder text (defaults to "Initial Website")
     public init(
         title: String,
-        stylesheet: String = "static/style.output.css",
+        stylesheet: String = "./static/style.css",
         text: String = "Initial Website"
     ) {
         self.title = title

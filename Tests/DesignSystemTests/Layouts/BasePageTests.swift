@@ -55,7 +55,7 @@ struct BasePageTests {
         let html = try TestUtils.renderHTML(page)
         
         TestUtils.assertContainsStylesheet(html, stylesheetPath: customStylesheet)
-        TestUtils.assertDoesNotContainText(html, texts: ["static/style.output.css"])
+        TestUtils.assertDoesNotContainText(html, texts: ["static/style.css"])
     }
     
     @Test("BasePage handles complex body content")

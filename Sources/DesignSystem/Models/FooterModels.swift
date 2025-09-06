@@ -20,26 +20,16 @@ public struct FooterLink: Sendable {
     }
 }
 
-/// Represents a social media link with optional platform-specific styling.
+/// Represents a social media link with platform-specific styling.
 public struct SocialLink: Sendable {
     public let url: String
     public let ariaLabel: String
-    public let platform: SocialPlatform?
-    public let customSVG: String?
+    public let platform: SocialPlatform
     
     /// Creates a social link with a recognized platform
     public init(url: String, ariaLabel: String, platform: SocialPlatform) {
         self.url = url
         self.ariaLabel = ariaLabel
         self.platform = platform
-        self.customSVG = nil
-    }
-    
-    /// Creates a social link with custom SVG content
-    public init(url: String, ariaLabel: String, customSVG: String) {
-        self.url = url
-        self.ariaLabel = ariaLabel
-        self.platform = nil
-        self.customSVG = customSVG
     }
 }

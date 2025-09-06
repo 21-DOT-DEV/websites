@@ -13,16 +13,24 @@ import Slipstream
 import DesignSystem
 
 struct Homepage {
+    // Static component instances for CSS generation and page content
+    static let siteHeader = SiteHeader(
+        logoText: "21.dev",
+        navigationLinks: [
+            NavigationLink(title: "Blog", href: "/blog/"),
+            NavigationLink(title: "P256K", href: "/p256k/"),
+            NavigationLink(title: "Docs", href: "https://docs.21.dev/", isExternal: true)
+        ]
+    )
+    
+    // CSS components for rendering styles
+    static var cssComponents: [any HasComponentCSS] {
+        [siteHeader]
+    }
+    
     static var page: some View {
         BasePage(title: "21.dev - Bitcoin Development Tools") {
-            SiteHeader(
-                logoText: "21.dev",
-                navigationLinks: [
-                    NavigationLink(title: "Blog", href: "/blog/"),
-                    NavigationLink(title: "P256K", href: "/p256k/"),
-                    NavigationLink(title: "Docs", href: "https://docs.21.dev/", isExternal: true)
-                ]
-            )
+            siteHeader
             HeroSection(
                 headline: "Equipping developers with the tools they need today to build the Bitcoin apps of tomorrow. 📱",
                 primaryButton: CTAButton(

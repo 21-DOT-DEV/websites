@@ -46,7 +46,7 @@ import Slipstream
 /// - `hover:text-orange-500` - Hover state colors
 /// - `transition-colors` - Color transitions
 /// - `flex-grow` - Flex grow properties
-public struct SiteHeader: View {
+public struct SiteHeader: View, HasComponentCSS {
     /// The text to display as the site logo/title
     public let logoText: String
     /// Array of navigation links to display in the header
@@ -59,6 +59,29 @@ public struct SiteHeader: View {
     public init(logoText: String, navigationLinks: [NavigationLink]) {
         self.logoText = logoText
         self.navigationLinks = navigationLinks
+    }
+    
+    // Instance-based CSS generation for mobile menu functionality
+    public var componentCSS: String {
+        return """
+        /* SiteHeader Mobile Menu Styles */
+        @media (max-width: 767px) {
+            .menu-button {
+                background: none;
+            }
+            .menu-items {
+                display: none;
+            }
+
+            div:has(#menu-toggle:checked) ~ .menu-items {
+                display: flex;
+            }
+        }
+        """
+    }
+    
+    public var componentName: String {
+        return "SiteHeader"
     }
     
     public var body: some View {

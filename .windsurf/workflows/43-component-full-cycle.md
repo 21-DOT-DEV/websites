@@ -36,13 +36,20 @@ description: >
 
 ## 2. Implement Component
 
-3. **Add SwiftUI/Slipstream implementation**:
+3. **Check existing Slipstream APIs first**:
+   ```bash
+   # Search for existing HTML elements before using RawHTML
+   find /path/to/slipstream/Sources/Slipstream/W3C/Elements/ -name "*.swift"
+   ```
+
+4. **Add SwiftUI/Slipstream implementation**:
    - Use structured Slipstream APIs (`.display(.flex)`, `.fontSize(.large)`)
    - Apply Tailwind utilities via idiomatic modifiers
    - Follow DesignSystem patterns for consistency
    - Use DesignSystem/Tokens for colors, spacing, typography
+   - **Avoid RawHTML** unless no Slipstream API exists
 
-4. **Add public documentation**:
+5. **Add public documentation**:
    ```swift
    /// Component description with usage example
    ///
@@ -54,12 +61,12 @@ description: >
 
 ## 3. Verify Component
 
-5. **Create unit tests**:
+6. **Create unit tests**:
    ```bash
    touch Tests/DesignSystemTests/Components/<ComponentName>Tests.swift
    ```
 
-6. **Test structure**:
+7. **Test structure**:
    ```swift
    import Testing
    import TestUtils
@@ -75,12 +82,12 @@ description: >
    }
    ```
 
-7. **Add integration test**:
+8. **Add integration test**:
    ```bash
    # Add to Tests/IntegrationTests/Site21DevTests.swift
    ```
 
-8. **Run verification**:
+9. **Run verification**:
    ```bash
    nocorrect swift build
    nocorrect swift test --filter ComponentNameTests
@@ -88,8 +95,15 @@ description: >
 
 ## 4. Integration
 
-9. **Update site integration** (if applicable):
-   - Add to appropriate page in `Sources/21-dev/`
-   - Update imports and component usage
-   - Test full site generation: `nocorrect swift run 21-dev`
+10. **Update site integration** (if applicable):
+    - Add to appropriate page in `Sources/21-dev/`
+    - Update imports and component usage
+    - Test full site generation: `nocorrect swift run 21-dev`
 
+## 5. Quality Check
+
+11. **Run RawHTML audit** (if component uses RawHTML):
+    ```bash
+    # Use dedicated audit workflow
+    /46-rawhtml-audit-workflow
+    ```

@@ -63,7 +63,7 @@ public enum TestUtils {
     }
     
     /// Asserts that HTML contains stylesheet link
-    public static func assertContainsStylesheet(_ html: String, stylesheetPath: String = "static/style.output.css") {
+    public static func assertContainsStylesheet(_ html: String, stylesheetPath: String = "static/style.css") {
         #expect(html.contains(stylesheetPath), "HTML should contain stylesheet: \(stylesheetPath)")
     }
     
