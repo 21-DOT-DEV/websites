@@ -11,15 +11,15 @@ import Slipstream
 /// A grid component for displaying feature cards in a responsive layout.
 /// Displays features in a 1-column mobile, 3-column desktop grid with consistent styling.
 public struct FeaturesGrid: View {
-    public let features: [Feature]
+    public let features: [ContentItem]
     
-    /// Creates a features grid with an array of feature items.
-    /// - Parameter features: Array of Feature items to display
-    public init(features: [Feature]) {
+    /// Creates a features grid with an array of content items.
+    /// - Parameter features: Array of ContentItem items to display
+    public init(features: [ContentItem]) {
         self.features = features
     }
     
-    private func featureCard(feature: Feature) -> some View {
+    private func featureCard(feature: ContentItem) -> some View {
         Div {
             // Icon and title container
             Div {

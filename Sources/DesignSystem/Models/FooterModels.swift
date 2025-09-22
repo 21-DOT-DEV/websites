@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import Slipstream
 
 /// Represents a footer navigation link.
 public struct FooterLink: Sendable {
@@ -20,16 +21,16 @@ public struct FooterLink: Sendable {
     }
 }
 
-/// Represents a social media link with platform-specific styling.
+/// Represents a social media link with direct icon component.
 public struct SocialLink: Sendable {
     public let url: String
     public let ariaLabel: String
-    public let platform: SocialPlatform
+    public let icon: AnyView
     
-    /// Creates a social link with a recognized platform
-    public init(url: String, ariaLabel: String, platform: SocialPlatform) {
+    /// Creates a social link with a direct icon component
+    public init<Icon: View>(url: String, ariaLabel: String, icon: Icon) {
         self.url = url
         self.ariaLabel = ariaLabel
-        self.platform = platform
+        self.icon = AnyView(icon)
     }
 }

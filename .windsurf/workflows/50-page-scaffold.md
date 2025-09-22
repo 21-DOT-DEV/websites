@@ -5,7 +5,7 @@ auto_execution_mode: 3
 
 # Page Scaffold
 
-1. Create Swift file in `Sources/21-dev/` (e.g., `P256K.swift`, `Bitcoin.swift`).
+1. Create Swift file in `Sources/21-dev/Pages` (e.g., `P256K.swift`, `Bitcoin.swift`).
 2. Add page struct with static property:
    ```swift
    struct PageName {
@@ -16,7 +16,7 @@ auto_execution_mode: 3
        }
    }
    ```
-3. Add route to sitemap in `Sources/21-dev/Sitemap.swift`:
+3. Add route to sitemap in `Sources/21-dev/SiteGenerator.swift`:
    ```swift
    let sitemap: Sitemap = [
        "index.html": Homepage.page,

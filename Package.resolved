@@ -1,5 +1,5 @@
 {
-  "originHash" : "3f33f4f2f84c3ca202975c1d665e479b410862ba8f9a9d6919e1cf53d0ff9e2d",
+  "originHash" : "e55291a901e12ec6860e79cea46b2d4fbcaf303ab291c8cd0f55a694cba41936",
   "pins" : [
     {
       "identity" : "lrucache",
@@ -16,7 +16,7 @@
       "location" : "https://github.com/21-DOT-DEV/slipstream",
       "state" : {
         "branch" : "NEW-INPUT-TYPES",
-        "revision" : "9398f9ba404471ec3c20049eef8de2adac2d0d0a"
+        "revision" : "1747f5e9cd9c636d13dc7dc848e560cf019ce32b"
       }
     },
     {
@@ -78,8 +78,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/scinfu/SwiftSoup.git",
       "state" : {
-        "revision" : "db0428bcfced386943c05ba8ea3e607baa715e45",
-        "version" : "2.11.0"
+        "revision" : "4206bc7b8bd9a4ff8e9511211e1b4bff979ef9c4",
+        "version" : "2.11.1"
       }
     }
   ],

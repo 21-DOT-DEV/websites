@@ -16,16 +16,16 @@ struct SocialLinkViewTests {
     @Test("SocialLinkView renders SVG-based social link (GitHub)")
     func testSocialLinkViewRendersGitHubSVG() async throws {
         let socialLink = SocialLink(
-            url: "https://github.com/test",
+            url: "https://github.com/example",
             ariaLabel: "GitHub",
-            platform: .github
+            icon: GitHubIcon()
         )
         let view = SocialLinkView(socialLink: socialLink)
         
         let html = try TestUtils.renderHTML(view)
         
         // Check link structure
-        #expect(html.contains("href=\"https://github.com/test\""))
+        #expect(html.contains("href=\"https://github.com/example\""))
         #expect(html.contains("target=\"_blank\""))
         #expect(html.contains("alt=\"GitHub\""))
         
@@ -46,8 +46,8 @@ struct SocialLinkViewTests {
     func testSocialLinkViewRendersTwitterSVG() async throws {
         let socialLink = SocialLink(
             url: "https://x.com/test",
-            ariaLabel: "X (Twitter)",
-            platform: .twitter
+            ariaLabel: "Twitter",
+            icon: TwitterIcon()
         )
         let view = SocialLinkView(socialLink: socialLink)
         
@@ -55,36 +55,35 @@ struct SocialLinkViewTests {
         
         // Check link structure
         #expect(html.contains("href=\"https://x.com/test\""))
-        #expect(html.contains("alt=\"X (Twitter)\""))
+        #expect(html.contains("alt=\"Twitter\""))
         
         // Check Twitter SVG content
         #expect(html.contains("M18.244 2.25h3.308l-7.227 8.26")) // Twitter SVG path start
         #expect(html.contains("viewBox=\"0 0 24 24\""))
     }
     
-    @Test("SocialLinkView renders text-based social link (Nostr)")
-    func testSocialLinkViewRendersNostrText() async throws {
+    @Test("SocialLinkView renders SVG-based social link (Nostr)")
+    func testSocialLinkViewRendersNostrSVG() async throws {
         let socialLink = SocialLink(
-            url: "https://njump.me/test",
-            ariaLabel: "Nostr Profile",
-            platform: .nostr
+            url: "https://nostr.com/test",
+            ariaLabel: "Nostr",
+            icon: NostrIcon()
         )
         let view = SocialLinkView(socialLink: socialLink)
         
         let html = try TestUtils.renderHTML(view)
         
         // Check link structure
-        #expect(html.contains("href=\"https://njump.me/test\""))
-        #expect(html.contains("alt=\"Nostr Profile\""))
+        #expect(html.contains("href=\"https://nostr.com/test\""))
+        #expect(html.contains("alt=\"Nostr\""))
         
-        // Check text content and styling
-        #expect(html.contains("nostr"))
-        #expect(html.contains("font-mono"))
-        #expect(html.contains("text-sm"))
+        // Check Nostr SVG content
+        #expect(html.contains("viewBox=\"0 0 24 24\""))
+        #expect(html.contains("transform=\"scale(1.4) translate(-3.2, -3.2)\"")) // Nostr SVG specific
         
-        // Should not contain SVG elements
-        #expect(!html.contains("<svg"))
-        #expect(!html.contains("viewBox"))
+        // Should contain SVG elements now
+        #expect(html.contains("<svg"))
+        #expect(html.contains("fill-current h-6 w-6"))
     }
     
     
@@ -93,7 +92,7 @@ struct SocialLinkViewTests {
         let socialLink = SocialLink(
             url: "https://external-site.com",
             ariaLabel: "External Site",
-            platform: .github
+            icon: GitHubIcon()
         )
         let view = SocialLinkView(socialLink: socialLink)
         
@@ -106,9 +105,9 @@ struct SocialLinkViewTests {
     
     @Test("SocialLinkView applies consistent styling across all variants")
     func testSocialLinkViewConsistentStyling() async throws {
-        let svgLink = SocialLink(url: "https://github.com", ariaLabel: "GitHub", platform: .github)
-        let textLink = SocialLink(url: "https://nostr.com", ariaLabel: "Nostr", platform: .nostr)
-        let twitterLink = SocialLink(url: "https://x.com", ariaLabel: "Twitter", platform: .twitter)
+        let svgLink = SocialLink(url: "https://github.com", ariaLabel: "GitHub", icon: GitHubIcon())
+        let textLink = SocialLink(url: "https://nostr.com", ariaLabel: "Nostr", icon: NostrIcon())
+        let twitterLink = SocialLink(url: "https://x.com", ariaLabel: "Twitter", icon: TwitterIcon())
         
         let svgHtml = try TestUtils.renderHTML(SocialLinkView(socialLink: svgLink))
         let textHtml = try TestUtils.renderHTML(SocialLinkView(socialLink: textLink))
@@ -126,9 +125,9 @@ struct SocialLinkViewTests {
     @Test("SocialLinkView handles accessibility labels correctly")
     func testSocialLinkViewAccessibilityLabels() async throws {
         let testCases = [
-            ("GitHub Profile", SocialLink(url: "https://github.com", ariaLabel: "GitHub Profile", platform: .github)),
-            ("Twitter Account", SocialLink(url: "https://x.com", ariaLabel: "Twitter Account", platform: .twitter)),
-            ("Nostr Identity", SocialLink(url: "https://nostr.com", ariaLabel: "Nostr Identity", platform: .nostr))
+            ("GitHub Profile", SocialLink(url: "https://github.com", ariaLabel: "GitHub Profile", icon: GitHubIcon())),
+            ("Twitter Account", SocialLink(url: "https://x.com", ariaLabel: "Twitter Account", icon: TwitterIcon())),
+            ("Nostr Identity", SocialLink(url: "https://nostr.com", ariaLabel: "Nostr Identity", icon: NostrIcon()))
         ]
         
         for (expectedLabel, socialLink) in testCases {

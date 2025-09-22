@@ -22,10 +22,17 @@ struct SiteGenerator {
         
         let outputURL = projectURL.appending(path: "../Websites/21-dev")
         
-        let stylemap = [
+        var stylemap = [
             "static/style.input.css": Homepage.cssComponents,
-            "p256k/static/style.input.css": P256KPage.cssComponents
+            "packages/p256k/static/style.input.css": P256KPage.cssComponents,
+            "blog/static/style.input.css": BlogListingPage.cssComponents
         ]
+        
+        // Add CSS for individual blog posts
+        let posts = BlogService.loadAllPosts()
+        for post in posts {
+            stylemap["blog/\(post.metadata.slug)/static/style.input.css"] = BlogPostPage.cssComponents
+        }
         
         for style in stylemap {
             try renderStyles(
@@ -36,10 +43,18 @@ struct SiteGenerator {
         }
         
         // Then render site
-        let sitemap: Sitemap = [
+        var sitemap: Sitemap = [
             "index.html": Homepage.page,
-            "p256k/index.html": P256KPage.page
+            "packages/p256k/index.html": P256KPage.page,
+            "blog/index.html": BlogListingPage.page
         ]
+        
+        // Add individual blog posts to sitemap
+        for post in posts {
+            if let postPage = BlogPostPage.page(for: post.metadata.slug) {
+                sitemap["blog/\(post.metadata.slug)/index.html"] = postPage
+            }
+        }
         
         try renderSitemap(sitemap, to: outputURL)
     }

@@ -27,18 +27,8 @@ public struct SocialLinkView: View {
     
     @ViewBuilder
     private var linkContent: some View {
-        let platform = socialLink.platform
-        if let displayText = platform.displayText {
-            // Text-based social link (e.g., "nostr")
-            Text(displayText)
-                .modifier(ClassModifier(add: "font-mono text-sm"))
-        } else if !platform.svgPath.isEmpty {
-            // SVG-based social link using Slipstream SVG API
-            SVG(viewBox: "0 0 24 24") {
-                SVGPath(platform.svgPath)
-            }
-            .className("h-6 w-6 fill-current")
-        }
+        socialLink.icon
+            .modifier(ClassModifier(add: "h-6 w-6 fill-current"))
     }
     
     private var commonStyling: Set<String> {

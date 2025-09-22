@@ -25,8 +25,8 @@ struct SiteFooterTests {
             contactEmail: "hello@test.com",
             licenseText: "MIT License",
             socialLinks: [
-                SocialLink(url: "https://github.com/test", ariaLabel: "GitHub", platform: .github),
-                SocialLink(url: "https://x.com/test", ariaLabel: "X", platform: .twitter)
+                SocialLink(url: "https://github.com/test", ariaLabel: "GitHub", icon: GitHubIcon()),
+                SocialLink(url: "https://x.com/test", ariaLabel: "X", icon: TwitterIcon())
             ],
             copyrightText: "2025 Test Company"
         )
@@ -87,9 +87,9 @@ struct SiteFooterTests {
             companyName: "SVG Test",
             companyDescription: "Testing SVG icons",
             socialLinks: [
-                SocialLink(url: "https://github.com/test", ariaLabel: "GitHub", platform: .github),
-                SocialLink(url: "https://x.com/test", ariaLabel: "X", platform: .twitter),
-                SocialLink(url: "https://njump.me/test", ariaLabel: "Nostr", platform: .nostr)
+                SocialLink(url: "https://github.com/test", ariaLabel: "GitHub", icon: GitHubIcon()),
+                SocialLink(url: "https://x.com/test", ariaLabel: "X", icon: TwitterIcon()),
+                SocialLink(url: "https://njump.me/test", ariaLabel: "Nostr", icon: NostrIcon())
             ],
             copyrightText: "2025 SVG Test"
         )
@@ -103,10 +103,9 @@ struct SiteFooterTests {
         // Test Twitter/X SVG  
         #expect(html.contains("M18.244 2.25h3.308l-7.227 8.26")) // Twitter path start
         
-        // Test Nostr text fallback
-        #expect(html.contains("nostr"))
-        #expect(html.contains("font-mono"))
-        #expect(html.contains("text-sm"))
+        // Test Nostr SVG rendering (now all icons are SVG)
+        #expect(html.contains("viewBox=\"0 0 24 24\""))
+        #expect(html.contains("transform=\"scale(1.4) translate(-3.2, -3.2)\"")) // Nostr icon specific
     }
     
     
@@ -161,15 +160,24 @@ struct SiteFooterTests {
         #expect(externalLink.href == "https://test.com")
     }
     
-    @Test("SocialPlatform SVG paths are valid")
-    func testSocialPlatformSVGPaths() async throws {
-        #expect(!SocialPlatform.github.svgPath.isEmpty)
-        #expect(!SocialPlatform.twitter.svgPath.isEmpty)
-        #expect(SocialPlatform.nostr.svgPath.isEmpty) // Nostr uses text
+    @Test("Social icons render correctly")
+    func testSocialIconsRendering() async throws {
+        let githubIcon = GitHubIcon()
+        let twitterIcon = TwitterIcon()
+        let nostrIcon = NostrIcon()
         
-        #expect(SocialPlatform.github.displayText == nil)
-        #expect(SocialPlatform.twitter.displayText == nil)  
-        #expect(SocialPlatform.nostr.displayText == "nostr")
+        let githubHtml = try TestUtils.renderHTML(githubIcon)
+        let twitterHtml = try TestUtils.renderHTML(twitterIcon)
+        let nostrHtml = try TestUtils.renderHTML(nostrIcon)
+        
+        // Test that icons render with proper SVG structure
+        #expect(githubHtml.contains("<svg"))
+        #expect(twitterHtml.contains("<svg"))
+        #expect(nostrHtml.contains("<svg"))
+        
+        // Test viewBox attributes
+        #expect(githubHtml.contains("viewBox=\"0 0 24 24\""))
+        #expect(twitterHtml.contains("viewBox=\"0 0 24 24\""))
     }
     
     @Test("SiteFooter integration with other components")

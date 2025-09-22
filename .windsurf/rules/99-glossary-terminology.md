@@ -1,8 +1,6 @@
 ---
 trigger: always_on
 description: >
-  Terminology and glossary for consistent communication across all Windsurf tasks.
-  Includes DesignSystem components, Slipstream concepts, and workflow references.
 ---
 
 # Glossary & Terminology
@@ -40,4 +38,4 @@ description: >
 
 ## Output & Build
 - **Websites/** — git-ignored build output directory.
-- **style.output.css** — compiled Tailwind CSS output file.
+- **style.css** — compiled Tailwind CSS output file.
