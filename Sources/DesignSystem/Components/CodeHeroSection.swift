@@ -66,8 +66,8 @@ public struct CodeHeroSection: View, HasComponentCSS {
     public let title: String
     /// Main headline text
     public let headline: String
-    /// Description paragraph
-    public let description: String
+    /// Description content (as a View)
+    private let descriptionView: AnyView
     /// Optional sponsor attribution text
     public let sponsorText: String?
     /// Optional sponsor logo components
@@ -131,12 +131,13 @@ public struct CodeHeroSection: View, HasComponentCSS {
         return "CodeHeroSection"
     }
     
-    /// Creates a new CodeHeroSection.
+    /// Creates a new CodeHeroSection with a plain text description.
     ///
     /// - Parameters:
+    ///   - icon: Optional icon to display next to title
     ///   - title: Main title text
     ///   - headline: Hero headline text
-    ///   - description: Descriptive text below headline
+    ///   - description: Plain text description below headline
     ///   - sponsorText: Optional sponsor attribution text
     ///   - sponsorLogos: Array of sponsor logo views
     ///   - ctaButton: Call-to-action button configuration
@@ -154,7 +155,7 @@ public struct CodeHeroSection: View, HasComponentCSS {
         self.icon = icon
         self.title = title
         self.headline = headline
-        self.description = description
+        self.descriptionView = AnyView(Paragraph(description))
         self.sponsorText = sponsorText
         self.sponsorLogos = sponsorLogos
         self.ctaButton = ctaButton
@@ -169,12 +170,76 @@ public struct CodeHeroSection: View, HasComponentCSS {
         }
     }
     
-    /// Convenience initializer for simple code blocks (backward compatibility)
+    /// Creates a new CodeHeroSection with a rich view-based description.
+    ///
+    /// - Parameters:
+    ///   - icon: Optional icon to display next to title
+    ///   - title: Main title text
+    ///   - headline: Hero headline text
+    ///   - description: ViewBuilder closure for rich description content (supports links, formatting, etc.)
+    ///   - sponsorText: Optional sponsor attribution text
+    ///   - sponsorLogos: Array of sponsor logo views
+    ///   - ctaButton: Call-to-action button configuration
+    ///   - codeBlock: Type of code block to display (simple or tabbed)
+    public init(
+        icon: String? = nil,
+        title: String,
+        headline: String,
+        @ViewBuilder description: () -> some View,
+        sponsorText: String? = nil,
+        sponsorLogos: [SponsorLogo] = [],
+        ctaButton: CTAButton,
+        codeBlock: CodeBlockType
+    ) {
+        self.icon = icon
+        self.title = title
+        self.headline = headline
+        // Capture the view result before wrapping to avoid Sendable issues
+        let descriptionContent = description()
+        self.descriptionView = AnyView(Paragraph { descriptionContent })
+        self.sponsorText = sponsorText
+        self.sponsorLogos = sponsorLogos
+        self.ctaButton = ctaButton
+        self.codeBlock = codeBlock
+        
+        // Generate tabs for tabbed code blocks, nil for simple blocks
+        switch codeBlock {
+        case .tabbed(let tabbedBlock):
+            self.tabs = Self.buildTabs(from: tabbedBlock)
+        case .simple:
+            self.tabs = nil
+        }
+    }
+    
+    /// Convenience initializer for simple code blocks with plain text description.
     public init(
         icon: String? = nil,
         title: String,
         headline: String,
         description: String,
+        sponsorText: String? = nil,
+        sponsorLogos: [SponsorLogo] = [],
+        ctaButton: CTAButton,
+        codeLines: [CodeLine]
+    ) {
+        self.init(
+            icon: icon,
+            title: title,
+            headline: headline,
+            description: description,
+            sponsorText: sponsorText,
+            sponsorLogos: sponsorLogos,
+            ctaButton: ctaButton,
+            codeBlock: .simple(codeLines)
+        )
+    }
+    
+    /// Convenience initializer for simple code blocks with rich view-based description.
+    public init(
+        icon: String? = nil,
+        title: String,
+        headline: String,
+        @ViewBuilder description: () -> some View,
         sponsorText: String? = nil,
         sponsorLogos: [SponsorLogo] = [],
         ctaButton: CTAButton,
@@ -224,7 +289,7 @@ public struct CodeHeroSection: View, HasComponentCSS {
                             .margin(.bottom, 24) // mb-6
                         
                         // Description
-                        Paragraph(description)
+                        descriptionView
                             .fontSize(.extraLarge) // text-xl
                             .textColor(.palette(.gray, darkness: 600))
                             .margin(.bottom, 24) // mb-6

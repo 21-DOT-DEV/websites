@@ -1,6 +1,6 @@
 ---
 title: "Hello World"
-date: "2025-09-12"
+date: "2025-10-15"
 slug: "hello-world"
 excerpt: "We're an open-source organization building tools to make Bitcoin development simpler and more accessible."
 tags: ["announcement", "welcome", "first post"]

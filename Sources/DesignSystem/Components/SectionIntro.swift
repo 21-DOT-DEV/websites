@@ -14,15 +14,15 @@ import Slipstream
 public struct SectionIntro<Content: View>: View {
     public let badge: String
     public let title: String
-    public let description: String
+    private let descriptionView: AnyView
     public let maxWidth: MaxWidth
     public let content: Content
     
-    /// Creates a section intro with badge, title, description, and content.
+    /// Creates a section intro with badge, title, plain text description, and content.
     /// - Parameters:
     ///   - badge: The small badge/category text displayed above the title
     ///   - title: The main section heading
-    ///   - description: The descriptive text below the title
+    ///   - description: Plain text description below the title
     ///   - maxWidth: Maximum content width (default: xl)
     ///   - content: The content to display after the intro
     public init(
@@ -34,7 +34,29 @@ public struct SectionIntro<Content: View>: View {
     ) {
         self.badge = badge
         self.title = title
-        self.description = description
+        self.descriptionView = AnyView(Paragraph(description))
+        self.maxWidth = maxWidth
+        self.content = content()
+    }
+    
+    /// Creates a section intro with badge, title, rich view-based description, and content.
+    /// - Parameters:
+    ///   - badge: The small badge/category text displayed above the title
+    ///   - title: The main section heading
+    ///   - description: ViewBuilder closure for rich description content (supports links, formatting, etc.)
+    ///   - maxWidth: Maximum content width (default: xl)
+    ///   - content: The content to display after the intro
+    public init(
+        badge: String,
+        title: String,
+        @ViewBuilder description: () -> some View,
+        maxWidth: MaxWidth = .xL,
+        @ViewBuilder content: () -> Content
+    ) {
+        self.badge = badge
+        self.title = title
+        let descriptionContent = description()
+        self.descriptionView = AnyView(Paragraph { descriptionContent })
         self.maxWidth = maxWidth
         self.content = content()
     }
@@ -59,7 +81,7 @@ public struct SectionIntro<Content: View>: View {
                         .textColor(.black)
                     
                     // Description
-                    Paragraph(description)
+                    descriptionView
                         .modifier(ClassModifier(add: maxWidth.cssClass))
                         .margin(.top, 16)
                         .fontSize(.extraLarge)

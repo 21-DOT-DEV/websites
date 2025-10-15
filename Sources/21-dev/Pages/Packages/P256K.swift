@@ -17,8 +17,8 @@ struct P256KPage {
     static let codeHeroSection = CodeHeroSection(
         icon: "🔏",
         title: "P256K",
-        headline: "Efficient P-256 cryptography for Swift",
-        description: "A high-performance, security-focused P-256 elliptic curve implementation built specifically for Swift developers. Optimized for speed without compromising cryptographic integrity.",
+        headline: "Efficient SECP256K1 for Swift",
+        description: "Seamlessly integrate, test, and utilize the elliptic curve cryptography for development of Bitcoin applications.",
         sponsorText: "Supported by",
         sponsorLogos: [.geyser, .openSats],
         ctaButton: CTAButton(
@@ -138,7 +138,7 @@ struct P256KPage {
     static let organizationsSection = SectionIntro(
         badge: "Ecosystem",
         title: "Used by Organizations",
-        description: "Leading Bitcoin applications and services trust P256K for their cryptographic needs."
+        description: "Several applications use our package for their SECP256K1 needs."
     ) {
         IconGallery(items: [
             ContentItem(
@@ -219,36 +219,23 @@ struct P256KPage {
     // Accordion component for FAQ section
     static let faqAccordion = Accordion(items: [
         AccordionItem(
-            question: "What makes p256k different from other Bitcoin libraries?",
-            answer: Text("p256k is built specifically for Swift developers with modern language features, comprehensive test coverage, and seamless integration with Swift Package Manager. It provides type-safe APIs and follows Swift conventions while maintaining full Bitcoin protocol compatibility.")
-        ),
-        AccordionItem(
-            question: "Can I use p256k in production applications?",
-            answer: Text("Yes, p256k is designed for production use with rigorous testing, security audits, and adherence to Bitcoin standards. It includes comprehensive error handling, memory safety, and performance optimizations suitable for real-world applications.")
-        ),
-        AccordionItem(
-            question: "How do I migrate from other Bitcoin libraries to p256k?",
-            answer: Div {
-                Text("Migration is straightforward with our compatibility layer. Check our ")
-                Link("migration guide", destination: URL(string: "https://docs.21.dev/p256k/migration")!)
-                    .textColor(.palette(.orange, darkness: 500))
-                Text(" for step-by-step instructions and code examples.")
-            }
+            question: "What makes P256K different from other SECP256K1 libraries?",
+            answer: Text("P256K is built specifically for Swift developers with modern language features, comprehensive test coverage, and seamless integration with Swift Package Manager. It provides type-safe APIs and follows Swift conventions.")
         ),
         AccordionItem(
             question: "What Swift versions are supported?",
-            answer: Text("p256k supports Swift 5.9+ and is tested on macOS, iOS, watchOS, and tvOS. It requires no external dependencies and works with both UIKit and SwiftUI applications.")
+            answer: Text("p256k supports Swift 5.9+ and is tested on macOS, iOS, watchOS, tvOS, and Linux. It requires no external packages and works with both UIKit and SwiftUI applications.")
         ),
         AccordionItem(
             question: "Where can I find code examples and tutorials?",
             answer: Div {
-                Text("Visit our comprehensive ")
+                Span("Visit our comprehensive ")
                 Link("documentation site", destination: URL(string: "https://docs.21.dev/p256k")!)
                     .textColor(.palette(.orange, darkness: 500))
-                Text(" for tutorials, API reference, and real-world examples. You can also explore the ")
+                Span(" for tutorials, API reference, and real-world examples. You can also explore the ")
                 Link("example projects", destination: URL(string: "https://github.com/21-dev/p256k-examples")!)
                     .textColor(.palette(.orange, darkness: 500))
-                Text(" repository on GitHub.")
+                Span(" repository on GitHub.")
             }
         )
     ])
@@ -267,8 +254,13 @@ struct P256KPage {
             // Features section using new components
             SectionIntro(
                 badge: "Integration",
-                title: "Streamline your development: utilize the efficiency of libsecp256k1 for swift",
-                description: "We've wrapped libsecp256k1 into a package and made it super simple to include into your Xcode project. And it works with Swift Packages too!"
+                title: "Streamline your development: utilize the efficiency of libsecp256k1 for Swift",
+                description: {
+                    Span("We've wrapped ")
+                    Link("libsecp256k1", destination: URL(string: "https://github.com/bitcoin-core/secp256k1")!)
+                        .textColor(.palette(.orange, darkness: 500))
+                    Span(" into a package and made it super simple to include into your Xcode project. And it works with Swift Packages too!")
+                }
             ) {
                 FeaturesGrid(features: [
                     ContentItem(
@@ -305,26 +297,26 @@ struct P256KPage {
             SectionIntro(
                 badge: "Documentation",
                 title: "Explore the APIs",
-                description: "Discover comprehensive documentation and examples for P256K's cryptographic capabilities."
+                description: "Comprehensive API documentation for P256K cryptography."
             ) {
                 CardGrid(items: [
                     ContentItem(
                         title: "ECDSA Signatures",
                         description: "Elliptic Curve Digital Signature Algorithm (ECDSA) offers a variant of the Digital Signature Algorithm (DSA) which uses elliptic-curve cryptography.",
                         icon: LightningIcon(),
-                        link: "https://docs.21.dev/p256k/ecdsa"
+                        link: "https://swiftpackageindex.com/21-dot-dev/swift-secp256k1/main/documentation/secp256k1/secp256k1/signing"
                     ),
                     ContentItem(
                         title: "Schnorr Signatures",
                         description: "Schnorr signatures provide enhanced privacy and efficiency with mathematical properties that enable advanced Bitcoin scripting capabilities.",
                         icon: SignatureIcon(),
-                        link: "https://docs.21.dev/p256k/schnorr"
+                        link: "https://swiftpackageindex.com/21-dot-dev/swift-secp256k1/main/documentation/secp256k1/secp256k1/schnorr"
                     ),
                     ContentItem(
                         title: "Key Management",
                         description: "Secure key generation, derivation, and management utilities for Bitcoin development with industry-standard practices.",
                         icon: SwiftPackagesIcon(),
-                        link: "https://docs.21.dev/p256k/keys"
+                        link: "https://swiftpackageindex.com/21-dot-dev/swift-secp256k1/main/documentation/secp256k1/secp256k1/signing/privatekey"
                     )
                 ])
             }
@@ -333,7 +325,7 @@ struct P256KPage {
             SectionIntro(
                 badge: "FAQ",
                 title: "Frequently Asked Questions",
-                description: "Common questions about using p256k for Bitcoin development, cryptographic operations, and Swift integration."
+                description: "Common questions about using P256K for Swift integration."
             ) {
                 faqAccordion
             }

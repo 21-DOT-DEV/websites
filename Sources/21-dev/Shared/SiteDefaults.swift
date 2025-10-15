@@ -18,26 +18,25 @@ public struct SiteDefaults {
         navigationLinks: [
             NavigationLink(title: "Blog", href: "/blog/"),
             NavigationLink(title: "P256K", href: "/packages/p256k/"),
-            NavigationLink(title: "Docs", href: "https://docs.21.dev/", isExternal: true)
+            NavigationLink(title: "Docs", href: "https://swiftpackageindex.com/21-dot-dev/swift-secp256k1/main/documentation/secp256k1", isExternal: true)
         ]
     )
     
     /// Default site footer with company info, links, and social media
     public static let footer = SiteFooter(
         companyName: "21.dev",
-        companyDescription: "Building the tools developers need for Bitcoin applications.",
+        companyDescription: "Equipping developers with the tools they need today to build the Bitcoin apps of tomorrow.",
         resourceLinks: [
             FooterLink(text: "Documentation", href: "https://docs.21.dev/", isExternal: true),
             FooterLink(text: "Blog", href: "/blog/"),
-            FooterLink(text: "P256K", href: "/packages/p256k/"),
-            FooterLink(text: "Donate", href: "/donate/")
+            FooterLink(text: "P256K", href: "/packages/p256k/")
         ],
         contactEmail: "hello@21.dev",
         licenseText: "Licensed under MIT",
         socialLinks: [
             SocialLink(url: "https://github.com/21-DOT-DEV", ariaLabel: "GitHub", icon: GitHubIcon()),
             SocialLink(url: "https://x.com/21_DOT_DEV", ariaLabel: "X (Twitter)", icon: TwitterIcon()),
-            SocialLink(url: "https://njump.me/npub1...21dev", ariaLabel: "Nostr", icon: NostrIcon())
+            SocialLink(url: "https://primal.net/21", ariaLabel: "Nostr", icon: NostrIcon())
         ],
         copyrightText: "© 2025 21.dev. All rights reserved."
     )

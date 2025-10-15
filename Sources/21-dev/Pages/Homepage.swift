@@ -26,13 +26,13 @@ struct Homepage {
                 headline: "Equipping developers with the tools they need today to build the Bitcoin apps of tomorrow. 📱",
                 primaryButton: CTAButton(
                     text: "Get Started",
-                    href: "https://docs.21.dev/",
+                    href: "https://swiftpackageindex.com/21-dot-dev/swift-secp256k1/main/documentation/secp256k1/",
                     style: .primary,
                     isExternal: true
                 ),
                 secondaryButton: CTAButton(
                     text: "View on GitHub",
-                    href: "https://github.com/21-dot-dev",
+                    href: "https://github.com/21-DOT-DEV",
                     style: .secondary,
                     isExternal: true
                 )
