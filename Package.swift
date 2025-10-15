@@ -9,7 +9,9 @@ let package = Package(
         .macOS("15"),
     ],
     dependencies: [
-        .package(url: "https://github.com/ClutchEngineering/slipstream", revision: "v2.0"),
+        // Local Dev
+        // .package(path: "../slipstream"),
+        .package(url: "https://github.com/21-DOT-DEV/slipstream", branch: "NEW-INPUT-TYPES"),
         .package(url: "https://github.com/21-DOT-DEV/swift-plugin-tailwindcss", exact: "3.4.17"),
         .package(url: "https://github.com/21-DOT-DEV/swift-secp256k1", exact: "0.21.1"),
     ],

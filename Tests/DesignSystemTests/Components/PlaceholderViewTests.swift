@@ -59,7 +59,7 @@ struct PlaceholderViewTests {
         
         // Full HTML snapshot for regression protection
         let expectedSnapshot = """
-<div class="h-screen flex items-center justify-center text-7xl text-center font-sans"> <p>Snapshot Test Content</p> </div>
+<div class="flex flex-col items-center h-screen justify-center"> <p class="text-7xl text-center font-sans">Snapshot Test Content</p> </div>
 """
         
         #expect(TestUtils.normalizeHTML(html) == TestUtils.normalizeHTML(expectedSnapshot))

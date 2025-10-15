@@ -30,6 +30,19 @@ struct BasePageTests {
         TestUtils.assertContainsStylesheet(html)
     }
     
+    @Test("BasePage includes mobile-friendly viewport meta tag")
+    func testBasePageViewportMetaTag() throws {
+        let page = BasePage(title: "Mobile Page") {
+            Text("Mobile Content")
+        }
+        let html = try TestUtils.renderHTML(page)
+        
+        // Verify viewport meta tag is present with correct mobile-friendly attributes
+        TestUtils.assertContainsText(html, texts: [
+            "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\" />"
+        ])
+    }
+    
     @Test("BasePage accepts custom stylesheet parameter")
     func testBasePageCustomStylesheet() throws {
         let customStylesheet = "custom/styles.css"
@@ -42,7 +55,7 @@ struct BasePageTests {
         let html = try TestUtils.renderHTML(page)
         
         TestUtils.assertContainsStylesheet(html, stylesheetPath: customStylesheet)
-        TestUtils.assertDoesNotContainText(html, texts: ["static/style.output.css"])
+        TestUtils.assertDoesNotContainText(html, texts: ["static/style.css"])
     }
     
     @Test("BasePage handles complex body content")
@@ -124,7 +137,7 @@ struct BasePageTests {
         #expect(html.contains("<title>Snapshot Test</title>"))
         TestUtils.assertContainsStylesheet(html)
         #expect(html.contains("<body>"))
-        #expect(html.contains("h-screen flex items-center justify-center"))
+        #expect(html.contains("flex flex-col items-center h-screen justify-center"))
         #expect(html.contains("Content"))
         #expect(html.contains("</body>"))
         #expect(html.contains("</html>"))

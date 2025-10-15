@@ -1,0 +1,21 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+
+/* Component-specific styles */
+/* SiteHeader */
+/* SiteHeader Mobile Menu Styles */
+@media (max-width: 767px) {
+    .menu-button {
+        background: none;
+    }
+    .menu-items {
+        display: none;
+    }
+
+    div:has(#menu-toggle:checked) ~ .menu-items {
+        display: flex;
+    }
+}
+

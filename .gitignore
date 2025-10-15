@@ -96,6 +96,3 @@ iOSInjectionProject/
 .vscode
 .aider*
 .env
-
-# Websites deployment folder
-Websites
