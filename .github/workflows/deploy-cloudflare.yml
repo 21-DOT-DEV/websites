@@ -62,34 +62,36 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: ${{ inputs.artifact-name }}
-          path: ${{ inputs.artifact-path }}
+          path: ${{ inputs.artifact-path }}/${{ inputs.project-name }}
       
       - name: Extract artifact if zipped
         run: |
           artifact_path="${{ inputs.artifact-path }}"
           project_name="${{ inputs.project-name }}"
+          deploy_dir="${artifact_path}/${project_name}"
           
           echo "🔍 Debugging artifact structure..."
           echo "Artifact path: ${artifact_path}"
           echo "Project name: ${project_name}"
-          echo "Contents of ${artifact_path}:"
-          ls -la "${artifact_path}/" || echo "Directory doesn't exist"
+          echo "Deploy directory: ${deploy_dir}"
+          echo "Contents of ${deploy_dir}:"
+          ls -la "${deploy_dir}/" || echo "Directory doesn't exist"
           
-          # Check if artifact is a zip file
-          if [ -f "${artifact_path}/${project_name}.zip" ]; then
+          # Check if artifact is a zip file (docs workflow)
+          if [ -f "${deploy_dir}/${project_name}.zip" ]; then
             echo "📦 Extracting ${project_name}.zip..."
-            cd "${artifact_path}"
+            cd "${deploy_dir}"
             unzip -q "${project_name}.zip"
             rm "${project_name}.zip"
             echo "✅ Extraction complete"
             echo "Contents after extraction:"
             ls -la
           else
-            echo "ℹ️ No zip file found, assuming directory artifact"
+            echo "ℹ️ No zip file found, using directory artifact as-is"
           fi
           
           echo "🔍 Final deployment directory contents:"
-          ls -laR "${artifact_path}/${project_name}/" | head -50
+          ls -la "${deploy_dir}/" | head -50
       
       - name: Deploy to Cloudflare Pages
         id: cloudflare
