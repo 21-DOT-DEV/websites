@@ -34,11 +34,6 @@ jobs:
       - name: Resolve dependencies
         run: swift package resolve
       
-      - name: Build docs target
-        run: |
-          echo "🔨 Building ${{ inputs.project-name }} target..."
-          swift build --target ${{ inputs.project-name }}
-      
       - name: Extract swift-secp256k1 version
         id: extract-version
         run: |
