@@ -36,7 +36,7 @@ jobs:
             ${{ runner.os }}-spm-
       
       - name: Build dependencies
-        run: swift build --configuration release
+        run: swift build --configuration release --target ${{ inputs.website }}
       
       - name: Run tests
         run: swift test --parallel
