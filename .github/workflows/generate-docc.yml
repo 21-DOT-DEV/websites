@@ -112,10 +112,12 @@ jobs:
           echo "📦 Creating archive for ${project}..."
           
           # Create zip archive (avoids GitHub Actions path validation issues)
-          cd Websites
-          zip -r "${project}.zip" "${project}/"
+          # Zip FROM INSIDE the directory to avoid nesting
+          cd "Websites/${project}"
+          zip -r "../${project}.zip" .
           
           # Remove original directory to save space
+          cd ..
           rm -rf "${project}"
           
           echo "✅ Archive created: Websites/${project}.zip"
