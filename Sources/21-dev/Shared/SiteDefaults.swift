@@ -18,7 +18,7 @@ public struct SiteDefaults {
         navigationLinks: [
             NavigationLink(title: "Blog", href: "/blog/"),
             NavigationLink(title: "P256K", href: "/packages/p256k/"),
-            NavigationLink(title: "Docs", href: "https://swiftpackageindex.com/21-dot-dev/swift-secp256k1/main/documentation/secp256k1", isExternal: true)
+            NavigationLink(title: "Docs", href: "https://docs.21.dev/documentation/p256k/", isExternal: true)
         ]
     )
     

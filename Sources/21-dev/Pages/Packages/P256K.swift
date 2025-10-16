@@ -304,19 +304,19 @@ struct P256KPage {
                         title: "ECDSA Signatures",
                         description: "Elliptic Curve Digital Signature Algorithm (ECDSA) offers a variant of the Digital Signature Algorithm (DSA) which uses elliptic-curve cryptography.",
                         icon: LightningIcon(),
-                        link: "https://swiftpackageindex.com/21-dot-dev/swift-secp256k1/main/documentation/secp256k1/secp256k1/signing"
+                        link: "https://docs.21.dev/documentation/p256k/secp256k1/signing"
                     ),
                     ContentItem(
                         title: "Schnorr Signatures",
                         description: "Schnorr signatures provide enhanced privacy and efficiency with mathematical properties that enable advanced Bitcoin scripting capabilities.",
                         icon: SignatureIcon(),
-                        link: "https://swiftpackageindex.com/21-dot-dev/swift-secp256k1/main/documentation/secp256k1/secp256k1/schnorr"
+                        link: "https://docs.21.dev/documentation/p256k/secp256k1/schnorr"
                     ),
                     ContentItem(
                         title: "Key Management",
                         description: "Secure key generation, derivation, and management utilities for Bitcoin development with industry-standard practices.",
                         icon: SwiftPackagesIcon(),
-                        link: "https://swiftpackageindex.com/21-dot-dev/swift-secp256k1/main/documentation/secp256k1/secp256k1/signing/privatekey"
+                        link: "https://docs.21.dev/documentation/p256k/secp256k1/signing/privatekey"
                     )
                 ])
             }

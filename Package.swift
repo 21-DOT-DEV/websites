@@ -14,8 +14,9 @@ let package = Package(
         .package(url: "https://github.com/21-DOT-DEV/slipstream", branch: "NEW-INPUT-TYPES"),
         .package(url: "https://github.com/21-DOT-DEV/swift-plugin-tailwindcss", exact: "3.4.17"),
         .package(url: "https://github.com/21-DOT-DEV/swift-secp256k1", exact: "0.21.1"),
+        .package(url: "https://github.com/swiftlang/swift-docc-plugin", exact: "1.4.5"),
     ],
-    targets: [
+    targets: makeDocumentationTargets() + [
         // Targets are the basic building blocks of a package, defining a module or a test suite.
         // Targets can depend on other targets in this package and products from dependencies.
         .executableTarget(
@@ -49,3 +50,20 @@ let package = Package(
         )
     ]
 )
+
+// MARK: - Documentation Targets
+
+/// Creates documentation targets for external packages.
+/// These targets exist solely to allow swift-docc-plugin to generate combined documentation.
+func makeDocumentationTargets() -> [Target] {
+    return [
+        .executableTarget(
+            name: "docs-21-dev-P256K",
+            dependencies: [ .product(name: "P256K", package: "swift-secp256k1"), ]
+        ),
+        .executableTarget(
+            name: "docs-21-dev-ZKP",
+            dependencies: [ .product(name: "ZKP", package: "swift-secp256k1"), ]
+        ),
+    ]
+}

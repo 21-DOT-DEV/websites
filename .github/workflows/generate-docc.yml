@@ -1,0 +1,131 @@
+name: Generate DocC Documentation
+
+on:
+  workflow_call:
+    inputs:
+      project-name:
+        description: 'Documentation project name (e.g., docs-21-dev)'
+        required: true
+        type: string
+      targets:
+        description: 'Space-separated list of targets to document (e.g., "P256K ZKP libsecp256k1 libsecp256k1_zkp")'
+        required: true
+        type: string
+    outputs:
+      artifact-name:
+        description: 'Name of the uploaded documentation artifact'
+        value: ${{ jobs.generate.outputs.artifact-name }}
+      version:
+        description: 'Extracted package version from Package.resolved'
+        value: ${{ jobs.generate.outputs.version }}
+
+jobs:
+  generate:
+    name: Generate Documentation
+    runs-on: macos-15
+    outputs:
+      artifact-name: ${{ inputs.project-name }}
+      version: ${{ steps.extract-version.outputs.version }}
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Resolve dependencies
+        run: swift package resolve
+      
+      - name: Extract swift-secp256k1 version
+        id: extract-version
+        run: |
+          SECP256K1_VERSION=$(jq -r '.pins[] | select(.identity == "swift-secp256k1") | .state.version' Package.resolved)
+          echo "version=$SECP256K1_VERSION" >> $GITHUB_OUTPUT
+          echo "SECP256K1_VERSION=$SECP256K1_VERSION" >> $GITHUB_ENV
+          echo "📦 swift-secp256k1 version: $SECP256K1_VERSION"
+      
+      - name: Build target array for documentation generation
+        id: build-targets
+        run: |
+          targets="${{ inputs.targets }}"
+          target_args=""
+          
+          for target in $targets; do
+            target_args="$target_args --target $target"
+          done
+          
+          echo "target-args=$target_args" >> $GITHUB_OUTPUT
+          echo "📚 Target arguments: $target_args"
+          echo "📚 Generating documentation for targets: ${{ inputs.targets }}"
+      
+      - name: Generate documentation
+        run: |
+          set -e
+          echo "📚 Generating documentation for targets: ${{ inputs.targets }}"
+          echo "📦 Package version: ${{ env.SECP256K1_VERSION }}"
+          echo "📂 Output path: ./Websites/${{ inputs.project-name }}"
+          
+          # Ensure output directory exists
+          mkdir -p ./Websites/${{ inputs.project-name }}
+          
+          swift package \
+            --allow-writing-to-directory ./Websites/${{ inputs.project-name }} \
+            generate-documentation \
+            ${{ steps.build-targets.outputs.target-args }} \
+            --enable-experimental-combined-documentation \
+            --transform-for-static-hosting \
+            --source-service github \
+            --source-service-base-url https://github.com/21-DOT-DEV/swift-secp256k1/blob/${{ env.SECP256K1_VERSION }} \
+            --checkout-path $PWD \
+            --output-path ./Websites/${{ inputs.project-name }}
+          
+          echo "✅ Documentation generation complete"
+      
+      - name: Verify documentation output
+        run: |
+          project="${{ inputs.project-name }}"
+          echo "Checking documentation output..."
+          ls -la Websites/${project}/
+          
+          # Verify index.html exists
+          if [ ! -f "Websites/${project}/index.html" ]; then
+            echo "Error: index.html not found in documentation output"
+            exit 1
+          fi
+          
+          # Verify documentation directory exists
+          if [ ! -d "Websites/${project}/documentation" ]; then
+            echo "Error: documentation directory not found"
+            exit 1
+          fi
+          
+          # Verify JavaScript directory exists (for search functionality)
+          if [ ! -d "Websites/${project}/js" ]; then
+            echo "Error: js directory not found (search functionality missing)"
+            exit 1
+          fi
+          
+          echo "✅ Documentation output verified successfully"
+          echo "📊 Documentation size: $(du -sh Websites/${project} | cut -f1)"
+      
+      - name: Create documentation archive
+        run: |
+          project="${{ inputs.project-name }}"
+          echo "📦 Creating archive for ${project}..."
+          
+          # Create zip archive (avoids GitHub Actions path validation issues)
+          # Zip FROM INSIDE the directory to avoid nesting
+          cd "Websites/${project}"
+          zip -r "../${project}.zip" .
+          
+          # Remove original directory to save space
+          cd ..
+          rm -rf "${project}"
+          
+          echo "✅ Archive created: Websites/${project}.zip"
+          ls -lh "${project}.zip"
+      
+      - name: Upload documentation artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ inputs.project-name }}
+          path: Websites/${{ inputs.project-name }}.zip
+          retention-days: 1
