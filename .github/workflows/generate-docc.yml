@@ -107,9 +107,24 @@ jobs:
           echo "✅ Documentation output verified successfully"
           echo "📊 Documentation size: $(du -sh Websites/${project} | cut -f1)"
       
+      - name: Create documentation archive
+        run: |
+          project="${{ inputs.project-name }}"
+          echo "📦 Creating archive for ${project}..."
+          
+          # Create zip archive (avoids GitHub Actions path validation issues)
+          cd Websites
+          zip -r "${project}.zip" "${project}/"
+          
+          # Remove original directory to save space
+          rm -rf "${project}"
+          
+          echo "✅ Archive created: Websites/${project}.zip"
+          ls -lh "${project}.zip"
+      
       - name: Upload documentation artifact
         uses: actions/upload-artifact@v4
         with:
           name: ${{ inputs.project-name }}
-          path: Websites/${{ inputs.project-name }}/
+          path: Websites/${{ inputs.project-name }}.zip
           retention-days: 1
