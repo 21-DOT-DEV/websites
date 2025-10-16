@@ -31,8 +31,6 @@ let package = Package(
             dependencies: [
                 .product(name: "P256K", package: "swift-secp256k1"),
                 .product(name: "ZKP", package: "swift-secp256k1"),
-                .product(name: "libsecp256k1", package: "swift-secp256k1"),
-                .product(name: "libsecp256k1_zkp", package: "swift-secp256k1"),
             ]
         ),
         .target(

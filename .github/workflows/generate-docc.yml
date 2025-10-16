@@ -34,6 +34,11 @@ jobs:
       - name: Resolve dependencies
         run: swift package resolve
       
+      - name: Build docs target
+        run: |
+          echo "🔨 Building ${{ inputs.project-name }} target..."
+          swift build --target ${{ inputs.project-name }}
+      
       - name: Extract swift-secp256k1 version
         id: extract-version
         run: |
@@ -53,10 +58,19 @@ jobs:
           done
           
           echo "target-args=$target_args" >> $GITHUB_OUTPUT
+          echo "📚 Target arguments: $target_args"
           echo "📚 Generating documentation for targets: ${{ inputs.targets }}"
       
       - name: Generate documentation
         run: |
+          set -e
+          echo "📚 Generating documentation for targets: ${{ inputs.targets }}"
+          echo "📦 Package version: ${{ env.SECP256K1_VERSION }}"
+          echo "📂 Output path: ./Websites/${{ inputs.project-name }}"
+          
+          # Ensure output directory exists
+          mkdir -p ./Websites/${{ inputs.project-name }}
+          
           swift package \
             --allow-writing-to-directory ./Websites/${{ inputs.project-name }} \
             generate-documentation \
@@ -68,6 +82,8 @@ jobs:
             --source-service-base-url https://github.com/21-DOT-DEV/swift-secp256k1/blob/${{ env.SECP256K1_VERSION }} \
             --checkout-path $PWD \
             --output-path ./Websites/${{ inputs.project-name }}
+          
+          echo "✅ Documentation generation complete"
       
       - name: Verify documentation output
         run: |

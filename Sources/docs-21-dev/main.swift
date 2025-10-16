@@ -5,11 +5,13 @@
 // Per Project Constitution v1.1.0:
 // Documentation-only targets are exempt from the zero-dependency principle
 // and may import external packages for documentation generation purposes.
+//
+// Note: Only high-level products (P256K, ZKP) are imported as dependencies.
+// DocC can still document low-level targets (libsecp256k1, libsecp256k1_zkp)
+// via --target flags without importing them directly (avoids symbol duplication).
 
 import P256K
 import ZKP
-import libsecp256k1
-import libsecp256k1_zkp
 
 // This executable does not run in production.
 // It exists only as a dependency anchor for DocC documentation generation.

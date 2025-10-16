@@ -25,7 +25,7 @@ jobs:
     uses: ./.github/workflows/generate-docc.yml
     with:
       project-name: docs-21-dev
-      targets: "P256K ZKP libsecp256k1 libsecp256k1_zkp"
+      targets: "P256K ZKP"
   
   deploy:
     name: Deploy Documentation
