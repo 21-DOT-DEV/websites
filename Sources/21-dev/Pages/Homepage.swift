@@ -26,7 +26,7 @@ struct Homepage {
                 headline: "Equipping developers with the tools they need today to build the Bitcoin apps of tomorrow. 📱",
                 primaryButton: CTAButton(
                     text: "Get Started",
-                    href: "https://swiftpackageindex.com/21-dot-dev/swift-secp256k1/main/documentation/secp256k1/",
+                    href: "https://docs.21.dev/documentation/p256k/",
                     style: .primary,
                     isExternal: true
                 ),
