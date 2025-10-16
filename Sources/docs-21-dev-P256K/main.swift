@@ -11,7 +11,6 @@
 // via --target flags without importing them directly (avoids symbol duplication).
 
 import P256K
-import ZKP
 
 // This executable does not run in production.
 // It exists only as a dependency anchor for DocC documentation generation.
