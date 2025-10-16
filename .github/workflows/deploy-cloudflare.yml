@@ -69,6 +69,12 @@ jobs:
           artifact_path="${{ inputs.artifact-path }}"
           project_name="${{ inputs.project-name }}"
           
+          echo "🔍 Debugging artifact structure..."
+          echo "Artifact path: ${artifact_path}"
+          echo "Project name: ${project_name}"
+          echo "Contents of ${artifact_path}:"
+          ls -la "${artifact_path}/" || echo "Directory doesn't exist"
+          
           # Check if artifact is a zip file
           if [ -f "${artifact_path}/${project_name}.zip" ]; then
             echo "📦 Extracting ${project_name}.zip..."
@@ -76,9 +82,14 @@ jobs:
             unzip -q "${project_name}.zip"
             rm "${project_name}.zip"
             echo "✅ Extraction complete"
+            echo "Contents after extraction:"
+            ls -la
           else
             echo "ℹ️ No zip file found, assuming directory artifact"
           fi
+          
+          echo "🔍 Final deployment directory contents:"
+          ls -laR "${artifact_path}/${project_name}/" | head -50
       
       - name: Deploy to Cloudflare Pages
         id: cloudflare

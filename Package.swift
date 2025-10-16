@@ -65,13 +65,5 @@ func makeDocumentationTargets() -> [Target] {
             name: "docs-21-dev-ZKP",
             dependencies: [ .product(name: "ZKP", package: "swift-secp256k1"), ]
         ),
-        .executableTarget(
-            name: "docs-21-dev-libsecp256k1",
-            dependencies: [ .product(name: "libsecp256k1", package: "swift-secp256k1"), ]
-        ),
-        .executableTarget(
-            name: "docs-21-dev-libsecp256k1-zkp",
-            dependencies: [ .product(name: "libsecp256k1_zkp", package: "swift-secp256k1"), ]
-        ),
     ]
 }

@@ -72,7 +72,6 @@ jobs:
             ${{ steps.build-targets.outputs.target-args }} \
             --enable-experimental-combined-documentation \
             --transform-for-static-hosting \
-            --hosting-base-path docs \
             --source-service github \
             --source-service-base-url https://github.com/21-DOT-DEV/swift-secp256k1/blob/${{ env.SECP256K1_VERSION }} \
             --checkout-path $PWD \
