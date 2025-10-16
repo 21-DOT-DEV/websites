@@ -1,4 +1,4 @@
-name: 21-dev
+name: docs-21-dev
 
 on:
   pull_request:
@@ -10,32 +10,30 @@ on:
     branches:
       - 'main'
     paths:
-      - '.github/workflows/build-slipstream.yml'
+      - '.github/workflows/generate-docc.yml'
       - '.github/workflows/deploy-cloudflare.yml'
-      - '.github/workflows/21-DEV.yml'
-      - 'Sources/21-dev/**'
-      - 'Resources/21-dev/**'
-      - 'Sources/DesignSystem/**'
-      - 'Tests/**'
+      - '.github/workflows/DOCS-21-DEV.yml'
       - 'Package.swift'
-
+      - 'Package.resolved'
+  
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
 
 jobs:
-  build:
-    name: Build Site
-    uses: ./.github/workflows/build-slipstream.yml
+  generate:
+    name: Generate Documentation
+    uses: ./.github/workflows/generate-docc.yml
     with:
-      website: 21-dev
+      project-name: docs-21-dev
+      targets: "P256K ZKP libsecp256k1 libsecp256k1_zkp"
   
   deploy:
-    name: Deploy Site
-    needs: build
+    name: Deploy Documentation
+    needs: generate
     uses: ./.github/workflows/deploy-cloudflare.yml
     with:
-      artifact-name: ${{ needs.build.outputs.artifact-name }}
-      project-name: 21-dev
+      artifact-name: ${{ needs.generate.outputs.artifact-name }}
+      project-name: docs-21-dev
       deploy-to-production: ${{ github.event.pull_request.merged || false }}
     secrets:
       cloudflare-api-token: ${{ secrets.CLOUDFLARE_API_TOKEN }}

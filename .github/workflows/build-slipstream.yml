@@ -1,35 +1,32 @@
-name: Deploy to Cloudflare Pages
+name: Build Slipstream Site
 
 on:
   workflow_call:
     inputs:
       website:
+        description: 'Site name to build (e.g., 21-dev)'
         required: true
         type: string
-        description: 'Site name to deploy'
-      deploy-to-production:
-        required: true
-        type: boolean
-        description: 'Whether to deploy to production (main branch) or preview'
-    secrets:
-      cloudflare-api-token:
-        required: true
-        description: 'Cloudflare API Token'
-      cloudflare-account-id:
-        required: true
-        description: 'Cloudflare Account ID'
+    outputs:
+      artifact-name:
+        description: 'Name of the uploaded build artifact'
+        value: ${{ jobs.build.outputs.artifact-name }}
 
 jobs:
   build:
+    name: Build ${{ inputs.website }}
     runs-on: macos-15
     env:
       DEVELOPER_DIR: "/Applications/Xcode_16.4.app/Contents/Developer"
+    outputs:
+      artifact-name: ${{ inputs.website }}-build
+    
     steps:
-      - name: Checkout
-        uses: actions/checkout@v3
-
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
       - name: Cache Swift Package Manager
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: |
             .build
@@ -37,16 +34,16 @@ jobs:
           key: ${{ runner.os }}-spm-${{ hashFiles('Package.swift', 'Package.resolved') }}
           restore-keys: |
             ${{ runner.os }}-spm-
-
-      - name: Build Dependencies
+      
+      - name: Build dependencies
         run: swift build --configuration release
-
-      - name: Run Tests
+      
+      - name: Run tests
         run: swift test --parallel
-
-      - name: Generate Site
+      
+      - name: Generate site
         run: swift run ${{ inputs.website }}
-
+      
       - name: Compile Tailwind CSS
         run: |
           website="${{ inputs.website }}"
@@ -95,8 +92,8 @@ jobs:
             
             echo "Successfully compiled: $output_file"
           done <<< "$css_files"
-
-      - name: Verify Build Output
+      
+      - name: Verify build output
         run: |
           website="${{ inputs.website }}"
           echo "Checking build output..."
@@ -124,79 +121,11 @@ jobs:
             exit 1
           fi
           
-          echo "Build output verified successfully"
-
-      - name: Upload Build Artifacts
+          echo "✅ Build output verified successfully"
+      
+      - name: Upload build artifacts
         uses: actions/upload-artifact@v4
         with:
           name: ${{ inputs.website }}-build
           path: Websites/${{ inputs.website }}/
           retention-days: 1
-
-  deploy:
-    needs: build
-    runs-on: ubuntu-latest
-    env:
-      DEPLOYMENT_BRANCH: preview
-      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-    permissions:
-      contents: read
-      deployments: write
-      pull-requests: write
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v3
-
-      - name: Check for Production Deployment
-        run: |
-          if [[ ${{ inputs.deploy-to-production }} == true ]]; then
-            echo "DEPLOYMENT_BRANCH=main" >> $GITHUB_ENV
-          fi
-
-      - name: Download build artifacts
-        uses: actions/download-artifact@v4
-        with:
-          name: ${{ inputs.website }}-build
-          path: Websites/${{ inputs.website }}
-
-      - name: Publish to Cloudflare Pages
-        id: cloudflare
-        uses: cloudflare/pages-action@v1
-        with:
-          apiToken: ${{ secrets.cloudflare-api-token }}
-          accountId: ${{ secrets.cloudflare-account-id }}
-          projectName: ${{ inputs.website }}
-          directory: Websites/${{ inputs.website }}
-          branch: ${{ env.DEPLOYMENT_BRANCH }}
-          wranglerVersion: '3'
-
-      - name: Prepare comment body
-        if: github.event_name == 'pull_request'
-        id: format-output
-        run: |
-          if [ "${{ steps.cloudflare.outcome }}" == "failure" ]; then
-            DEPLOYMENT_STATUS="❌ Deployment Failed!"
-          else
-            DEPLOYMENT_STATUS="✅ Deployment Successful!"
-          fi
-
-          echo "DEPLOYMENT_TEXT<<EOF" >> $GITHUB_ENV
-          echo "### Deploying Preview for ${{ inputs.website }} 🚀" >> $GITHUB_ENV
-          echo "---" >> $GITHUB_ENV
-          echo "| **Name** | **Result** |" >> $GITHUB_ENV
-          echo "|---------------------------------|------------------------|" >> $GITHUB_ENV
-          echo "|🔀 Latest Commit | ${{ github.sha }} |" >> $GITHUB_ENV
-          echo "|🛰️ Status | $DEPLOYMENT_STATUS |" >> $GITHUB_ENV
-          echo "|🪵 Action Run | [View Logs](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}) |" >> $GITHUB_ENV
-          echo "|🔍 Preview Url | [${{ steps.cloudflare.outputs.url }}](${{ steps.cloudflare.outputs.url }}) |" >> $GITHUB_ENV
-          echo "|🕵🏻‍♂️ Alias Url | [${{ steps.cloudflare.outputs.alias }}](${{ steps.cloudflare.outputs.alias }}) |" >> $GITHUB_ENV
-          echo "EOF" >> $GITHUB_ENV
-
-      - name: Deployment Preview Comment
-        if: github.event_name == 'pull_request'
-        run: |
-          # Try to edit last comment, fallback to creating new comment if none exists
-          if ! gh issue comment ${{ github.event.pull_request.number }} --edit-last --body "${{ env.DEPLOYMENT_TEXT }}" 2>/dev/null; then
-            echo "No previous comment found, creating new comment..."
-            gh issue comment ${{ github.event.pull_request.number }} --body "${{ env.DEPLOYMENT_TEXT }}"
-          fi

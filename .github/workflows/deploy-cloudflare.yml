@@ -1,0 +1,113 @@
+name: Deploy to Cloudflare Pages
+
+on:
+  workflow_call:
+    inputs:
+      artifact-name:
+        description: 'Name of the build artifact to deploy'
+        required: true
+        type: string
+      project-name:
+        description: 'Cloudflare Pages project name'
+        required: true
+        type: string
+      deploy-to-production:
+        description: 'Deploy to production (true) or preview (false)'
+        required: true
+        type: boolean
+      artifact-path:
+        description: 'Path where artifact should be extracted'
+        required: false
+        type: string
+        default: 'Websites'
+    secrets:
+      cloudflare-api-token:
+        required: true
+      cloudflare-account-id:
+        required: true
+    outputs:
+      deployment-url:
+        description: 'The URL where the site was deployed'
+        value: ${{ jobs.deploy.outputs.url }}
+
+jobs:
+  deploy:
+    name: Deploy to Cloudflare Pages
+    runs-on: ubuntu-latest
+    env:
+      DEPLOYMENT_BRANCH: preview
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    permissions:
+      contents: read
+      deployments: write
+      pull-requests: write
+    outputs:
+      url: ${{ steps.cloudflare.outputs.url }}
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Determine deployment branch
+        run: |
+          if [[ ${{ inputs.deploy-to-production }} == true ]]; then
+            echo "DEPLOYMENT_BRANCH=main" >> $GITHUB_ENV
+            echo "🚀 Deploying to PRODUCTION (main branch)"
+          else
+            echo "DEPLOYMENT_BRANCH=preview" >> $GITHUB_ENV
+            echo "🔍 Deploying to PREVIEW"
+          fi
+      
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ inputs.artifact-name }}
+          path: ${{ inputs.artifact-path }}/${{ inputs.project-name }}
+      
+      - name: Deploy to Cloudflare Pages
+        id: cloudflare
+        uses: cloudflare/pages-action@v1
+        with:
+          apiToken: ${{ secrets.cloudflare-api-token }}
+          accountId: ${{ secrets.cloudflare-account-id }}
+          projectName: ${{ inputs.project-name }}
+          directory: ${{ inputs.artifact-path }}/${{ inputs.project-name }}
+          branch: ${{ env.DEPLOYMENT_BRANCH }}
+          wranglerVersion: '3'
+      
+      - name: Prepare deployment comment
+        if: github.event_name == 'pull_request'
+        id: format-output
+        run: |
+          if [ "${{ steps.cloudflare.outcome }}" == "failure" ]; then
+            DEPLOYMENT_STATUS="❌ Deployment Failed!"
+          else
+            DEPLOYMENT_STATUS="✅ Deployment Successful!"
+          fi
+
+          echo "DEPLOYMENT_TEXT<<EOF" >> $GITHUB_ENV
+          echo "### Deploying Preview for ${{ inputs.project-name }} 🚀" >> $GITHUB_ENV
+          echo "---" >> $GITHUB_ENV
+          echo "| **Name** | **Result** |" >> $GITHUB_ENV
+          echo "|---------------------------------|------------------------|" >> $GITHUB_ENV
+          echo "|🔀 Latest Commit | ${{ github.sha }} |" >> $GITHUB_ENV
+          echo "|🛰️ Status | $DEPLOYMENT_STATUS |" >> $GITHUB_ENV
+          echo "|🪵 Action Run | [View Logs](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}) |" >> $GITHUB_ENV
+          echo "|🔍 Preview URL | [${{ steps.cloudflare.outputs.url }}](${{ steps.cloudflare.outputs.url }}) |" >> $GITHUB_ENV
+          echo "|🕵🏻‍♂️ Alias URL | [${{ steps.cloudflare.outputs.alias }}](${{ steps.cloudflare.outputs.alias }}) |" >> $GITHUB_ENV
+          echo "EOF" >> $GITHUB_ENV
+      
+      - name: Comment deployment preview on PR
+        if: github.event_name == 'pull_request'
+        run: |
+          # Try to edit last comment, fallback to creating new comment if none exists
+          if ! gh issue comment ${{ github.event.pull_request.number }} --edit-last --body "${{ env.DEPLOYMENT_TEXT }}" 2>/dev/null; then
+            echo "No previous comment found, creating new comment..."
+            gh issue comment ${{ github.event.pull_request.number }} --body "${{ env.DEPLOYMENT_TEXT }}"
+          fi
+      
+      - name: Deployment complete
+        run: |
+          echo "✅ Deployment successful!"
+          echo "📍 Deployment URL: ${{ steps.cloudflare.outputs.url }}"
+          echo "🌿 Branch: ${{ env.DEPLOYMENT_BRANCH }}"
