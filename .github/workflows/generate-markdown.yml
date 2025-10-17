@@ -62,7 +62,7 @@ jobs:
           swift run docc4llm export \
             Archives/md-21-dev.doccarchive \
             --format markdown \
-            --output-path md-21-dev-concatenated.md
+            --output md-21-dev-concatenated.md
       
       - name: Validate delimiter format
         run: |

@@ -14,12 +14,37 @@ import DesignSystem
 
 @main
 struct SiteGenerator {
+    /// Copy static resource files from Resources/ to Websites/ output directory
+    private static func copyStaticResources(from resourcesURL: URL, to outputURL: URL) throws {
+        let fileManager = FileManager.default
+        
+        // Define static files to copy (root-level files only)
+        let staticFiles = ["llms.txt", "robots.txt", "sitemap.xml"]
+        
+        for filename in staticFiles {
+            let sourceURL = resourcesURL.appendingPathComponent(filename)
+            let destinationURL = outputURL.appendingPathComponent(filename)
+            
+            // Only copy if source exists
+            if fileManager.fileExists(atPath: sourceURL.path) {
+                // Remove destination if it exists (for idempotency)
+                if fileManager.fileExists(atPath: destinationURL.path) {
+                    try fileManager.removeItem(at: destinationURL)
+                }
+                
+                try fileManager.copyItem(at: sourceURL, to: destinationURL)
+                print("✅ Copied \(filename)")
+            }
+        }
+    }
+    
     static func main() throws {
         // Assumes this file is located in a Sources/ sub-directory of a Swift package.
         let projectURL = URL(fileURLWithPath: #filePath)
             .deletingLastPathComponent()
             .deletingLastPathComponent()
         
+        let resourcesURL = projectURL.appending(path: "../Resources/21-dev")
         let outputURL = projectURL.appending(path: "../Websites/21-dev")
         
         var stylemap = [
@@ -57,5 +82,8 @@ struct SiteGenerator {
         }
         
         try renderSitemap(sitemap, to: outputURL)
+        
+        // Copy static resources after site generation
+        try copyStaticResources(from: resourcesURL, to: outputURL)
     }
 }
