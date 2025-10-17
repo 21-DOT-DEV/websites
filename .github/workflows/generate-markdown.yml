@@ -41,7 +41,7 @@ jobs:
           target_args=""
           
           for target in $targets; do
-            target_args="$target_args --target docs-21-dev-$target"
+            target_args="$target_args --target $target"
           done
           
           echo "target-args=$target_args" >> $GITHUB_OUTPUT
