@@ -82,7 +82,7 @@ jobs:
           if ! swift run docc4llm export \
             Archives/md-21-dev.doccarchive \
             --format markdown \
-            --output-path md-21-dev-concatenated.md; then
+            --output md-21-dev-concatenated.md; then
             echo "❌ Markdown export failed"
             exit 1
           fi

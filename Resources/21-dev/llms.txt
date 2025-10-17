@@ -8,6 +8,8 @@ Intended for both LLM retrieval and human developers needing low-noise cryptogra
 
 Documentation automatically updates with package releases and includes source code links to exact line numbers in GitHub repositories.
 
+**Last updated**: 2025-01-16
+
 ## Overview
 
 - [Root Index](https://md.21.dev/): Entry point explaining the documentation structure, file organization, and navigation patterns for all modules
@@ -46,3 +48,7 @@ Within the [ZKP directory](https://md.21.dev/zkp/), symbols are organized by:
 ---
 
 Future modules will follow the same structure and be added under API Documentation with their own module overview files and symbol directories.
+
+## Contact
+
+Report issues or provide feedback: https://21.dev/
