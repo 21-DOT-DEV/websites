@@ -28,14 +28,14 @@ As a developer evaluating or using the swift-secp256k1 library, I want to access
 
 **Why this priority**: This is the core value proposition - making library APIs discoverable and understandable. Without this, developers cannot effectively use the library.
 
-**Independent Test**: Can be fully tested by visiting docs.21.dev and verifying that all four targets (P256K, ZKP, libsecp256k1, libsecp256k1_zkp) are documented with public API signatures, descriptions, and navigation.
+**Independent Test**: Can be fully tested by visiting docs.21.dev and verifying that both targets (P256K and ZKP) are documented with public API signatures, descriptions, and navigation.
 
 **Acceptance Scenarios**:
 
-1. **Given** I am a developer researching elliptic curve cryptography, **When** I navigate to docs.21.dev, **Then** I see a landing page with links to all four library targets.
+1. **Given** I am a developer researching elliptic curve cryptography, **When** I navigate to docs.21.dev, **Then** I see a landing page with links to both library targets (P256K and ZKP).
 2. **Given** I want to use the ZKP functionality, **When** I click on the ZKP target documentation, **Then** I see all public types, functions, and properties with their signatures and descriptions.
 3. **Given** I am reading a function's documentation, **When** I want to see its source code, **Then** I can click a link that takes me to the exact file and line in the swift-secp256k1 GitHub repository.
-4. **Given** I need to find a specific API, **When** I use the documentation search, **Then** I get relevant results across all four targets.
+4. **Given** I need to find a specific API, **When** I use the documentation search, **Then** I get relevant results across both targets.
 
 ---
 
@@ -85,9 +85,9 @@ As a code reviewer, I want to preview generated documentation in pull requests b
 ### Functional Requirements
 
 **Documentation Generation**:
-- **FR-001**: System MUST generate combined documentation for exactly four targets: P256K, ZKP, libsecp256k1, and libsecp256k1_zkp from the swift-secp256k1 package.
-- **FR-002**: System MUST use the experimental combined documentation feature to merge all four targets into a unified documentation site.
-- **FR-003**: System MUST document only public APIs (no internal or private symbols).
+- **FR-001**: System MUST generate combined documentation for exactly two targets: P256K and ZKP from the swift-secp256k1 package.
+- **FR-002**: System MUST use the experimental combined documentation feature to merge both targets into a unified documentation site.
+- **FR-003**: System MUST document only symbols with `public` access modifier (excludes `internal`, `private`, `fileprivate`, `@usableFromInline`, and `package` access levels).
 - **FR-004**: System MUST transform documentation for static hosting compatibility (no server-side rendering required).
 - **FR-005**: System MUST link documented symbols to their source code in the swift-secp256k1 GitHub repository at https://github.com/21-DOT-DEV/swift-secp256k1.
 
@@ -143,8 +143,8 @@ As a code reviewer, I want to preview generated documentation in pull requests b
 
 ### Measurable Outcomes
 
-- **SC-001**: Documentation site loads at docs.21.dev and displays combined documentation for all four targets within 3 seconds on a broadband connection.
-- **SC-002**: All public APIs from P256K, ZKP, libsecp256k1, and libsecp256k1_zkp appear in the generated documentation with complete signatures and descriptions.
+- **SC-001**: Documentation site loads at docs.21.dev and displays combined documentation for both targets within 3 seconds on a 25 Mbps broadband connection (per FCC broadband definition).
+- **SC-002**: All public APIs from P256K and ZKP appear in the generated documentation with complete signatures and descriptions.
 - **SC-003**: Source code links navigate to the correct file and line in the swift-secp256k1 GitHub repository for 100% of documented symbols.
 - **SC-004**: When swift-secp256k1 version is updated in Package.swift, documentation regenerates and deploys to docs.21.dev within 15 minutes of PR merge.
 - **SC-005**: Dependabot PRs updating swift-secp256k1 trigger test documentation builds that complete within 10 minutes and report pass/fail status.

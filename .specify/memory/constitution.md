@@ -1,25 +1,28 @@
 <!--
 Sync Impact Report:
-- Version: 1.0.0 → 1.1.0 (MINOR - adds exemption clause)
-- Principle Modified: III. Test-First Development (NON-NEGOTIABLE)
-- Change Type: Exemption added for Infrastructure-as-Code
-- Core Principle: PRESERVED (TDD still mandatory for application code)
-- New Guidance: IaC exempt with alternative validation requirements
+- Version: 1.1.0 → 1.2.0 (MINOR - adds approved dependency)
+- Principle Modified: II. Zero Dependencies
+- Change Type: DocC4LLM added to approved dependencies list
+- Core Principle: PRESERVED (Zero dependencies policy maintained with expanded approved list)
+- New Dependency: DocC4LLM (markdown export tool) - temporary until Swift plugin available
+- Rationale: Only tool for .doccarchive → markdown export; enables LLM-optimized documentation
+- Migration Path: Planned conversion to Swift plugin (build-time-only dependency)
 - Principles: 6 principles (no additions/removals)
   I. Design System First
-  II. Zero Dependencies
-  III. Test-First Development (NON-NEGOTIABLE) [MODIFIED - IaC exemption added]
+  II. Zero Dependencies [MODIFIED - DocC4LLM added to approved list]
+  III. Test-First Development (NON-NEGOTIABLE)
   IV. Static Site Architecture
   V. Slipstream API Preference
   VI. Swift 6 + SPM Standards
 - Templates Status:
   ✅ spec-template.md - No changes needed
-  ✅ plan-template.md - Constitution Check references updated principle
+  ✅ plan-template.md - No changes needed
   ✅ tasks-template.md - No changes needed
   ✅ checklist-template.md - No changes needed
 - Affected Features:
-  ✓ 001-documentation-subdomain-for - Now compliant (T009/T011 satisfy integration testing)
-- Follow-up: Update affected feature plan.md Constitution Check to reference v1.1.0
+  ✓ 002-i-want-to (md.21.dev) - Constitutional gate cleared
+- Previous Version History:
+  • 1.0.0 → 1.1.0 (2025-10-15): Added IaC exemption to Test-First Development
 -->
 
 # Static Site Project Constitution
@@ -41,12 +44,12 @@ All site development MUST use the DesignSystem target located in `Sources/Design
 
 ### II. Zero Dependencies
 
-The project MUST NOT introduce any dependencies beyond the approved core stack: Slipstream (static site framework), swift-plugin-tailwindcss (styling), swift-docc-plugin (documentation generation) and swift-testing (testing framework). NO additional Swift packages, NPM packages, or third-party frameworks may be added.
+The project MUST NOT introduce any dependencies beyond the approved core stack: Slipstream (static site framework), swift-plugin-tailwindcss (styling), swift-docc-plugin (documentation generation), DocC4LLM (markdown export tool), and swift-testing (testing framework). NO additional Swift packages, NPM packages, or third-party frameworks may be added.
 
 **Rationale**: Minimizes complexity, reduces security surface area, ensures long-term maintainability, and keeps build times fast. Every dependency is a liability.
 
 **Requirements**:
-- Package.swift MUST contain only: Slipstream, swift-plugin-tailwindcss, swift-docc-plugin, swift-secp256k1, swift-testing
+- Package.swift MUST contain only: Slipstream, swift-plugin-tailwindcss, swift-docc-plugin, swift-secp256k1, DocC4LLM, swift-testing
 - No JavaScript frameworks (React, Vue, Angular, etc.)
 - No CSS frameworks beyond TailwindCSS
 - No runtime dependencies in generated static sites
@@ -241,4 +244,4 @@ This constitution supersedes all other development practices and preferences. An
 - Complexity/violations MUST be justified in Complexity Tracking table
 - Windsurf rules in `.windsurf/rules/*.md` enforce these principles during development
 
-**Version**: 1.1.0 | **Ratified**: 2025-10-15 | **Last Amended**: 2025-10-15
+**Version**: 1.2.0 | **Ratified**: 2025-10-15 | **Last Amended**: 2025-10-16

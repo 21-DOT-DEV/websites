@@ -1,0 +1,249 @@
+name: Generate Markdown Documentation
+
+on:
+  workflow_call:
+    inputs:
+      ref:
+        description: 'Git ref to checkout (branch, tag, or SHA)'
+        required: true
+        type: string
+      targets:
+        description: 'Space-separated list of targets to document (e.g., "P256K ZKP")'
+        required: true
+        type: string
+    outputs:
+      artifact-name:
+        description: 'Name of the uploaded artifact containing markdown documentation'
+        value: ${{ jobs.generate.outputs.artifact-name }}
+
+jobs:
+  generate:
+    name: Generate markdown docs
+    runs-on: macos-15
+    permissions:
+      contents: read
+    outputs:
+      artifact-name: md-21-dev
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref }}
+      
+      - name: Resolve dependencies
+        run: swift package resolve
+      
+      - name: Build target arguments for documentation generation
+        id: build-targets
+        run: |
+          targets="${{ inputs.targets }}"
+          target_args=""
+          
+          for target in $targets; do
+            target_args="$target_args --target docs-21-dev-$target"
+          done
+          
+          echo "target-args=$target_args" >> $GITHUB_OUTPUT
+          echo "📚 Target arguments: $target_args"
+          echo "📚 Generating documentation for targets: ${{ inputs.targets }}"
+      
+      - name: Generate DocC archive
+        run: |
+          swift package \
+            --allow-writing-to-directory ./Archives \
+            generate-documentation \
+            ${{ steps.build-targets.outputs.target-args }} \
+            --output-path ./Archives/md-21-dev.doccarchive \
+            --enable-experimental-combined-documentation
+      
+      - name: Export to markdown
+        run: |
+          swift run docc4llm export \
+            Archives/md-21-dev.doccarchive \
+            --format markdown \
+            --output-path md-21-dev-concatenated.md
+      
+      - name: Validate delimiter format
+        run: |
+          START_COUNT=$(grep -c "^=== START FILE:" md-21-dev-concatenated.md || true)
+          END_COUNT=$(grep -c "^=== END FILE ===$" md-21-dev-concatenated.md || true)
+          
+          if [ "$START_COUNT" -eq 0 ] || [ "$END_COUNT" -eq 0 ]; then
+            echo "❌ Format validation failed"
+            echo "START markers: $START_COUNT"
+            echo "END markers: $END_COUNT"
+            echo "Expected: >0 for both"
+            exit 1
+          fi
+          
+          if [ "$START_COUNT" -ne "$END_COUNT" ]; then
+            echo "❌ Delimiter mismatch"
+            echo "START markers: $START_COUNT"
+            echo "END markers: $END_COUNT"
+            exit 1
+          fi
+          
+          echo "✓ Format validation passed (delimiters: $START_COUNT)"
+      
+      - name: Split markdown into individual files
+        run: |
+          mkdir -p Websites/md-21-dev
+          cd Websites/md-21-dev
+          
+          awk '/=== START FILE: /{
+            gsub(/ ===$/, "", $4)
+            path=$4
+            sub(/^data\/documentation\//, "", path)
+            sub(/\.[^.]+$/, ".md", path)
+            system("mkdir -p \"$(dirname \"" path "\")\"")}
+          /=== END FILE ===/{
+            close(path)
+            path=""
+            next}
+          path{
+            print > path
+          }' ../../md-21-dev-concatenated.md
+          
+          FILE_COUNT=$(find . -type f -name "*.md" | wc -l)
+          echo "✓ File splitting complete (files: $FILE_COUNT)"
+      
+      - name: Monitor deployment size
+        run: |
+          FILE_COUNT=$(find Websites/md-21-dev -type f | wc -l)
+          SIZE_MB=$(du -sm Websites/md-21-dev | cut -f1)
+          
+          echo "Files: $FILE_COUNT"
+          echo "Size: ${SIZE_MB}MB"
+          
+          if [ "$FILE_COUNT" -gt 15000 ]; then
+            echo "::warning::Approaching file limit: $FILE_COUNT files (limit: 20,000)"
+          fi
+          
+          if [ "$SIZE_MB" -gt 20 ]; then
+            echo "::warning::Approaching size limit: ${SIZE_MB}MB (limit: 25MB)"
+          fi
+      
+      - name: Create root index
+        run: |
+          cd Websites/md-21-dev
+          
+          # Count files by directory
+          P256K_COUNT=$(find p256k -type f -name "*.md" 2>/dev/null | wc -l | tr -d ' ')
+          ZKP_COUNT=$(find zkp -type f -name "*.md" 2>/dev/null | wc -l | tr -d ' ')
+          TOTAL_COUNT=$(find . -type f -name "*.md" | wc -l | tr -d ' ')
+          
+          # Get directory size
+          TOTAL_SIZE=$(du -sh . | cut -f1)
+          
+          # Sample some files from each module (first 5)
+          P256K_SAMPLES=$(find p256k -type f -name "*.md" 2>/dev/null | sort | head -5 | sed 's|^\./||')
+          ZKP_SAMPLES=$(find zkp -type f -name "*.md" 2>/dev/null | sort | head -5 | sed 's|^\./||')
+          
+          cat > index.md << EOF
+          # Swift secp256k1 Documentation
+          
+          LLM-optimized markdown documentation for the swift-secp256k1 library.
+          
+          **Total Files**: $TOTAL_COUNT markdown files  
+          **Total Size**: $TOTAL_SIZE
+          
+          ## Modules
+          
+          ### [P256K Module](./p256k.md)
+          
+          secp256k1 Elliptic Curve cryptography operations including key generation, ECDSA signing, ECDH key agreement, and public key recovery.
+          
+          - **Files**: $P256K_COUNT symbols
+          - **Directory**: \`p256k/\`
+          
+          Sample symbols:
+          EOF
+          
+          # Add P256K samples as links
+          echo "$P256K_SAMPLES" | while read -r file; do
+            if [ -n "$file" ]; then
+              name=$(basename "$file" .md)
+              echo "- [\`$name\`](./$file)" >> index.md
+            fi
+          done
+          
+          cat >> index.md << EOF
+          
+          ### [ZKP Module](./zkp.md)
+          
+          Zero-Knowledge Proof operations including Pedersen commitments, range proofs, and Schnorr signatures - builds on P256K primitives for confidential transactions.
+          
+          - **Files**: $ZKP_COUNT symbols
+          - **Directory**: \`zkp/\`
+          
+          Sample symbols:
+          EOF
+          
+          # Add ZKP samples as links
+          echo "$ZKP_SAMPLES" | while read -r file; do
+            if [ -n "$file" ]; then
+              name=$(basename "$file" .md)
+              echo "- [\`$name\`](./$file)" >> index.md
+            fi
+          done
+          
+          cat >> index.md << EOF
+          
+          ## Directory Structure
+          
+          \`\`\`
+          md.21.dev/
+          ├── index.md           # This file
+          ├── p256k.md           # P256K module overview ($P256K_COUNT symbols)
+          ├── p256k/             # P256K symbol documentation
+          ├── zkp.md             # ZKP module overview ($ZKP_COUNT symbols)
+          └── zkp/               # ZKP symbol documentation
+          \`\`\`
+          
+          ## File Organization
+          
+          Each API symbol has its own markdown file:
+          - **Pattern**: \`/{module}/{symbol-name}.md\`
+          - **Format**: CommonMark markdown with consistent structure
+          - **Content**: Swift signatures, parameter descriptions, return types, source links
+          
+          ## Programmatic Discovery
+          
+          For LLMs and automated tools:
+          - [llms.txt at 21.dev](https://21.dev/llms.txt) - llms.txt standard index
+          - \`AGENTS.md\` in swift-secp256k1 repository - Agent guidance and setup
+          
+          ## Module Overviews
+          
+          Start with module overview files for high-level understanding:
+          - [P256K Module Overview](./p256k.md) - Elliptic curve primitives
+          - [ZKP Module Overview](./zkp.md) - Zero-knowledge proof operations
+          
+          Then navigate to specific symbols via directory listings or search.
+          EOF
+          
+          echo "✓ Created index.md with $TOTAL_COUNT total symbols ($P256K_COUNT P256K, $ZKP_COUNT ZKP)"
+      
+      - name: Create markdown archive
+        run: |
+          echo "📦 Creating archive for md-21-dev..."
+          
+          # Create zip archive (avoids GitHub Actions path validation issues)
+          # Zip FROM INSIDE the directory to avoid nesting
+          cd Websites/md-21-dev
+          zip -r ../md-21-dev.zip .
+          
+          # Remove original directory to save space
+          cd ..
+          rm -rf md-21-dev
+          
+          echo "✅ Archive created: Websites/md-21-dev.zip"
+          ls -lh md-21-dev.zip
+      
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: md-21-dev
+          path: Websites/md-21-dev.zip
+          retention-days: 1

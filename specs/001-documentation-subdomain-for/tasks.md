@@ -34,7 +34,7 @@
 
 **Completion Criteria**:
 - Constitution explicitly allows documentation-only targets (3-4 sentence paragraph under "Zero Dependencies")
-- Package.swift includes docs-21-dev target with P256K, ZKP, libsecp256k1, libsecp256k1_zkp dependencies
+- Package.swift includes docs-21-dev target with P256K and ZKP dependencies
 - Cloudflare Pages project exists and accepts deployments
 - docs.21.dev custom domain configured in Cloudflare (DNS not yet propagated)
 
@@ -44,7 +44,7 @@
 
 **User Story**: As a developer evaluating or using the swift-secp256k1 library, I want to access comprehensive API documentation at docs.21.dev so I can understand available cryptographic functions, their parameters, return types, and usage examples without reading source code.
 
-**Independent Test**: Visit docs.21.dev and verify all four targets (P256K, ZKP, libsecp256k1, libsecp256k1_zkp) are documented with complete API signatures, descriptions, navigation, and working source code links to GitHub.
+**Independent Test**: Visit docs.21.dev and verify both targets (P256K and ZKP) are documented with complete API signatures, descriptions, navigation, and working source code links to GitHub.
 
 **Tasks**:
 
@@ -129,16 +129,19 @@
 - Run full documentation generation command from plan.md
 - Verify output in `Websites/docs-21-dev/`:
   - index.html exists
-  - documentation/p256k/, documentation/zkp/, documentation/libsecp256k1/, documentation/libsecp256k1_zkp/ directories exist
+  - documentation/p256k/ and documentation/zkp/ directories exist (FR-001)
+  - **NEW - Fix C1**: Verify each target has documented symbols:
+    - `ls documentation/p256k/` shows API files (not empty directory)
+    - `ls documentation/zkp/` shows API files (not empty directory)
   - Search functionality works (js/ directory exists)
-  - Open index.html in browser and manually verify navigation
+  - Open index.html in browser and manually verify navigation between both targets
 
 **Completion Criteria for User Story 1**:
 - Workflow file exists and is syntactically valid
 - Documentation generates successfully locally
-- All 4 targets documented with public APIs
+- Both targets (P256K, ZKP) documented with public APIs
 - Source code links point to correct GitHub URLs with version tag
-- Search functionality works across all targets
+- Search functionality works across both targets
 - Preview and production deployment jobs are ready (not yet tested end-to-end)
 
 ---
@@ -151,8 +154,8 @@
 
 **Tasks**:
 
-- [ ] T009 [US2] Push workflow to feature branch and create test PR to trigger CI
-- [ ] T010 [US2] Verify Dependabot PR triggers workflow when Package.resolved changes
+- [x] T009 [US2] Push workflow to feature branch and create test PR to trigger CI
+- [x] T010 [US2] Verify Dependabot PR triggers workflow when Package.resolved changes
 
 **Task Details**:
 
@@ -171,7 +174,10 @@
 - Wait for next Dependabot PR or manually create one updating swift-secp256k1 version in Package.swift
 - Verify workflow automatically triggers when Dependabot updates Package.resolved
 - Confirm path filter correctly identifies Package.swift/Package.resolved changes
-- Verify only swift-secp256k1 changes trigger docs workflow (not other dependencies)
+- **NEW - Fix C3**: Test negative case to validate path filtering (FR-010):
+  - Update an unrelated dependency (e.g., Slipstream, swift-testing) in Package.resolved
+  - Verify docs-documentation workflow does NOT trigger
+  - Confirm only swift-secp256k1 updates trigger documentation regeneration
 
 **Completion Criteria for User Story 2**:
 - Workflow triggers on Package.swift/Package.resolved changes
@@ -190,18 +196,22 @@
 
 **Tasks**:
 
-- [ ] T011 [US3] Verify preview deployment URL accessibility and functionality
-- [ ] T012 [US3] Test PR merge triggers production deployment to docs.21.dev
+- [x] T011 [US3] Verify preview deployment URL accessibility and functionality
+- [x] T012 [US3] Test PR merge triggers production deployment to docs.21.dev
 
 **Task Details**:
 
 ### T011: Validate Preview Deployment
 **Implementation**:
 - Using PR from T009, access Cloudflare preview URL from PR comment
-- Verify all 4 targets are documented
+- Verify both targets (P256K, ZKP) are documented
 - Test navigation between targets
-- Click source code links and verify they navigate to correct GitHub files/lines
-- Use search functionality across all targets
+- **NEW - Fix C2**: Systematically validate source code links (FR-017):
+  - Sample 5+ symbols from P256K target, click source links
+  - Sample 5+ symbols from ZKP target, click source links
+  - Verify 100% navigate to correct GitHub files and line numbers
+  - Verify URLs use correct version from Package.resolved (not main/master)
+- Use search functionality across both targets
 - Check styling renders correctly in Chrome, Firefox, Safari
 - Verify all links work (no 404s)
 
@@ -230,8 +240,8 @@
 
 **Tasks**:
 
-- [ ] T013 [P] Configure DNS CNAME record for docs.21.dev → docs-21-dev.pages.dev
-- [ ] T014 Verify all success criteria (SC-001 through SC-008)
+- [x] T013 [P] Configure DNS CNAME record for docs.21.dev → docs-21-dev.pages.dev
+- [x] T014 Verify all success criteria (SC-001 through SC-008)
 - [ ] T015 Document workflow in repository README or .github/workflows/README.md
 
 **Task Details**:
@@ -248,14 +258,18 @@
 ### T014: Validate Success Criteria
 **Implementation**:
 Check each success criterion:
-- **SC-001**: Load docs.21.dev and measure time to first contentful paint (<3 seconds on broadband)
-- **SC-002**: Verify all public APIs from all 4 targets appear with complete signatures
+- **SC-001**: Load docs.21.dev and measure time to first contentful paint (<3 seconds on 25 Mbps connection)
+- **SC-002**: Verify all public APIs from both targets (P256K, ZKP) appear with complete signatures
 - **SC-003**: Click 10+ source code links, verify 100% navigate to correct GitHub files/lines
 - **SC-004**: Time full cycle from Package.swift update → docs.21.dev update (<15 minutes)
 - **SC-005**: Verify Dependabot PR → test build completes (<10 minutes)
 - **SC-006**: Confirm no manual steps required after Dependabot PR
-- **SC-007**: Review CI error messages for clarity (create intentional failure to test)
-- **SC-008**: Run Lighthouse performance test, verify score ≥90
+- **SC-007 - Fix C4**: Validate error message clarity (FR-019):
+  - Intentionally break generation (e.g., invalid target name: `--target InvalidTarget`)
+  - Verify workflow fails with clear error message in logs
+  - Confirm error can be diagnosed within 5 minutes by unfamiliar developer
+  - Document error message quality in T015
+- **SC-008**: Run Lighthouse Performance test, verify score ≥90
 
 ### T015: Document Workflow
 **File**: `.github/workflows/README.md` or repository README.md

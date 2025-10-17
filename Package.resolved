@@ -1,6 +1,15 @@
 {
-  "originHash" : "bb21a7d5a57d8129492572bc3ac7e97a38e092a65c8c6a4bb677441a310318a1",
+  "originHash" : "3d8a825a67f644f361a4a97bdf724ed6aa762ececfd12e40829a768c9a1b0e3a",
   "pins" : [
+    {
+      "identity" : "docc4llm",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/P24L/DocC4LLM.git",
+      "state" : {
+        "revision" : "7a50a1790055e8bbe56cd54cdb1d3be16f6d819e",
+        "version" : "1.0.0"
+      }
+    },
     {
       "identity" : "lrucache",
       "kind" : "remoteSourceControl",

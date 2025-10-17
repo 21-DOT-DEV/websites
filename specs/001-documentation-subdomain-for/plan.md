@@ -5,7 +5,7 @@
 
 ## Summary
 
-Generate combined API documentation for the swift-secp256k1 cryptographic library (targets: P256K, ZKP, libsecp256k1, libsecp256k1_zkp) and deploy as a static site to docs.21.dev subdomain. Documentation will auto-update via Dependabot PRs and deploy through a Cloudflare Pages project, using the existing websites Package.swift as an umbrella package to access external dependency targets.
+Generate combined API documentation for the swift-secp256k1 cryptographic library (targets: P256K and ZKP) and deploy as a static site to docs.21.dev subdomain. Documentation will auto-update via Dependabot PRs and deploy through a Cloudflare Pages project, using the existing websites Package.swift as an umbrella package to access external dependency targets.
 
 **Technical Approach**: Use swift-docc-plugin to generate combined documentation from this repository (umbrella package), targeting swift-secp256k1's modules directly. Deploy via GitHub Actions to a separate Cloudflare Pages project with docs.21.dev custom domain. CI triggers on Package.swift/Package.resolved changes for both PRs (preview) and main branch (production).
 
@@ -34,7 +34,7 @@ Generate combined API documentation for the swift-secp256k1 cryptographic librar
 - 1-day artifact retention matching existing workflow pattern
 
 **Scale/Scope**: 
-- 4 targets from single external package
+- 2 targets (P256K, ZKP) from single external package
 - ~50-200MB documentation output
 - Single repository documentation (multi-repo deferred)
 
@@ -99,14 +99,11 @@ swift package \
   generate-documentation \
   --target P256K \
   --target ZKP \
-  --target libsecp256k1 \
-  --target libsecp256k1_zkp \
   --enable-experimental-combined-documentation \
   --transform-for-static-hosting \
-  --hosting-base-path docs \
   --source-service github \
   --source-service-base-url https://github.com/21-DOT-DEV/swift-secp256k1/blob/$SECP256K1_VERSION \
-  --checkout-path $PWD \
+  --checkout-path .build/checkouts/swift-secp256k1 \
   --output-path ./Websites/docs-21-dev
 ```
 
@@ -116,18 +113,17 @@ swift package \
 - `--allow-writing-to-directory ./Websites/docs-21-dev` - Required sandbox permission
 
 **Core Generation**:
-- `--target [name]` - Target each of the 4 swift-secp256k1 modules (FR-001)
-- `--enable-experimental-combined-documentation` - Merge all targets into unified site (FR-002)
+- `--target [name]` - Target P256K and ZKP modules from swift-secp256k1 (FR-001)
+- `--enable-experimental-combined-documentation` - Merge both targets into unified site (FR-002)
 - `--output-path ./Websites/docs-21-dev` - Write output to deployment directory
 
 **Static Hosting**:
 - `--transform-for-static-hosting` - Generate static-compatible HTML (FR-004)
-- `--hosting-base-path docs` - Configure links for docs.21.dev hosting
 
 **Source Linking** (FR-005, FR-017, FR-021):
 - `--source-service github` - Enable GitHub source links
 - `--source-service-base-url https://github.com/21-DOT-DEV/swift-secp256k1/blob/$SECP256K1_VERSION` - Base URL with version from Package.resolved (ensures links point to exact documented version)
-- `--checkout-path $PWD` - Path to repository for accurate line numbers
+- `--checkout-path .build/checkouts/swift-secp256k1` - Path to swift-secp256k1 checkout for accurate source link generation (relative paths from this directory appended to base URL)
 
 **Omitted Flags** (by design):
 - `--disable-indexing` - **NOT used** to enable search (discoverability requirement)
@@ -263,9 +259,7 @@ Websites/docs-21-dev/
 ├── index.html                 # Landing page (DocC auto-generated)
 ├── documentation/
 │   ├── p256k/                 # P256K target docs
-│   ├── zkp/                   # ZKP target docs
-│   ├── libsecp256k1/          # libsecp256k1 target docs
-│   └── libsecp256k1_zkp/      # libsecp256k1_zkp target docs
+│   └── zkp/                   # ZKP target docs
 ├── data/
 │   └── documentation/         # Symbol graph data
 ├── css/                       # DocC default styles
@@ -273,7 +267,7 @@ Websites/docs-21-dev/
 └── images/                    # Icons and assets
 ```
 
-**Note**: Exact structure determined by DocC with `--enable-experimental-combined-documentation` flag. May include unified index or separate indices per target.
+**Note**: Exact structure determined by DocC with `--enable-experimental-combined-documentation` flag. Structure shown above is expected output based on 2 targets; experimental flag may produce variations.
 
 ## Testing Strategy
 
@@ -289,7 +283,7 @@ Websites/docs-21-dev/
 1. **Production Deployment**: Verify main branch deployment to docs.21.dev
 2. **Manual Verification** (first deployment):
    - Visit docs.21.dev
-   - Verify all 4 targets are documented (SC-002)
+   - Verify both targets (P256K, ZKP) are documented (SC-002)
    - Test search functionality
    - Click source code links → verify GitHub navigation (SC-003)
    - Run Lighthouse performance test (SC-008)
@@ -305,7 +299,7 @@ Websites/docs-21-dev/
 **From Spec Success Criteria** (mapped to implementation):
 
 - **SC-001**: Load time <3 seconds → Achieved via static hosting + Cloudflare CDN
-- **SC-002**: All 4 targets documented → Verified by `--target` flags in command
+- **SC-002**: Both targets documented → Verified by `--target` flags in command
 - **SC-003**: 100% source links work → Verified by `--source-service` flags
 - **SC-004**: Deploy within 15 minutes → CI job timeout + Cloudflare deployment time
 - **SC-005**: Test builds complete in 10 minutes → macos-15 runner performance
@@ -381,7 +375,7 @@ Websites/docs-21-dev/
 - [ ] Push workflow to feature branch and test CI run
 - [ ] Test preview deployment on feature branch PR
 - [ ] Merge to main and verify production deployment
-- [ ] Verify docs.21.dev loads and displays all 4 targets
+- [ ] Verify docs.21.dev loads and displays both targets (P256K, ZKP)
 - [ ] Run Lighthouse performance test
 - [ ] Test source code links to GitHub
 - [ ] Test search functionality

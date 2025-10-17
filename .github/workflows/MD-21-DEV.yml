@@ -1,0 +1,40 @@
+name: md-21-dev
+
+on:
+  pull_request:
+    types:
+      - closed
+      - opened
+      - synchronize
+      - reopened
+    branches:
+      - 'main'
+    paths:
+      - '.github/workflows/generate-markdown.yml'
+      - '.github/workflows/deploy-cloudflare.yml'
+      - '.github/workflows/MD-21-DEV.yml'
+      - 'Package.swift'
+      - 'Package.resolved'
+  
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+jobs:
+  generate:
+    name: Generate Markdown Documentation
+    uses: ./.github/workflows/generate-markdown.yml
+    with:
+      ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      targets: "P256K ZKP"
+  
+  deploy:
+    name: Deploy Markdown Documentation
+    needs: generate
+    uses: ./.github/workflows/deploy-cloudflare.yml
+    with:
+      artifact-name: ${{ needs.generate.outputs.artifact-name }}
+      project-name: md-21-dev
+      deploy-to-production: ${{ github.event.pull_request.merged || false }}
+    secrets:
+      cloudflare-api-token: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      cloudflare-account-id: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
