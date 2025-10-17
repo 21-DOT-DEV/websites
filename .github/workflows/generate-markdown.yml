@@ -48,21 +48,54 @@ jobs:
           echo "📚 Target arguments: $target_args"
           echo "📚 Generating documentation for targets: ${{ inputs.targets }}"
       
+      - name: Create Archives directory
+        run: mkdir -p Archives
+      
       - name: Generate DocC archive
         run: |
-          swift package \
+          echo "🔨 Generating DocC archive..."
+          
+          if ! swift package \
             --allow-writing-to-directory ./Archives \
             generate-documentation \
             ${{ steps.build-targets.outputs.target-args }} \
             --output-path ./Archives/md-21-dev.doccarchive \
-            --enable-experimental-combined-documentation
+            --enable-experimental-combined-documentation; then
+            echo "❌ DocC generation failed"
+            exit 1
+          fi
+          
+          # Verify archive was created
+          if [ ! -d "./Archives/md-21-dev.doccarchive" ]; then
+            echo "❌ Archive not found after generation"
+            ls -la Archives/ || echo "Archives directory is empty"
+            exit 1
+          fi
+          
+          echo "✅ DocC archive generated successfully"
+          ls -lh Archives/
       
       - name: Export to markdown
         run: |
-          swift run docc4llm export \
+          echo "📝 Exporting DocC archive to markdown..."
+          
+          if ! swift run docc4llm export \
             Archives/md-21-dev.doccarchive \
             --format markdown \
-            --output md-21-dev-concatenated.md
+            --output-path md-21-dev-concatenated.md; then
+            echo "❌ Markdown export failed"
+            exit 1
+          fi
+          
+          # Verify export output was created
+          if [ ! -f "md-21-dev-concatenated.md" ]; then
+            echo "❌ Exported markdown file not found"
+            ls -la
+            exit 1
+          fi
+          
+          echo "✅ Markdown export completed"
+          ls -lh md-21-dev-concatenated.md
       
       - name: Validate delimiter format
         run: |

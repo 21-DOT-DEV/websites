@@ -19,7 +19,7 @@ struct SiteGenerator {
         let fileManager = FileManager.default
         
         // Define static files to copy (root-level files only)
-        let staticFiles = ["llms.txt", "robots.txt", "sitemap.xml"]
+        let staticFiles = ["llms.txt", "robots.txt", "sitemap.xml", "_headers", "_redirects"]
         
         for filename in staticFiles {
             let sourceURL = resourcesURL.appendingPathComponent(filename)
