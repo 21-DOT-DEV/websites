@@ -74,7 +74,7 @@ jobs:
             --transform-for-static-hosting \
             --source-service github \
             --source-service-base-url https://github.com/21-DOT-DEV/swift-secp256k1/blob/${{ env.SECP256K1_VERSION }} \
-            --checkout-path $PWD \
+            --checkout-path .build/checkouts/swift-secp256k1 \
             --output-path ./Websites/${{ inputs.project-name }}
           
           echo "✅ Documentation generation complete"

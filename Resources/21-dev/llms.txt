@@ -1,0 +1,54 @@
+# 21.dev
+
+> Personal website and documentation hub for Swift cryptography packages
+
+This site hosts machine-readable API documentation optimized for LLM consumption. All referenced files are plain .md CommonMark files with stable URLs. Documentation is pure markdown with no JavaScript, following predictable file path patterns for easy programmatic access.
+
+Intended for both LLM retrieval and human developers needing low-noise cryptographic API documentation.
+
+Documentation automatically updates with package releases and includes source code links to exact line numbers in GitHub repositories.
+
+**Last updated**: 2025-01-16
+
+## Overview
+
+- [Root Index](https://md.21.dev/): Entry point explaining the documentation structure, file organization, and navigation patterns for all modules
+
+## API Documentation
+
+- [swift-secp256k1 P256K Module](https://md.21.dev/p256k.md): secp256k1 Elliptic Curve cryptography operations including key generation, ECDSA signing, ECDH key agreement, and public key recovery - the foundational cryptographic primitives
+- [swift-secp256k1 ZKP Module](https://md.21.dev/zkp.md): Zero-Knowledge Proof operations including Pedersen commitments, range proofs, and Schnorr signatures - builds on P256K primitives for confidential transactions and privacy-preserving protocols
+
+The ZKP module extends P256K's elliptic curve operations with zero-knowledge proof capabilities. Both modules share the secp256k1 curve implementation.
+
+## Navigation Guide
+
+- [Example Symbol Documentation](https://md.21.dev/p256k/sharedsecret.md): Sample API symbol showing the consistent documentation format used across all 2,500+ symbol files
+- [All P256K Symbols](https://md.21.dev/p256k/): Complete directory of all P256K types, functions, and utilities (~1,285 files)
+- [All ZKP Symbols](https://md.21.dev/zkp/): Complete directory of all ZKP types, functions, and utilities (~1,285 files)
+
+Each directory contains ~1,285 symbols following the pattern `/{target}/{symbol-name}.md` (e.g., `p256k/int128.md`). All files use consistent structure: Swift signatures, parameter descriptions, return types, detailed explanations, and GitHub source links to exact line numbers.
+
+## Detailed Symbol Taxonomy (Optional)
+
+Each directory contains ~1,285 symbols, organized into the following categories. All symbols are accessible via the directory links in Navigation Guide above.
+
+### Elliptic Curve Operations (P256K)
+Within the [P256K directory](https://md.21.dev/p256k/), symbols are organized by:
+- **Key Types**: PublicKey, PrivateKey, and SharedSecret for elliptic curve cryptography
+- **Signing Functions**: ECDSA signature generation and verification operations
+- **Utility Types**: Supporting types like Int256, UInt256, and hash digest structures
+
+### Zero-Knowledge Proofs (ZKP)
+Within the [ZKP directory](https://md.21.dev/zkp/), symbols are organized by:
+- **Commitment Types**: Pedersen commitment structures for confidential transactions
+- **Proof Functions**: Range proof generation and verification for private value assertions
+- **Signature Types**: Schnorr signature implementations building on secp256k1
+
+---
+
+Future modules will follow the same structure and be added under API Documentation with their own module overview files and symbol directories.
+
+## Contact
+
+Report issues or provide feedback: https://21.dev/
