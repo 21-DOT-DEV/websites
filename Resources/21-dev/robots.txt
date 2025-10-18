@@ -1,0 +1,15 @@
+# Open access for all crawlers (search + AI)
+User-agent: *
+Allow: /
+
+# Tell crawlers where to find your sitemaps
+Sitemap: https://21.dev/sitemap.xml
+# Add more Sitemap: lines if you have a sitemap index or per-section sitemaps
+
+# Optional, emerging signal (non-standard, some vendors read it)
+# Set this only if you *do* want AI training and search:
+Content-Signal: search=yes, ai-train=yes
+
+# Optional: advertise an llms.txt (emerging convention for AI-friendly docs)
+# See https://llmstxt.org/ for the format.
+LLMs: https://21.dev/llms.txt
