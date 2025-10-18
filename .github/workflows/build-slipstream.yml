@@ -81,11 +81,12 @@ jobs:
               mkdir -p "$(dirname "$output_file")"
             fi
             
-            # Compile the CSS file
+            # Compile the CSS file with minification
             if ! swift package --disable-sandbox tailwindcss \
               --input "$input_file" \
               --output "$output_file" \
-              --config "$config_file"; then
+              --config "$config_file" \
+              --minify; then
               echo "Error: Failed to compile $input_file"
               exit 1
             fi

@@ -122,23 +122,59 @@ jobs:
       - name: Split markdown into individual files
         run: |
           mkdir -p Websites/md-21-dev
-          cd Websites/md-21-dev
           
           awk '/=== START FILE: /{
-            gsub(/ ===$/, "", $4)
-            path=$4
-            sub(/^data\/documentation\//, "", path)
-            sub(/\.[^.]+$/, ".md", path)
-            system("mkdir -p \"$(dirname \"" path "\")\"")}
+            gsub(/ ===$/, "", $4);
+            path=$4;
+            sub(/^data\/documentation\//, "", path);
+            sub(/\.[^.]+$/, ".md", path);
+            
+            # Filter logic - skip unwanted files
+            filename = path; sub(/.*\//, "", filename);
+            
+            # Skip protocol implementations and standard operators
+            if (filename ~ /-implementations\.md$|^(!=|==|~)\(|^hash\(into:|^hashvalue\.md$/) next;
+            
+            # Skip comparison and range operators
+            if (filename ~ /^_\(|^_=\(|^\x27\.\.\.|^compare\(_:_:\)\.md$/) next;
+            
+            # Skip standard initializers
+            if (filename ~ /^init\(\)\.md$|^init\(arrayliteral:|^init\(rawvalue:|^init\(from:/) next;
+            
+            # Skip collection/sequence methods
+            if (filename ~ /^(allsatisfy|compactmap|contains\(|count\(where|drop|elementsequal|enumerated|filter\(|first\(where|flatmap|foreach|formatted|lazy|lexicographically|makeiterator|map\(|max\(|min\(|prefix|publisher|reduce|reversed|sequence-|shuffled|sorted|split|starts|suffix|underestimated|withcontiguous)/) next;
+            
+            # Skip numeric utility methods
+            if (filename ~ /^(advanced|distance|stride|negate|signum|add|subtract|multiply|divide|remainder|quotient|leading|trailing|nonzero|bitwidth|byteswapped|magnitude\.md$|words\.md$|zero-|issigned|ismultiple)/) next;
+            
+            # Skip entire utility directories
+            if (path ~ /^(p256k|zkp)\/(foundation|swift\/simd|swift\/string|simdwrapper|simdwordsinteger|int128\/|int256\/|uint128\/|uint256\/)/) next;
+            
+            # Keep crypto-specific files
+            if (path ~ /sign|verify|signature|ecdsa|schnorr|recover|musig|keyagreement|sharedsecret|privatekey|publickey|xonlykey|nonce|sha256/) {
+              outpath="Websites/md-21-dev/"path;
+              system("mkdir -p \"$(dirname \""outpath"\")\"");
+              next;
+            }
+            
+            # Keep shallow files (main types)
+            depth = gsub(/\//, "/", path);
+            if (depth <= 2) {
+              outpath="Websites/md-21-dev/"path;
+              system("mkdir -p \"$(dirname \""outpath"\")\"");
+            }
+            next;
+          }
           /=== END FILE ===/{
-            close(path)
-            path=""
-            next}
-          path{
-            print > path
-          }' ../../md-21-dev-concatenated.md
+            close(outpath);
+            outpath="";
+            next
+          }
+          outpath{
+            print > outpath
+          }' md-21-dev-concatenated.md
           
-          FILE_COUNT=$(find . -type f -name "*.md" | wc -l)
+          FILE_COUNT=$(find Websites/md-21-dev -type f -name "*.md" | wc -l)
           echo "✓ File splitting complete (files: $FILE_COUNT)"
       
       - name: Monitor deployment size
@@ -165,9 +201,18 @@ jobs:
           P256K_COUNT=$(find p256k -type f -name "*.md" 2>/dev/null | wc -l | tr -d ' ')
           ZKP_COUNT=$(find zkp -type f -name "*.md" 2>/dev/null | wc -l | tr -d ' ')
           TOTAL_COUNT=$(find . -type f -name "*.md" | wc -l | tr -d ' ')
+          ZKP_UNIQUE=$(find zkp -type f -name "*.md" | while read f; do [ ! -f "${f/zkp/p256k}" ] && echo "$f"; done | wc -l | tr -d ' ')
+          ZKP_SHARED=$((ZKP_COUNT - ZKP_UNIQUE))
           
           # Get directory size
           TOTAL_SIZE=$(du -sh . | cut -f1)
+          
+          # Generate full P256K tree structure
+          P256K_TREE=$(if command -v tree &> /dev/null; then
+            tree p256k/
+          else
+            find p256k -print | sed -e 's;[^/]*/;│   ;g;s;│   \([^│]\);└── \1;'
+          fi)
           
           # Sample some files from each module (first 5)
           P256K_SAMPLES=$(find p256k -type f -name "*.md" 2>/dev/null | sort | head -5 | sed 's|^\./||')
@@ -223,16 +268,15 @@ jobs:
           
           cat >> index.md << EOF
           
-          ## Directory Structure
+          ## Navigation Tree
+          
+          Complete module structure (ZKP follows identical organization):
           
           \`\`\`
-          md.21.dev/
-          ├── index.md           # This file
-          ├── p256k.md           # P256K module overview ($P256K_COUNT symbols)
-          ├── p256k/             # P256K symbol documentation
-          ├── zkp.md             # ZKP module overview ($ZKP_COUNT symbols)
-          └── zkp/               # ZKP symbol documentation
+          $P256K_TREE
           \`\`\`
+          
+          **Note**: The ZKP module mirrors this structure with $ZKP_UNIQUE additional unique methods for zero-knowledge proof operations.
           
           ## File Organization
           
@@ -256,7 +300,9 @@ jobs:
           Then navigate to specific symbols via directory listings or search.
           EOF
           
-          echo "✓ Created index.md with $TOTAL_COUNT total symbols ($P256K_COUNT P256K, $ZKP_COUNT ZKP)"
+          echo "✓ Created index.md with $TOTAL_COUNT total symbols"
+          echo "  - P256K: $P256K_COUNT symbols"
+          echo "  - ZKP: $ZKP_COUNT symbols ($ZKP_SHARED shared, $ZKP_UNIQUE unique)"
       
       - name: Create markdown archive
         run: |

@@ -19,7 +19,8 @@ struct SiteGenerator {
         let fileManager = FileManager.default
         
         // Define static files to copy (root-level files only)
-        let staticFiles = ["llms.txt", "robots.txt", "sitemap.xml", "_headers", "_redirects"]
+        // Note: sitemap.xml is generated dynamically, not copied
+        let staticFiles = ["llms.txt", "robots.txt", "_headers", "_redirects"]
         
         for filename in staticFiles {
             let sourceURL = resourcesURL.appendingPathComponent(filename)
@@ -36,6 +37,61 @@ struct SiteGenerator {
                 print("✅ Copied \(filename)")
             }
         }
+    }
+    
+    /// Generate sitemap.xml from the sitemap dictionary
+    private static func generateSitemapXML(from sitemap: Sitemap, to outputURL: URL, baseURL: String = "https://21.dev/") throws {
+        let dateFormatter = ISO8601DateFormatter()
+        dateFormatter.formatOptions = [.withFullDate]
+        let lastModDate = dateFormatter.string(from: Date())
+        
+        // Function to escape XML special characters in URLs
+        func escapeXMLSpecialCharacters(_ string: String) -> String {
+            return string
+                .replacingOccurrences(of: "&", with: "&amp;")
+                .replacingOccurrences(of: "<", with: "&lt;")
+                .replacingOccurrences(of: ">", with: "&gt;")
+                .replacingOccurrences(of: "'", with: "&apos;")
+                .replacingOccurrences(of: "\"", with: "&quot;")
+        }
+        
+        var xmlContent = """
+        <?xml version="1.0" encoding="UTF-8"?>
+        <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+        
+        """
+        
+        for path in sitemap.keys.sorted() {
+            // Convert relative path to absolute URL
+            var absoluteURL = baseURL.trimmingCharacters(in: CharacterSet(charactersIn: "/"))
+            let cleanPath = path.replacingOccurrences(of: "index.html", with: "")
+            
+            if !cleanPath.isEmpty {
+                absoluteURL += "/" + cleanPath.trimmingCharacters(in: CharacterSet(charactersIn: "/"))
+            }
+            
+            // Ensure trailing slash for directory-style URLs
+            if !absoluteURL.hasSuffix("/") {
+                absoluteURL += "/"
+            }
+            
+            // Escape special characters for XML
+            let escapedURL = escapeXMLSpecialCharacters(absoluteURL)
+            
+            xmlContent += """
+            <url>
+              <loc>\(escapedURL)</loc>
+              <lastmod>\(lastModDate)</lastmod>
+            </url>
+            
+            """
+        }
+        
+        xmlContent += "</urlset>"
+        
+        let sitemapURL = outputURL.appending(path: "sitemap.xml")
+        try xmlContent.write(to: sitemapURL, atomically: true, encoding: .utf8)
+        print("✅ Generated sitemap.xml")
     }
     
     static func main() throws {
@@ -82,6 +138,9 @@ struct SiteGenerator {
         }
         
         try renderSitemap(sitemap, to: outputURL)
+        
+        // Generate sitemap.xml
+        try generateSitemapXML(from: sitemap, to: outputURL)
         
         // Copy static resources after site generation
         try copyStaticResources(from: resourcesURL, to: outputURL)
