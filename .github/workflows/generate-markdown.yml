@@ -304,6 +304,21 @@ jobs:
           echo "  - P256K: $P256K_COUNT symbols"
           echo "  - ZKP: $ZKP_COUNT symbols ($ZKP_SHARED shared, $ZKP_UNIQUE unique)"
       
+      - name: Create robots.txt for LLM-only access
+        run: |
+          cd Websites/md-21-dev
+          
+          cat > robots.txt << 'EOF'
+          # LLM/API consumption only - no search engine indexing
+          User-agent: *
+          Disallow: /
+          
+          # AI training allowed
+          Content-Signal: search=no, ai-train=yes
+          EOF
+          
+          echo "✓ Created robots.txt for LLM-only access"
+      
       - name: Create markdown archive
         run: |
           echo "📦 Creating archive for md-21-dev..."
