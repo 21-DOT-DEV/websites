@@ -69,7 +69,7 @@ public struct Accordion: View, HasComponentCSS {
                 .modifier(ClassModifier(add: "accordion-toggle"))
             
             // Clickable label (question)
-            Label(htmlFor: toggleId) {
+            Label(for: toggleId) {
                 Div {
                     Span {
                         Text(item.question)

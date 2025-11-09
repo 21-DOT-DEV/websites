@@ -16,7 +16,7 @@ public struct BittrIcon: View {
         SVG(viewBox: "-69 -22.5 414 414") {
             SVGGroup {
                 // Yellow background
-                SVGRect(x: "-69", y: "-22.5", width: "414", height: "414")
+                SVGRect(origin: Point(x: -69, y: -22.5), size: Size(width: 414, height: 414))
                     .modifier(AttributeModifier("style", value: "fill:#fdbe10;stroke-width:0"))
                 
                 SVGGroup {

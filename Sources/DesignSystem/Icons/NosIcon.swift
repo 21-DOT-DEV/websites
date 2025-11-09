@@ -16,40 +16,34 @@ public struct NosIcon: View {
         SVG(viewBox: "0 0 512 512") {
             SVGDefs {
                 SVGLinearGradient(
-                    id: "paint0_linear_nos",
-                    x1: "108.355",
-                    y1: "385.145",
-                    x2: "404",
-                    y2: "145.534",
-                    gradientUnits: "userSpaceOnUse"
+                    start: Point(x: 108.355, y: 385.145),
+                    end: Point(x: 404, y: 145.534),
+                    gradientUnits: .userSpaceOnUse
                 ) {
-                    SVGStop(offset: "0", stopColor: "#B50036", stopOpacity: "1")
-                    SVGStop(offset: "1", stopColor: "#AF5F00", stopOpacity: "1")
+                    SVGStop(offset: 0, color: SVGColor.hex("#B50036"), opacity: 1)
+                    SVGStop(offset: 1, color: SVGColor.hex("#AF5F00"), opacity: 1)
                 }
+                .modifier(AttributeModifier("id", value: "paint0_linear_nos"))
                 
                 SVGLinearGradient(
-                    id: "paint1_linear_nos",
-                    x1: "108.355",
-                    y1: "367.282",
-                    x2: "404",
-                    y2: "127.671",
-                    gradientUnits: "userSpaceOnUse"
+                    start: Point(x: 108.355, y: 367.282),
+                    end: Point(x: 404, y: 127.671),
+                    gradientUnits: .userSpaceOnUse
                 ) {
-                    SVGStop(offset: "0", stopColor: "#FF2E6C", stopOpacity: "1")
-                    SVGStop(offset: "1", stopColor: "#FF9416", stopOpacity: "1")
+                    SVGStop(offset: 0, color: SVGColor.hex("#FF2E6C"), opacity: 1)
+                    SVGStop(offset: 1, color: SVGColor.hex("#FF9416"), opacity: 1)
                 }
-                
+                .modifier(AttributeModifier("id", value: "paint1_linear_nos"))
+
                 SVGLinearGradient(
-                    id: "paint2_linear_nos",
-                    x1: "108.355",
-                    y1: "367.282",
-                    x2: "404",
-                    y2: "127.671",
-                    gradientUnits: "userSpaceOnUse"
+                    start: Point(x: 108.355, y: 367.282),
+                    end: Point(x: 404, y: 127.671),
+                    gradientUnits: .userSpaceOnUse
                 ) {
-                    SVGStop(offset: "0", stopColor: "#FF2E6C", stopOpacity: "1")
-                    SVGStop(offset: "1", stopColor: "#FF9416", stopOpacity: "1")
+                    SVGStop(offset: 0, color: SVGColor.hex("#FF2E6C"), opacity: 1)
+                    SVGStop(offset: 1, color: SVGColor.hex("#FF9416"), opacity: 1)
                 }
+                .modifier(AttributeModifier("id", value: "paint2_linear_nos"))
             }
             
             // Background rectangle

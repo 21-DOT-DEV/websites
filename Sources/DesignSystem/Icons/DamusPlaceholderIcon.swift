@@ -16,20 +16,20 @@ public struct DamusPlaceholderIcon: View {
         SVG(viewBox: "0 0 256 256") {
             SVGGroup {
                 // Text with slight shadow effect
-                SVGText("Damus", x: "129", y: "141")
+                SVGText("Damus", at: Point(x: 129, y: 141))
                     .fontSize("56")
                     .fontFamily("system-ui, -apple-system, sans-serif")
                     .fontWeight("600")
                     .textAnchor("middle")
-                    .fill("#333333")
+                    .fill(SVGColor.hex("#333333"))
                 
-                SVGText("Damus", x: "128", y: "140")
+                SVGText("Damus", at: Point(x: 128, y: 140))
                     .fontSize("56")
                     .fontFamily("system-ui, -apple-system, sans-serif")
                     .fontWeight("600")
                     .textAnchor("middle")
-                    .fill("#f8f8f8")
-                    .stroke("#666666")
+                    .fill(SVGColor.hex("#f8f8f8"))
+                    .stroke(SVGColor.hex("#666666"))
                     .strokeWidth("0.5")
             }
         }

@@ -16,51 +16,45 @@ public struct NosturIcon: View {
         SVG(viewBox: "0 0 687.7 687.7") {
             SVGDefs {
                 SVGLinearGradient(
-                    id: "XMLID_3_nostur",
-                    x1: "9.8476",
-                    y1: "675.8415",
-                    x2: "673.8476",
-                    y2: "15.8415",
-                    gradientUnits: "userSpaceOnUse"
+                    start: Point(x: 9.8476, y: 675.8415),
+                    end: Point(x: 673.8476, y: 15.8415),
+                    gradientUnits: .userSpaceOnUse
                 ) {
-                    SVGStop(offset: "0", stopColor: "#0F1A1A", stopOpacity: "1")
-                    SVGStop(offset: "0.1187", stopColor: "#1E2A2B", stopOpacity: "1")
-                    SVGStop(offset: "0.3088", stopColor: "#2D3C3F", stopOpacity: "1")
-                    SVGStop(offset: "0.496", stopColor: "#394B4F", stopOpacity: "1")
-                    SVGStop(offset: "0.6766", stopColor: "#41555C", stopOpacity: "1")
-                    SVGStop(offset: "0.8479", stopColor: "#465C63", stopOpacity: "1")
-                    SVGStop(offset: "1", stopColor: "#475E66", stopOpacity: "1")
+                    SVGStop(offset: 0, color: SVGColor.hex("#0F1A1A"), opacity: 1)
+                    SVGStop(offset: 0.1187, color: SVGColor.hex("#1E2A2B"), opacity: 1)
+                    SVGStop(offset: 0.3088, color: SVGColor.hex("#2D3C3F"), opacity: 1)
+                    SVGStop(offset: 0.496, color: SVGColor.hex("#394B4F"), opacity: 1)
+                    SVGStop(offset: 0.6766, color: SVGColor.hex("#41555C"), opacity: 1)
+                    SVGStop(offset: 0.8479, color: SVGColor.hex("#465C63"), opacity: 1)
+                    SVGStop(offset: 1, color: SVGColor.hex("#475E66"), opacity: 1)
                 }
+                .modifier(AttributeModifier("id", value: "XMLID_3_nostur"))
                 
                 SVGLinearGradient(
-                    id: "XMLID_4_nostur",
-                    x1: "534.8233",
-                    y1: "333.4573",
-                    x2: "804.8233",
-                    y2: "655.4573",
-                    gradientUnits: "userSpaceOnUse"
+                    start: Point(x: 534.8233, y: 333.4573),
+                    end: Point(x: 804.8233, y: 655.4573),
+                    gradientUnits: .userSpaceOnUse
                 ) {
-                    SVGStop(offset: "0", stopColor: "#2C3738", stopOpacity: "1")
-                    SVGStop(offset: "1", stopColor: "#0E1212", stopOpacity: "1")
+                    SVGStop(offset: 0, color: SVGColor.hex("#2C3738"), opacity: 1)
+                    SVGStop(offset: 1, color: SVGColor.hex("#0E1212"), opacity: 1)
                 }
+                .modifier(AttributeModifier("id", value: "XMLID_4_nostur"))
                 
                 SVGLinearGradient(
-                    id: "XMLID_5_nostur",
-                    x1: "316.9406",
-                    y1: "179.0295",
-                    x2: "656.9406",
-                    y2: "701.0295",
-                    gradientUnits: "userSpaceOnUse"
+                    start: Point(x: 316.9406, y: 179.0295),
+                    end: Point(x: 656.9406, y: 701.0295),
+                    gradientUnits: .userSpaceOnUse
                 ) {
-                    SVGStop(offset: "0", stopColor: "#2C3738", stopOpacity: "1")
-                    SVGStop(offset: "5.547917e-002", stopColor: "#2A3536", stopOpacity: "1")
-                    SVGStop(offset: "0.867", stopColor: "#0A0E0E", stopOpacity: "1")
+                    SVGStop(offset: 0, color: SVGColor.hex("#2C3738"), opacity: 1)
+                    SVGStop(offset: 0.05547917, color: SVGColor.hex("#2A3536"), opacity: 1)
+                    SVGStop(offset: 0.867, color: SVGColor.hex("#0A0E0E"), opacity: 1)
                 }
+                .modifier(AttributeModifier("id", value: "XMLID_5_nostur"))
             }
             
             SVGGroup {
-                // Background rectangle
-                SVGRect(width: "687.7", height: "687.7")
+                // Background rectangle - fixing the SVGRect call
+                SVGRect(origin: .zero, size: Size(width: 687.7, height: 687.7))
                     .modifier(AttributeModifier("style", value: "fill:url(#XMLID_3_nostur)"))
                 
                 // First path element

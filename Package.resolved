@@ -1,5 +1,5 @@
 {
-  "originHash" : "3d8a825a67f644f361a4a97bdf724ed6aa762ececfd12e40829a768c9a1b0e3a",
+  "originHash" : "36514073ea28fecf42f16661ef62afeba42bda990a620170742a3ca303aa4584",
   "pins" : [
     {
       "identity" : "docc4llm",
@@ -15,8 +15,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/nicklockwood/LRUCache.git",
       "state" : {
-        "revision" : "e0e9e039b33db8f2ef39b8e25607e38f46b13584",
-        "version" : "1.1.2"
+        "revision" : "0d91406ecd4d6c1c56275866f00508d9aeacc92a",
+        "version" : "1.2.0"
       }
     },
     {
@@ -24,8 +24,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/21-DOT-DEV/slipstream",
       "state" : {
-        "branch" : "NEW-INPUT-TYPES",
-        "revision" : "1747f5e9cd9c636d13dc7dc848e560cf019ce32b"
+        "branch" : "HasComponentCSS",
+        "revision" : "e31d7e59b580f05c8713a6f6c4563060dbf44711"
       }
     },
     {
@@ -52,7 +52,7 @@
       "location" : "https://github.com/swiftlang/swift-cmark.git",
       "state" : {
         "branch" : "gfm",
-        "revision" : "cbd8eae0689857c873063f28b9a80419ec718e20"
+        "revision" : "924936d0427cb25a61169739a7660230bffa6ea6"
       }
     },
     {
@@ -79,7 +79,7 @@
       "location" : "https://github.com/apple/swift-markdown.git",
       "state" : {
         "branch" : "main",
-        "revision" : "c281baa59e2b0d3ddc72848741217af811f66d39"
+        "revision" : "f7a559ec0d1f4a6a31b82187b5cdf97c632f68f6"
       }
     },
     {

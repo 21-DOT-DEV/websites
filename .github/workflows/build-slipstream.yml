@@ -47,52 +47,15 @@ jobs:
       - name: Compile Tailwind CSS
         run: |
           website="${{ inputs.website }}"
-          config_file="Resources/${website}/tailwind.config.cjs"
+          echo "Compiling site-wide CSS for ${website}..."
           
-          # Find all CSS input files using the flexible pattern
-          css_files=$(find "Resources/${website}" -name "style.input.css" -path "*/static/style.input.css" 2>/dev/null || true)
+          swift package --disable-sandbox tailwindcss \
+            --input "Resources/${website}/static/style.input.css" \
+            --output "Websites/${website}/static/style.css" \
+            --config "Resources/${website}/tailwind.config.cjs" \
+            --minify
           
-          if [ -z "$css_files" ]; then
-            echo "Error: No CSS input files found in Resources/${website}"
-            echo "Expected pattern: Resources/${website}/*/static/style.input.css"
-            exit 1
-          fi
-          
-          echo "Found CSS input files:"
-          echo "$css_files"
-          
-          # Compile each CSS file
-          while IFS= read -r input_file; do
-            # Extract the page path from the input file
-            # e.g., Resources/21-dev/static/style.input.css -> static
-            # e.g., Resources/21-dev/p256k/static/style.input.css -> p256k/static
-            relative_path=$(echo "$input_file" | sed "s|Resources/${website}/||" | sed 's|/style\.input\.css$||')
-            
-            if [ "$relative_path" = "static" ]; then
-              # Root CSS file
-              output_file="Websites/${website}/static/style.css"
-              echo "Compiling root CSS: $input_file -> $output_file"
-            else
-              # Page-specific CSS file
-              output_file="Websites/${website}/${relative_path}/style.css"
-              echo "Compiling page CSS: $input_file -> $output_file"
-              
-              # Ensure output directory exists
-              mkdir -p "$(dirname "$output_file")"
-            fi
-            
-            # Compile the CSS file with minification
-            if ! swift package --disable-sandbox tailwindcss \
-              --input "$input_file" \
-              --output "$output_file" \
-              --config "$config_file" \
-              --minify; then
-              echo "Error: Failed to compile $input_file"
-              exit 1
-            fi
-            
-            echo "Successfully compiled: $output_file"
-          done <<< "$css_files"
+          echo "✅ Successfully compiled CSS"
       
       - name: Verify build output
         run: |
@@ -106,19 +69,9 @@ jobs:
             exit 1
           fi
           
-          # Verify CSS files exist - check for compiled CSS files
-          css_found=false
-          
-          # Look for any compiled CSS files that should exist
-          if find "Websites/${website}" -name "style.css" -path "*/static/style.css" | grep -q .; then
-            css_found=true
-            echo "Found compiled CSS files:"
-            find "Websites/${website}" -name "style.css" -path "*/static/style.css"
-          fi
-          
-          if [ "$css_found" = false ]; then
-            echo "Error: No compiled CSS files found in build output"
-            echo "Expected at least one file matching: Websites/${website}/*/static/style.css"
+          # Verify site-wide CSS file exists
+          if [ ! -f "Websites/${website}/static/style.css" ]; then
+            echo "Error: Compiled CSS not found at Websites/${website}/static/style.css"
             exit 1
           fi
           

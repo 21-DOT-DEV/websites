@@ -113,7 +113,7 @@ public struct Tabs: View, HasComponentCSS {
             ForEach(tabs.indices, id: \.self) { index in
                 let tabId = "\(id)-tab-\(index)"
                 let isChecked = index == 0
-                Radio(name: "\(id)-tabs", id: tabId, checked: isChecked)
+                RadioButton(name: "\(id)-tabs", id: tabId, checked: isChecked)
                     .modifier(ClassModifier(add: "sr-only"))
             }
             
@@ -121,7 +121,7 @@ public struct Tabs: View, HasComponentCSS {
             Div {
                 ForEach(tabs.indices, id: \.self) { index in
                     let tabId = "\(id)-tab-\(index)"
-                    Label(tabs[index].title, htmlFor: tabId)
+                    Label(tabs[index].title, for: tabId)
                         .modifier(ClassModifier(add: "cursor-pointer px-4 py-2 text-sm font-medium text-gray-600 border-b-2 border-transparent hover:text-orange-500 hover:border-orange-300 transition-colors"))
                 }
             }
