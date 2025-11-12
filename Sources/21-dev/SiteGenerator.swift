@@ -94,7 +94,7 @@ struct SiteGenerator {
         print("✅ Generated sitemap.xml")
     }
     
-    static func main() throws {
+    static func main() async throws {
         // Assumes this file is located in a Sources/ sub-directory of a Swift package.
         let projectURL = URL(fileURLWithPath: #filePath)
             .deletingLastPathComponent()
@@ -119,13 +119,11 @@ struct SiteGenerator {
         }
         
         // Render site with automatic CSS collection and generation
-        try renderSitemap(
+        try await renderSitemap(
             sitemap,
             to: outputURL,
-            cssConfiguration: (
-                baseCSS: projectURL.appending(path: "../Resources/21-dev/static/style.base.css"),
-                output: projectURL.appending(path: "../Resources/21-dev/static/style.input.css")
-            )
+            baseCSS: projectURL.appending(path: "../Resources/21-dev/static/style.base.css"),
+            stylesheet: "static/style.input.css"
         )
         
         // Generate sitemap.xml

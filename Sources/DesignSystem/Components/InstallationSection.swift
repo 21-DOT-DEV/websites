@@ -41,7 +41,7 @@ import Slipstream
 ///     ])
 /// }
 /// ```
-public struct InstallationSection: View, HasComponentCSS {
+public struct InstallationSection: View {
     public let options: [InstallationOption]
     public let tabs: Tabs
     
@@ -84,15 +84,6 @@ public struct InstallationSection: View, HasComponentCSS {
                 }
             }
         })
-    }
-    
-    // Instance-based CSS generation using actual tab configuration
-    public var componentCSS: String {
-        return tabs.componentCSS
-    }
-    
-    public var componentName: String {
-        return "InstallationSection"
     }
     
     /// Creates a new InstallationSection.
