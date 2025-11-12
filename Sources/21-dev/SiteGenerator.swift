@@ -104,13 +104,11 @@ struct SiteGenerator {
         }
         
         // Render site with automatic CSS collection and generation
-        try renderSitemap(
+        try await renderSitemap(
             sitemap,
             to: outputURL,
-            cssConfiguration: (
-                baseCSS: projectURL.appending(path: "../Resources/21-dev/static/style.base.css"),
-                output: projectURL.appending(path: "../Resources/21-dev/static/style.input.css")
-            )
+            baseCSS: projectURL.appending(path: "../Resources/21-dev/static/style.base.css"),
+            stylesheet: "static/style.input.css"
         )
         
         // Generate sitemap.xml for 21.dev with git-based lastmod dates

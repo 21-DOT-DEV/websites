@@ -10,7 +10,7 @@ import Slipstream
 
 /// An accordion component for displaying expandable question-and-answer pairs.
 /// Uses CSS-only interactions with smooth transitions and supports multiple open items.
-public struct Accordion: View, HasComponentCSS {
+public struct Accordion: View, StyleModifier {
     public let items: [AccordionItem]
     public let accordionId: String
     
@@ -27,7 +27,7 @@ public struct Accordion: View, HasComponentCSS {
         return "Accordion"
     }
     
-    public var componentCSS: String {
+    public var style: String {
         return """
         /* Accordion CSS-only interactions */
         .accordion-toggle {
