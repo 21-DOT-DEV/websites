@@ -333,7 +333,18 @@
    - Dependencies: Sitemap Infrastructure (version-specific sitemaps needed)
    - Notes: Implement when multiple major versions exist; Rust Docs, Swift.org, React docs all support version switching
 
-4. **Internationalization Foundation**  
+4. **Sitemap Index Generation**  
+   - Purpose & user value: Aggregate all subdomain sitemaps into a unified sitemap index at 21.dev/sitemap.xml for centralized search engine discovery, following sitemap protocol 0.9 best practices for multi-subdomain sites.
+   - Success metrics:  
+     - Daily cron job fetches all subdomain sitemaps (21.dev, docs.21.dev, md.21.dev)
+     - SHA-256 content hashing detects changes and regenerates index only when needed
+     - Sitemap index properly references all three subdomain sitemaps with lastmod values
+     - Graceful degradation if any subdomain sitemap fetch fails
+     - Index submitted to Google/Bing APIs when regenerated (24-hour lag acceptable)
+   - Dependencies: Sitemap Infrastructure (individual subdomain sitemaps must exist first)
+   - Notes: Deferred from Phase 1 in favor of standard per-subdomain approach (simpler, immediate submission). Sitemap index provides centralized aggregation for large multi-subdomain sites but adds complexity without significant SEO benefit for current scale.
+
+5. **Internationalization Foundation**  
    - Purpose & user value: Lay groundwork for future multi-language support by implementing proper `lang` attributes, hreflang scaffolding, and i18n-ready URL structures without committing to translations yet.
    - Success metrics:  
      - HTML lang attribute set to "en" on all pages
@@ -354,6 +365,31 @@
      - lastmod dates accurate and automatically updated
    - Dependencies: Sitemap Infrastructure Overhaul (foundation must exist first)
    - Notes: Enhancement to basic sitemap; not critical but improves crawl efficiency
+
+4. **Swift-Based Sitemap Generator Utility**  
+   - Purpose & user value: Consolidate sitemap generation logic into a unified Swift utility replacing bash scripts, providing type-safe implementation, better error handling, and consistent behavior across all three subdomains.
+   - Success metrics:  
+     - Single Swift executable generates sitemaps for all subdomain types (21.dev, docs, md)
+     - Type-safe sitemap models with compile-time validation
+     - Unified lastmod tracking logic (git, package version, fallback)
+     - 100% feature parity with bash script implementation
+     - Reduced maintenance burden (single codebase vs. multiple scripts)
+     - Sitemap generation runs in < 2 seconds for all subdomains combined
+   - Dependencies: Sitemap Infrastructure Overhaul (initial bash implementation must exist first)
+   - Notes: Refactoring/optimization of Phase 1 implementation; improves maintainability but not user-facing; aligns with project's Swift-first philosophy
+
+5. **GitHub Actions Workflow Validation with actionlint**  
+   - Purpose & user value: Implement automated validation of GitHub Actions workflows including embedded bash scripts to catch syntax errors, undefined variables, and shellcheck violations before CI execution, reducing deployment failures.
+   - Success metrics:  
+     - SPM plugin wrapper for actionlint created and integrated
+     - Local validation command: `swift package actionlint` runs on all workflow files
+     - CI workflow validates all YAML + embedded bash on every PR
+     - 100% of workflow syntax errors caught before merge
+     - shellcheck violations in inline bash detected and reported
+     - Zero deployment failures due to workflow syntax issues
+     - actionlint runs in < 10 seconds for all workflow files
+   - Dependencies: none (standalone infrastructure improvement)
+   - Notes: Industry standard tool (GitHub, Cloudflare, HashiCorp use it); creates SPM plugin first for consistency with project's swift-plugin pattern (see swift-plugin-tailwindcss); aligns with constitution's IaC testing exemption by providing static analysis alternative
 
 ---
 

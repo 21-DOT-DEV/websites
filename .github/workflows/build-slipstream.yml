@@ -106,6 +106,15 @@ jobs:
             exit 1
           fi
           
+          # Verify sitemap.xml exists (for 21-dev)
+          if [ "$website" = "21-dev" ]; then
+            if [ ! -f "Websites/${website}/sitemap.xml" ]; then
+              echo "Error: sitemap.xml not found for 21-dev"
+              exit 1
+            fi
+            echo "✅ Sitemap sitemap.xml found"
+          fi
+          
           # Verify CSS files exist - check for compiled CSS files
           css_found=false
           

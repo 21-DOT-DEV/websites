@@ -23,12 +23,8 @@
 # ai-train: training or fine-tuning AI models.
 
 User-Agent: *
-Content-Signal: ai-train=yes, search=yes, ai-input=yes
+Content-Signal: ai-train=no, search=yes, ai-input=yes
 Allow: /
 
-# Tell crawlers where to find your sitemaps
-Sitemap: https://21.dev/sitemap.xml
-
-# Optional: advertise an llms.txt (emerging convention for AI-friendly docs)
-# See https://llmstxt.org/ for the format.
-LLMs: https://21.dev/llms.txt
+# Tell crawlers where to find your sitemap
+Sitemap: https://docs.21.dev/sitemap.xml

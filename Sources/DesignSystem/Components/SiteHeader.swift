@@ -170,7 +170,7 @@ private struct SiteHeaderMobileToggle: View {
     var body: some View {
         Checkbox(name: "menu-toggle", id: "menu-toggle")
             .hidden()                               // hidden
-        Label("☰", htmlFor: "menu-toggle")
+        Label("☰", for: "menu-toggle")
             // TODO: Missing Slipstream APIs - using ClassModifier for:
             // - cursor-pointer (cursor style) 
             // - exact max-width: 767px responsive breakpoint (matches working example)
