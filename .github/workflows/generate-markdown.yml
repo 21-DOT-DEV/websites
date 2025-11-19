@@ -34,6 +34,50 @@ jobs:
       - name: Resolve dependencies
         run: swift package resolve
       
+      - name: Extract swift-secp256k1 version
+        id: extract-version
+        run: |
+          SECP256K1_VERSION=$(jq -r '.pins[] | select(.identity == "swift-secp256k1") | .state.version' Package.resolved)
+          echo "version=$SECP256K1_VERSION" >> $GITHUB_OUTPUT
+          echo "SECP256K1_VERSION=$SECP256K1_VERSION" >> $GITHUB_ENV
+          echo "📦 swift-secp256k1 version: $SECP256K1_VERSION"
+      
+      - name: Verify state file version matches Package.resolved
+        run: |
+          STATE_FILE="Resources/sitemap-state.json"
+          
+          if [ ! -f "$STATE_FILE" ]; then
+            echo "❌ Error: State file not found at $STATE_FILE"
+            echo "Please run 'lefthook install' to set up automatic state file management"
+            exit 1
+          fi
+          
+          STATE_VERSION=$(jq -r '.package_version' "$STATE_FILE")
+          RESOLVED_VERSION="${{ env.SECP256K1_VERSION }}"
+          
+          echo "📄 State file version: $STATE_VERSION"
+          echo "📦 Package.resolved version: $RESOLVED_VERSION"
+          
+          if [ "$STATE_VERSION" != "$RESOLVED_VERSION" ]; then
+            echo ""
+            echo "❌ ERROR: Version mismatch detected!"
+            echo ""
+            echo "State file version:        $STATE_VERSION"
+            echo "Package.resolved version:  $RESOLVED_VERSION"
+            echo ""
+            echo "The sitemap state file is out of sync with Package.resolved."
+            echo "This means the package version changed but the state file was not updated."
+            echo ""
+            echo "To fix this:"
+            echo "1. Ensure lefthook is installed: 'lefthook install'"
+            echo "2. The lefthook post-checkout hook will automatically update the state file"
+            echo "3. Commit the updated Resources/sitemap-state.json file"
+            echo ""
+            exit 1
+          fi
+          
+          echo "✅ Version match confirmed: $STATE_VERSION"
+      
       - name: Build target arguments for documentation generation
         id: build-targets
         run: |
@@ -193,131 +237,111 @@ jobs:
             echo "::warning::Approaching size limit: ${SIZE_MB}MB (limit: 25MB)"
           fi
       
+      - name: Generate sitemap
+        run: |
+          output_dir="Websites/md-21-dev"
+          sitemap_file="${output_dir}/sitemap.xml"
+          
+          echo "🗺️  Generating sitemap for md-21-dev..."
+          
+          # Read lastmod date from state file (will be updated by lefthook-plugin when package version changes)
+          if [ -f "Resources/sitemap-state.json" ]; then
+            lastmod=$(jq -r '.generated_date' Resources/sitemap-state.json)
+            echo "📅 Using lastmod from state file: $lastmod"
+          else
+            # Fallback to current date if state file doesn't exist
+            lastmod=$(date -u +"%Y-%m-%d")
+            echo "⚠️  State file not found, using current date: $lastmod"
+          fi
+          
+          # Start sitemap XML
+          cat > "$sitemap_file" << 'EOF'
+          <?xml version="1.0" encoding="UTF-8"?>
+          <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+          
+          EOF
+          
+          # Find all markdown files and generate URL entries
+          find "${output_dir}" -name "*.md" -type f | sort | while read -r file; do
+            # Convert file path to URL path
+            url_path=$(echo "$file" | sed "s|^${output_dir}/||")
+            
+            # Build absolute URL (md.21.dev subdomain)
+            url="https://md.21.dev/${url_path}"
+            
+            # Escape XML special characters in URL (using basic sed substitution)
+            escaped_url=$(echo "$url" | sed 's/&/\&amp;/g; s/</\&lt;/g; s/>/\&gt;/g; s/'"'"'/\&apos;/g; s/"/\&quot;/g')
+            
+            # Add URL entry to sitemap
+            cat >> "$sitemap_file" << EOF
+          <url>
+            <loc>${escaped_url}</loc>
+            <lastmod>${lastmod}</lastmod>
+          </url>
+          
+          EOF
+          done
+          
+          # Close sitemap XML
+          echo "</urlset>" >> "$sitemap_file"
+          
+          # Count URLs and display summary
+          url_count=$(grep -c "<loc>" "$sitemap_file" || echo "0")
+          echo "✅ Sitemap generated with ${url_count} URLs"
+          echo "📄 Sitemap location: ${sitemap_file}"
+          
+          # Validate sitemap is not empty
+          if [ "$url_count" -eq 0 ]; then
+            echo "❌ Error: Sitemap contains no URLs"
+            exit 1
+          fi
+      
       - name: Create root index
         run: |
           cd Websites/md-21-dev
           
-          # Count files by directory
-          P256K_COUNT=$(find p256k -type f -name "*.md" 2>/dev/null | wc -l | tr -d ' ')
-          ZKP_COUNT=$(find zkp -type f -name "*.md" 2>/dev/null | wc -l | tr -d ' ')
+          # Count total files
           TOTAL_COUNT=$(find . -type f -name "*.md" | wc -l | tr -d ' ')
-          ZKP_UNIQUE=$(find zkp -type f -name "*.md" | while read f; do [ ! -f "${f/zkp/p256k}" ] && echo "$f"; done | wc -l | tr -d ' ')
-          ZKP_SHARED=$((ZKP_COUNT - ZKP_UNIQUE))
           
-          # Get directory size
-          TOTAL_SIZE=$(du -sh . | cut -f1)
-          
-          # Generate full P256K tree structure
-          P256K_TREE=$(if command -v tree &> /dev/null; then
-            tree p256k/
-          else
-            find p256k -print | sed -e 's;[^/]*/;│   ;g;s;│   \([^│]\);└── \1;'
-          fi)
-          
-          # Sample some files from each module (first 5)
-          P256K_SAMPLES=$(find p256k -type f -name "*.md" 2>/dev/null | sort | head -5 | sed 's|^\./||')
-          ZKP_SAMPLES=$(find zkp -type f -name "*.md" 2>/dev/null | sort | head -5 | sed 's|^\./||')
-          
-          cat > index.md << EOF
+          cat > index.md << 'EOF'
           # Swift secp256k1 Documentation
           
           LLM-optimized markdown documentation for the swift-secp256k1 library.
           
-          **Total Files**: $TOTAL_COUNT markdown files  
-          **Total Size**: $TOTAL_SIZE
+          **Total Files**: TOTAL_COUNT markdown files
           
           ## Modules
           
-          ### [P256K Module](./p256k.md)
+          - [P256K Module](./p256k.md) - secp256k1 Elliptic Curve cryptography
+          - [ZKP Module](./zkp.md) - Zero-Knowledge Proof operations
           
-          secp256k1 Elliptic Curve cryptography operations including key generation, ECDSA signing, ECDH key agreement, and public key recovery.
+          ## Organization
           
-          - **Files**: $P256K_COUNT symbols
-          - **Directory**: \`p256k/\`
+          Each API symbol has its own markdown file at `/{module}/{symbol-name}.md`
           
-          Sample symbols:
+          Navigate via module overviews or browse directories directly.
           EOF
           
-          # Add P256K samples as links
-          echo "$P256K_SAMPLES" | while read -r file; do
-            if [ -n "$file" ]; then
-              name=$(basename "$file" .md)
-              echo "- [\`$name\`](./$file)" >> index.md
-            fi
-          done
+          # Replace placeholder with actual count
+          sed -i '' "s/TOTAL_COUNT/$TOTAL_COUNT/g" index.md
           
-          cat >> index.md << EOF
-          
-          ### [ZKP Module](./zkp.md)
-          
-          Zero-Knowledge Proof operations including Pedersen commitments, range proofs, and Schnorr signatures - builds on P256K primitives for confidential transactions.
-          
-          - **Files**: $ZKP_COUNT symbols
-          - **Directory**: \`zkp/\`
-          
-          Sample symbols:
-          EOF
-          
-          # Add ZKP samples as links
-          echo "$ZKP_SAMPLES" | while read -r file; do
-            if [ -n "$file" ]; then
-              name=$(basename "$file" .md)
-              echo "- [\`$name\`](./$file)" >> index.md
-            fi
-          done
-          
-          cat >> index.md << EOF
-          
-          ## Navigation Tree
-          
-          Complete module structure (ZKP follows identical organization):
-          
-          \`\`\`
-          $P256K_TREE
-          \`\`\`
-          
-          **Note**: The ZKP module mirrors this structure with $ZKP_UNIQUE additional unique methods for zero-knowledge proof operations.
-          
-          ## File Organization
-          
-          Each API symbol has its own markdown file:
-          - **Pattern**: \`/{module}/{symbol-name}.md\`
-          - **Format**: CommonMark markdown with consistent structure
-          - **Content**: Swift signatures, parameter descriptions, return types, source links
-          
-          ## Programmatic Discovery
-          
-          For LLMs and automated tools:
-          - [llms.txt at 21.dev](https://21.dev/llms.txt) - llms.txt standard index
-          - \`AGENTS.md\` in swift-secp256k1 repository - Agent guidance and setup
-          
-          ## Module Overviews
-          
-          Start with module overview files for high-level understanding:
-          - [P256K Module Overview](./p256k.md) - Elliptic curve primitives
-          - [ZKP Module Overview](./zkp.md) - Zero-knowledge proof operations
-          
-          Then navigate to specific symbols via directory listings or search.
-          EOF
-          
-          echo "✓ Created index.md with $TOTAL_COUNT total symbols"
-          echo "  - P256K: $P256K_COUNT symbols"
-          echo "  - ZKP: $ZKP_COUNT symbols ($ZKP_SHARED shared, $ZKP_UNIQUE unique)"
-      
-      - name: Create robots.txt for LLM-only access
+          echo "✓ Created index.md with $TOTAL_COUNT total files"
+            
+      - name: Copy static resources
         run: |
-          cd Websites/md-21-dev
+          project="${{ inputs.project-name }}"
+          output_dir="Websites/${project}"
+          resources_dir="Resources/${project}"
           
-          cat > robots.txt << 'EOF'
-          # LLM/API consumption only - no search engine indexing
-          User-agent: *
-          Disallow: /
+          echo "📋 Copying static resources for ${project}..."
           
-          # AI training allowed
-          Content-Signal: search=no, ai-train=yes
-          EOF
-          
-          echo "✓ Created robots.txt for LLM-only access"
+          # Copy robots.txt if it exists
+          if [ -f "${resources_dir}/robots.txt" ]; then
+            cp "${resources_dir}/robots.txt" "${output_dir}/robots.txt"
+            echo "✅ Copied robots.txt"
+          else
+            echo "⚠️  No robots.txt found in ${resources_dir}"
+          fi
       
       - name: Create markdown archive
         run: |

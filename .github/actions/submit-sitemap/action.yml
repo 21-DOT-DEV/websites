@@ -1,0 +1,113 @@
+name: 'Submit Sitemap to Search Engines'
+description: 'Submits sitemap to Google Search Console and Bing Webmaster Tools'
+inputs:
+  sitemap_url:
+    description: 'Full URL to the sitemap.xml file'
+    required: true
+  google_service_account_json:
+    description: 'Google Service Account JSON credentials for Indexing API'
+    required: true
+  bing_api_key:
+    description: 'Bing Webmaster Tools API key'
+    required: true
+
+runs:
+  using: "composite"
+  steps:
+    - name: Submit sitemap to Google Search Console
+      shell: bash
+      run: |
+        set +e  # Don't fail on error - submissions are non-blocking
+        
+        echo "🔍 Submitting sitemap to Google Search Console..."
+        echo "   Sitemap URL: ${{ inputs.sitemap_url }}"
+        
+        # Write service account JSON to temporary file
+        SA_KEY_FILE=$(mktemp)
+        echo '${{ inputs.google_service_account_json }}' > "$SA_KEY_FILE"
+        
+        # Extract service account email
+        SA_EMAIL=$(jq -r '.client_email' "$SA_KEY_FILE")
+        
+        # Get OAuth 2.0 access token
+        ACCESS_TOKEN=$(curl -s -X POST https://oauth2.googleapis.com/token \
+          -H "Content-Type: application/json" \
+          -d '{
+            "grant_type": "urn:ietf:params:oauth:grant-type:jwt-bearer",
+            "assertion": "'$(
+              # Create JWT
+              header='{"alg":"RS256","typ":"JWT"}'
+              payload='{"iss":"'$SA_EMAIL'","scope":"https://www.googleapis.com/auth/indexing","aud":"https://oauth2.googleapis.com/token","exp":'$(($(date +%s)+3600))',"iat":'$(date +%s)'}'
+              
+              # Base64url encode
+              header_b64=$(echo -n "$header" | base64 | tr -d '=' | tr '/+' '_-' | tr -d '\n')
+              payload_b64=$(echo -n "$payload" | base64 | tr -d '=' | tr '/+' '_-' | tr -d '\n')
+              
+              # Sign with private key
+              signature=$(echo -n "${header_b64}.${payload_b64}" | \
+                openssl dgst -sha256 -sign <(jq -r '.private_key' "$SA_KEY_FILE") | \
+                base64 | tr -d '=' | tr '/+' '_-' | tr -d '\n')
+              
+              echo "${header_b64}.${payload_b64}.${signature}"
+            )'"
+          }' | jq -r '.access_token')
+        
+        # Clean up temporary file
+        rm -f "$SA_KEY_FILE"
+        
+        if [ -z "$ACCESS_TOKEN" ] || [ "$ACCESS_TOKEN" = "null" ]; then
+          echo "::warning::Failed to obtain Google OAuth token"
+          exit 0
+        fi
+        
+        # Submit URL notification
+        RESPONSE=$(curl -s -w "\n%{http_code}" -X POST \
+          "https://indexing.googleapis.com/v3/urlNotifications:publish" \
+          -H "Content-Type: application/json" \
+          -H "Authorization: Bearer $ACCESS_TOKEN" \
+          -d '{
+            "url": "${{ inputs.sitemap_url }}",
+            "type": "URL_UPDATED"
+          }')
+        
+        HTTP_CODE=$(echo "$RESPONSE" | tail -n1)
+        BODY=$(echo "$RESPONSE" | head -n-1)
+        
+        if [ "$HTTP_CODE" = "200" ]; then
+          echo "✅ Successfully submitted to Google Search Console"
+          echo "   HTTP Status: $HTTP_CODE"
+          echo "   Response: $BODY"
+        else
+          echo "::warning::Google Search Console submission failed with HTTP $HTTP_CODE"
+          echo "   Response: $BODY"
+        fi
+    
+    - name: Submit sitemap to Bing Webmaster Tools
+      shell: bash
+      run: |
+        set +e  # Don't fail on error - submissions are non-blocking
+        
+        echo "🔍 Submitting sitemap to Bing Webmaster Tools..."
+        echo "   Sitemap URL: ${{ inputs.sitemap_url }}"
+        
+        # Submit URL to Bing
+        RESPONSE=$(curl -s -w "\n%{http_code}" -X POST \
+          "https://ssl.bing.com/webmaster/api.svc/json/SubmitUrlBatch" \
+          -H "Content-Type: application/json" \
+          -H "Authorization: Bearer ${{ inputs.bing_api_key }}" \
+          -d '{
+            "siteUrl": "${{ inputs.sitemap_url }}",
+            "urlList": ["${{ inputs.sitemap_url }}"]
+          }')
+        
+        HTTP_CODE=$(echo "$RESPONSE" | tail -n1)
+        BODY=$(echo "$RESPONSE" | head -n-1)
+        
+        if [ "$HTTP_CODE" = "200" ]; then
+          echo "✅ Successfully submitted to Bing Webmaster Tools"
+          echo "   HTTP Status: $HTTP_CODE"
+          echo "   Response: $BODY"
+        else
+          echo "::warning::Bing Webmaster Tools submission failed with HTTP $HTTP_CODE"
+          echo "   Response: $BODY"
+        fi

@@ -39,27 +39,19 @@ struct SiteGenerator {
         }
     }
     
-    /// Generate sitemap.xml from the sitemap dictionary
-    private static func generateSitemapXML(from sitemap: Sitemap, to outputURL: URL, baseURL: String = "https://21.dev/") throws {
-        let dateFormatter = ISO8601DateFormatter()
-        dateFormatter.formatOptions = [.withFullDate]
-        let lastModDate = dateFormatter.string(from: Date())
+    /// Generate sitemap XML file from the sitemap dictionary
+    /// - Parameters:
+    ///   - sitemap: The sitemap dictionary mapping paths to pages
+    ///   - outputURL: The output directory URL
+    ///   - filename: The sitemap filename (default: "sitemap.xml")
+    ///   - baseURL: The base URL for the site (default: "https://21.dev/")
+    private static func generateSitemapXML(from sitemap: Sitemap, to outputURL: URL, filename: String = "sitemap.xml", baseURL: String = "https://21.dev/") async throws {
+        // Get lastmod date from git history of the site generator file
+        // This represents "when was the site code last updated"
+        let lastModDate = try await getGitLastModDate(filePath: "Sources/21-dev/SiteGenerator.swift")
         
-        // Function to escape XML special characters in URLs
-        func escapeXMLSpecialCharacters(_ string: String) -> String {
-            return string
-                .replacingOccurrences(of: "&", with: "&amp;")
-                .replacingOccurrences(of: "<", with: "&lt;")
-                .replacingOccurrences(of: ">", with: "&gt;")
-                .replacingOccurrences(of: "'", with: "&apos;")
-                .replacingOccurrences(of: "\"", with: "&quot;")
-        }
-        
-        var xmlContent = """
-        <?xml version="1.0" encoding="UTF-8"?>
-        <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-        
-        """
+        // Start with standard sitemap header
+        var xmlContent = sitemapXMLHeader()
         
         for path in sitemap.keys.sorted() {
             // Convert relative path to absolute URL
@@ -75,26 +67,19 @@ struct SiteGenerator {
                 absoluteURL += "/"
             }
             
-            // Escape special characters for XML
-            let escapedURL = escapeXMLSpecialCharacters(absoluteURL)
-            
-            xmlContent += """
-            <url>
-              <loc>\(escapedURL)</loc>
-              <lastmod>\(lastModDate)</lastmod>
-            </url>
-            
-            """
+            // Add URL entry using utility function
+            xmlContent += sitemapURLEntry(url: absoluteURL, lastmod: lastModDate)
         }
         
-        xmlContent += "</urlset>"
+        // Close with standard footer
+        xmlContent += sitemapXMLFooter()
         
-        let sitemapURL = outputURL.appending(path: "sitemap.xml")
+        let sitemapURL = outputURL.appending(path: filename)
         try xmlContent.write(to: sitemapURL, atomically: true, encoding: .utf8)
-        print("✅ Generated sitemap.xml")
+        print("✅ Generated \(filename)")
     }
     
-    static func main() throws {
+    static func main() async throws {
         // Assumes this file is located in a Sources/ sub-directory of a Swift package.
         let projectURL = URL(fileURLWithPath: #filePath)
             .deletingLastPathComponent()
@@ -139,8 +124,8 @@ struct SiteGenerator {
         
         try renderSitemap(sitemap, to: outputURL)
         
-        // Generate sitemap.xml
-        try generateSitemapXML(from: sitemap, to: outputURL)
+        // Generate sitemap.xml for 21.dev with git-based lastmod dates
+        try await generateSitemapXML(from: sitemap, to: outputURL)
         
         // Copy static resources after site generation
         try copyStaticResources(from: resourcesURL, to: outputURL)

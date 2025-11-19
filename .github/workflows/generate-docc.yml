@@ -42,6 +42,42 @@ jobs:
           echo "SECP256K1_VERSION=$SECP256K1_VERSION" >> $GITHUB_ENV
           echo "📦 swift-secp256k1 version: $SECP256K1_VERSION"
       
+      - name: Verify state file version matches Package.resolved
+        run: |
+          STATE_FILE="Resources/sitemap-state.json"
+          
+          if [ ! -f "$STATE_FILE" ]; then
+            echo "❌ Error: State file not found at $STATE_FILE"
+            echo "Please run 'lefthook install' to set up automatic state file management"
+            exit 1
+          fi
+          
+          STATE_VERSION=$(jq -r '.package_version' "$STATE_FILE")
+          RESOLVED_VERSION="${{ env.SECP256K1_VERSION }}"
+          
+          echo "📄 State file version: $STATE_VERSION"
+          echo "📦 Package.resolved version: $RESOLVED_VERSION"
+          
+          if [ "$STATE_VERSION" != "$RESOLVED_VERSION" ]; then
+            echo ""
+            echo "❌ ERROR: Version mismatch detected!"
+            echo ""
+            echo "State file version:        $STATE_VERSION"
+            echo "Package.resolved version:  $RESOLVED_VERSION"
+            echo ""
+            echo "The sitemap state file is out of sync with Package.resolved."
+            echo "This means the package version changed but the state file was not updated."
+            echo ""
+            echo "To fix this:"
+            echo "1. Ensure lefthook is installed: 'lefthook install'"
+            echo "2. The lefthook post-checkout hook will automatically update the state file"
+            echo "3. Commit the updated Resources/sitemap-state.json file"
+            echo ""
+            exit 1
+          fi
+          
+          echo "✅ Version match confirmed: $STATE_VERSION"
+      
       - name: Build target array for documentation generation
         id: build-targets
         run: |
@@ -105,6 +141,82 @@ jobs:
           
           echo "✅ Documentation output verified successfully"
           echo "📊 Documentation size: $(du -sh Websites/${project} | cut -f1)"
+      
+      - name: Generate sitemap
+        run: |
+          project="${{ inputs.project-name }}"
+          output_dir="Websites/${project}"
+          sitemap_file="${output_dir}/sitemap.xml"
+          
+          echo "🗺️  Generating sitemap for ${project}..."
+          
+          # Read lastmod date from state file (will be updated by lefthook-plugin when package version changes)
+          if [ -f "Resources/sitemap-state.json" ]; then
+            lastmod=$(jq -r '.generated_date' Resources/sitemap-state.json)
+            echo "📅 Using lastmod from state file: $lastmod"
+          else
+            # Fallback to current date if state file doesn't exist
+            lastmod=$(date -u +"%Y-%m-%d")
+            echo "⚠️  State file not found, using current date: $lastmod"
+          fi
+          
+          # Start sitemap XML
+          cat > "$sitemap_file" << 'EOF'
+          <?xml version="1.0" encoding="UTF-8"?>
+          <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+          
+          EOF
+          
+          # Find all HTML files under documentation/ directory and generate URL entries
+          find "${output_dir}/documentation" -name "*.html" -type f | sort | while read -r file; do
+            # Convert file path to URL path
+            url_path=$(echo "$file" | sed "s|^${output_dir}/||")
+            
+            # Build absolute URL (docs.21.dev subdomain)
+            url="https://docs.21.dev/${url_path}"
+            
+            # Escape XML special characters in URL (using basic sed substitution)
+            escaped_url=$(echo "$url" | sed 's/&/\&amp;/g; s/</\&lt;/g; s/>/\&gt;/g; s/'"'"'/\&apos;/g; s/"/\&quot;/g')
+            
+            # Add URL entry to sitemap
+            cat >> "$sitemap_file" << EOF
+          <url>
+            <loc>${escaped_url}</loc>
+            <lastmod>${lastmod}</lastmod>
+          </url>
+          
+          EOF
+          done
+          
+          # Close sitemap XML
+          echo "</urlset>" >> "$sitemap_file"
+          
+          # Count URLs and display summary
+          url_count=$(grep -c "<loc>" "$sitemap_file" || echo "0")
+          echo "✅ Sitemap generated with ${url_count} URLs"
+          echo "📄 Sitemap location: ${sitemap_file}"
+          
+          # Validate sitemap is not empty
+          if [ "$url_count" -eq 0 ]; then
+            echo "❌ Error: Sitemap contains no URLs"
+            exit 1
+          fi
+      
+      - name: Copy static resources
+        run: |
+          project="${{ inputs.project-name }}"
+          output_dir="Websites/${project}"
+          resources_dir="Resources/${project}"
+          
+          echo "📋 Copying static resources for ${project}..."
+          
+          # Copy robots.txt if it exists
+          if [ -f "${resources_dir}/robots.txt" ]; then
+            cp "${resources_dir}/robots.txt" "${output_dir}/robots.txt"
+            echo "✅ Copied robots.txt"
+          else
+            echo "⚠️  No robots.txt found in ${resources_dir}"
+          fi
       
       - name: Create documentation archive
         run: |

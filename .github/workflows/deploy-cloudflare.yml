@@ -25,6 +25,10 @@ on:
         required: true
       cloudflare-account-id:
         required: true
+      google-service-account-json:
+        required: false
+      bing-api-key:
+        required: false
     outputs:
       deployment-url:
         description: 'The URL where the site was deployed'
@@ -123,3 +127,37 @@ jobs:
           echo "✅ Deployment successful!"
           echo "📍 Deployment URL: ${{ steps.cloudflare.outputs.url }}"
           echo "🌿 Branch: ${{ env.DEPLOYMENT_BRANCH }}"
+      
+      - name: Determine sitemap URL
+        if: inputs.deploy-to-production == true
+        id: sitemap
+        run: |
+          # Map project-name to production sitemap URL
+          case "${{ inputs.project-name }}" in
+            "21-dev")
+              SITEMAP_URL="https://21.dev/sitemap.xml"
+              ;;
+            "docs-21-dev")
+              SITEMAP_URL="https://docs.21.dev/sitemap.xml"
+              ;;
+            "md-21-dev")
+              SITEMAP_URL="https://md.21.dev/sitemap.xml"
+              ;;
+            *)
+              echo "::warning::Unknown project name: ${{ inputs.project-name }}, skipping sitemap submission"
+              echo "skip=true" >> $GITHUB_OUTPUT
+              exit 0
+              ;;
+          esac
+          
+          echo "sitemap-url=$SITEMAP_URL" >> $GITHUB_OUTPUT
+          echo "skip=false" >> $GITHUB_OUTPUT
+          echo "📍 Sitemap URL: $SITEMAP_URL"
+      
+      - name: Submit sitemap to search engines
+        if: inputs.deploy-to-production == true && steps.sitemap.outputs.skip != 'true'
+        uses: ./.github/actions/submit-sitemap
+        with:
+          sitemap_url: ${{ steps.sitemap.outputs.sitemap-url }}
+          google_service_account_json: ${{ secrets.google-service-account-json }}
+          bing_api_key: ${{ secrets.bing-api-key }}

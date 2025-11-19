@@ -11,25 +11,25 @@ import Slipstream
 /// Synonym placeholder icon component with text styling
 public struct SynonymPlaceholderIcon: View {
     public init() {}
-    
+
     public var body: some View {
         SVG(viewBox: "0 0 256 256") {
             SVGGroup {
                 // Text with slight shadow effect
-                SVGText("Synonym", x: "129", y: "141")
+                SVGText("Synonym", at: Point(x: 129, y: 141))
                     .fontSize("56")
                     .fontFamily("system-ui, -apple-system, sans-serif")
                     .fontWeight("600")
                     .textAnchor("middle")
-                    .fill("#333333")
-                
-                SVGText("Synonym", x: "128", y: "140")
+                    .fill(.hex("#333333"))
+
+                SVGText("Synonym", at: Point(x: 128, y: 140))
                     .fontSize("56")
                     .fontFamily("system-ui, -apple-system, sans-serif")
                     .fontWeight("600")
                     .textAnchor("middle")
-                    .fill("#f8f8f8")
-                    .stroke("#666666")
+                    .fill(.hex("#f8f8f8"))
+                    .stroke(.hex("#666666"))
                     .strokeWidth("0.5")
             }
         }
