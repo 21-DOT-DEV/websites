@@ -35,6 +35,32 @@ Implement comprehensive sitemap infrastructure across all three subdomains (21.d
 5. **Deployment Independence**: Each subdomain deployment fully independent; no cross-workflow coordination needed
 6. **Workflow Pattern**: Inline bash steps in workflows (no separate script files) for local testability
 
+## Lefthook Automation
+
+**Purpose**: Automatically update sitemap state file when dependencies change
+
+**Setup**:
+```bash
+swift package --disable-sandbox lefthook install
+```
+
+**How it works**:
+- Git hook: `post-checkout` (triggers after branch switches, pulls, checkouts)
+- Monitors: `Package.resolved` file for changes
+- Updates: `Resources/sitemap-state.json` with new `swift-secp256k1` version + timestamp
+- Result: Ensures docs/md sitemaps only regenerate lastmod dates when package version actually changes
+
+**Integration**:
+- Uses [lefthook-plugin](https://github.com/csjones/lefthook-plugin) Swift package (no separate binary install needed)
+- Configuration: `lefthook.yml` at repository root
+- Execution: Runs automatically on `git checkout`, `git pull`, etc.
+- Developer workflow: Hook updates state file → developer commits updated file alongside version bump
+
+**Benefits**:
+- Zero manual maintenance of state file
+- Accurate lastmod tracking (only changes when content actually changes)
+- Prevents CI failures from version mismatches (workflows validate state file version)
+
 ## Constitution Check
 
 *GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*

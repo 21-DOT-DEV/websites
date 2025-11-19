@@ -45,10 +45,10 @@ struct SiteGenerator {
     ///   - outputURL: The output directory URL
     ///   - filename: The sitemap filename (default: "sitemap.xml")
     ///   - baseURL: The base URL for the site (default: "https://21.dev/")
-    private static func generateSitemapXML(from sitemap: Sitemap, to outputURL: URL, filename: String = "sitemap.xml", baseURL: String = "https://21.dev/") throws {
-        let dateFormatter = ISO8601DateFormatter()
-        dateFormatter.formatOptions = [.withFullDate]
-        let lastModDate = dateFormatter.string(from: Date())
+    private static func generateSitemapXML(from sitemap: Sitemap, to outputURL: URL, filename: String = "sitemap.xml", baseURL: String = "https://21.dev/") async throws {
+        // Get lastmod date from git history of the site generator file
+        // This represents "when was the site code last updated"
+        let lastModDate = try await getGitLastModDate(filePath: "Sources/21-dev/SiteGenerator.swift")
         
         // Start with standard sitemap header
         var xmlContent = sitemapXMLHeader()
@@ -79,7 +79,7 @@ struct SiteGenerator {
         print("✅ Generated \(filename)")
     }
     
-    static func main() throws {
+    static func main() async throws {
         // Assumes this file is located in a Sources/ sub-directory of a Swift package.
         let projectURL = URL(fileURLWithPath: #filePath)
             .deletingLastPathComponent()
@@ -124,8 +124,8 @@ struct SiteGenerator {
         
         try renderSitemap(sitemap, to: outputURL)
         
-        // Generate sitemap.xml for 21.dev
-        try generateSitemapXML(from: sitemap, to: outputURL)
+        // Generate sitemap.xml for 21.dev with git-based lastmod dates
+        try await generateSitemapXML(from: sitemap, to: outputURL)
         
         // Copy static resources after site generation
         try copyStaticResources(from: resourcesURL, to: outputURL)

@@ -34,6 +34,50 @@ jobs:
       - name: Resolve dependencies
         run: swift package resolve
       
+      - name: Extract swift-secp256k1 version
+        id: extract-version
+        run: |
+          SECP256K1_VERSION=$(jq -r '.pins[] | select(.identity == "swift-secp256k1") | .state.version' Package.resolved)
+          echo "version=$SECP256K1_VERSION" >> $GITHUB_OUTPUT
+          echo "SECP256K1_VERSION=$SECP256K1_VERSION" >> $GITHUB_ENV
+          echo "📦 swift-secp256k1 version: $SECP256K1_VERSION"
+      
+      - name: Verify state file version matches Package.resolved
+        run: |
+          STATE_FILE="Resources/sitemap-state.json"
+          
+          if [ ! -f "$STATE_FILE" ]; then
+            echo "❌ Error: State file not found at $STATE_FILE"
+            echo "Please run 'lefthook install' to set up automatic state file management"
+            exit 1
+          fi
+          
+          STATE_VERSION=$(jq -r '.package_version' "$STATE_FILE")
+          RESOLVED_VERSION="${{ env.SECP256K1_VERSION }}"
+          
+          echo "📄 State file version: $STATE_VERSION"
+          echo "📦 Package.resolved version: $RESOLVED_VERSION"
+          
+          if [ "$STATE_VERSION" != "$RESOLVED_VERSION" ]; then
+            echo ""
+            echo "❌ ERROR: Version mismatch detected!"
+            echo ""
+            echo "State file version:        $STATE_VERSION"
+            echo "Package.resolved version:  $RESOLVED_VERSION"
+            echo ""
+            echo "The sitemap state file is out of sync with Package.resolved."
+            echo "This means the package version changed but the state file was not updated."
+            echo ""
+            echo "To fix this:"
+            echo "1. Ensure lefthook is installed: 'lefthook install'"
+            echo "2. The lefthook post-checkout hook will automatically update the state file"
+            echo "3. Commit the updated Resources/sitemap-state.json file"
+            echo ""
+            exit 1
+          fi
+          
+          echo "✅ Version match confirmed: $STATE_VERSION"
+      
       - name: Build target arguments for documentation generation
         id: build-targets
         run: |
@@ -283,23 +327,21 @@ jobs:
           
           echo "✓ Created index.md with $TOTAL_COUNT total files"
             
-      - name: Create robots.txt for LLM-only access
+      - name: Copy static resources
         run: |
-          cd Websites/md-21-dev
+          project="${{ inputs.project-name }}"
+          output_dir="Websites/${project}"
+          resources_dir="Resources/${project}"
           
-          cat > robots.txt << 'EOF'
-          # LLM/API consumption only - no search engine indexing
-          User-agent: *
-          Disallow: /
+          echo "📋 Copying static resources for ${project}..."
           
-          # Tell crawlers where to find sitemap (even though indexing is disallowed)
-          Sitemap: https://md.21.dev/sitemap.xml
-          
-          # AI training allowed
-          Content-Signal: search=no, ai-train=yes
-          EOF
-          
-          echo "✓ Created robots.txt for LLM-only access with sitemap reference"
+          # Copy robots.txt if it exists
+          if [ -f "${resources_dir}/robots.txt" ]; then
+            cp "${resources_dir}/robots.txt" "${output_dir}/robots.txt"
+            echo "✅ Copied robots.txt"
+          else
+            echo "⚠️  No robots.txt found in ${resources_dir}"
+          fi
       
       - name: Create markdown archive
         run: |

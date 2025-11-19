@@ -16,6 +16,8 @@ let package = Package(
         .package(url: "https://github.com/21-DOT-DEV/swift-secp256k1", exact: "0.21.1"),
         .package(url: "https://github.com/swiftlang/swift-docc-plugin", exact: "1.4.5"),
         .package(url: "https://github.com/P24L/DocC4LLM.git", exact: "1.0.0"),
+        .package(url: "https://github.com/swiftlang/swift-subprocess.git", exact: "0.2.1"),
+        .package(url: "https://github.com/csjones/lefthook-plugin", exact: "2.0.4"),
     ],
     targets: makeDocumentationTargets() + [
         // Targets are the basic building blocks of a package, defining a module or a test suite.
@@ -31,6 +33,7 @@ let package = Package(
             name: "DesignSystem",
             dependencies: [
                 .product(name: "Slipstream", package: "slipstream"),
+                .product(name: "Subprocess", package: "swift-subprocess")
             ]
         ),
         .target(
@@ -47,7 +50,11 @@ let package = Package(
         ),
         .testTarget(
             name: "IntegrationTests",
-            dependencies: ["DesignSystem", "21-dev", "TestUtils"]
+            dependencies: [
+                "DesignSystem",
+                "21-dev",
+                "TestUtils"
+            ]
         )
     ]
 )

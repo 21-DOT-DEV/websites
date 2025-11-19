@@ -1,0 +1,66 @@
+# Lefthook configuration for automatic sitemap state file management
+# See: https://github.com/evilmartians/lefthook
+
+# Shared command using YAML anchor - reused across hooks
+.commands:
+  update-sitemap-state: &update-sitemap-state
+    glob: "Package.resolved"
+    run: |
+      echo "📦 Updating sitemap state file..."
+      
+      NEW_VERSION=$(jq -r '.pins[] | select(.identity == "swift-secp256k1") | .state.version' Package.resolved)
+      
+      if [ -z "$NEW_VERSION" ]; then
+        echo "⚠️  Could not extract swift-secp256k1 version"
+        exit 0
+      fi
+      
+      STATE_FILE="Resources/sitemap-state.json"
+      
+      if [ -f "$STATE_FILE" ]; then
+        CURRENT_VERSION=$(jq -r '.package_version' "$STATE_FILE")
+        
+        if [ "$CURRENT_VERSION" = "$NEW_VERSION" ]; then
+          echo "✅ State file already up to date ($NEW_VERSION)"
+          exit 0
+        fi
+        
+        echo "📝 Updating state file: $CURRENT_VERSION → $NEW_VERSION"
+      else
+        echo "📝 Creating new state file with version: $NEW_VERSION"
+      fi
+      
+      CURRENT_DATE=$(date -u +"%Y-%m-%dT%H:%M:%S%z" | sed 's/\([0-9][0-9]\)$/:\1/')
+      
+      echo "{" > "$STATE_FILE"
+      echo "  \"package_version\": \"$NEW_VERSION\"," >> "$STATE_FILE"
+      echo "  \"generated_date\": \"$CURRENT_DATE\"" >> "$STATE_FILE"
+      echo "}" >> "$STATE_FILE"
+      
+      echo "✅ Updated $STATE_FILE"
+      echo "   Package version: $NEW_VERSION"
+      echo "   Generated date: $CURRENT_DATE"
+      
+      # Hook-specific post-actions
+      if [ "$LEFTHOOK_HOOK" = "post-checkout" ]; then
+        echo ""
+        echo "⚠️  Remember to commit this change:"
+        echo "   git add Resources/sitemap-state.json"
+        echo "   git commit -m 'Update sitemap state for swift-secp256k1 $NEW_VERSION'"
+      elif [ "$LEFTHOOK_HOOK" = "pre-commit" ]; then
+        git add Resources/sitemap-state.json
+        echo "📄 Staged sitemap state file for commit"
+      fi
+
+# Post-checkout hook: Triggers on checkout when Package.resolved changed
+post-checkout:
+  files: git diff --name-only HEAD@{1} HEAD 2>/dev/null
+  commands:
+    update-sitemap-state:
+      <<: *update-sitemap-state
+
+# Pre-commit hook: Triggers when committing changes to Package.resolved
+pre-commit:
+  commands:
+    update-sitemap-state:
+      <<: *update-sitemap-state

@@ -1,5 +1,5 @@
 {
-  "originHash" : "3d8a825a67f644f361a4a97bdf724ed6aa762ececfd12e40829a768c9a1b0e3a",
+  "originHash" : "92abb613a1ab12fac047b001eaeee8259e8068fab75d337dd89f2457abfa660f",
   "pins" : [
     {
       "identity" : "docc4llm",
@@ -8,6 +8,15 @@
       "state" : {
         "revision" : "7a50a1790055e8bbe56cd54cdb1d3be16f6d819e",
         "version" : "1.0.0"
+      }
+    },
+    {
+      "identity" : "lefthook-plugin",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/csjones/lefthook-plugin",
+      "state" : {
+        "revision" : "a314af230eadad35bb6d59928d84b905184b3f38",
+        "version" : "2.0.4"
       }
     },
     {
@@ -98,6 +107,24 @@
       "state" : {
         "revision" : "8c62aba8a3011c9bcea232e5ee007fb0b34a15e2",
         "version" : "0.21.1"
+      }
+    },
+    {
+      "identity" : "swift-subprocess",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/swiftlang/swift-subprocess.git",
+      "state" : {
+        "revision" : "44922dfe46380cd354ca4b0208e717a3e92b13dd",
+        "version" : "0.2.1"
+      }
+    },
+    {
+      "identity" : "swift-system",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/apple/swift-system",
+      "state" : {
+        "revision" : "395a77f0aa927f0ff73941d7ac35f2b46d47c9db",
+        "version" : "1.6.3"
       }
     },
     {

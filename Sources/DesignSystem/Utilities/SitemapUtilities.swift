@@ -9,6 +9,7 @@
 //
 
 import Foundation
+import Subprocess
 
 // MARK: - Sitemap XML Generation
 
@@ -42,6 +43,48 @@ public func sitemapURLEntry(url: String, lastmod: String) -> String {
     </url>
     
     """
+}
+
+// MARK: - Git Utilities
+
+/// Get the last modification date for a file from git history
+/// - Parameter filePath: Relative path to the file in the repository
+/// - Returns: ISO8601 formatted date string from git, or current date if git history unavailable
+public func getGitLastModDate(filePath: String) async throws -> String {
+    do {
+        let result = try await Subprocess.run(
+            .name("git"),
+            arguments: .init([
+                "log",
+                "-1",
+                "--format=%cI",  // ISO8601 format with timezone
+                "--",
+                filePath
+            ]),
+            output: .string(limit: 4096),
+            error: .string(limit: 1024)
+        )
+        
+        // Check if git command succeeded
+        guard case .exited(0) = result.terminationStatus else {
+            // Fallback to current timestamp if git command failed
+            return ISO8601DateFormatter().string(from: Date())
+        }
+        
+        // Get stdout and trim whitespace
+        guard let dateString = result.standardOutput?
+            .trimmingCharacters(in: .whitespacesAndNewlines),
+              !dateString.isEmpty else {
+            // Fallback to current timestamp if git returned empty
+            return ISO8601DateFormatter().string(from: Date())
+        }
+        
+        return dateString
+        
+    } catch {
+        // Fallback to current timestamp on any error (git not available, file not in repo, etc.)
+        return ISO8601DateFormatter().string(from: Date())
+    }
 }
 
 // MARK: - Sitemap Utility Functions

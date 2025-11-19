@@ -42,6 +42,42 @@ jobs:
           echo "SECP256K1_VERSION=$SECP256K1_VERSION" >> $GITHUB_ENV
           echo "📦 swift-secp256k1 version: $SECP256K1_VERSION"
       
+      - name: Verify state file version matches Package.resolved
+        run: |
+          STATE_FILE="Resources/sitemap-state.json"
+          
+          if [ ! -f "$STATE_FILE" ]; then
+            echo "❌ Error: State file not found at $STATE_FILE"
+            echo "Please run 'lefthook install' to set up automatic state file management"
+            exit 1
+          fi
+          
+          STATE_VERSION=$(jq -r '.package_version' "$STATE_FILE")
+          RESOLVED_VERSION="${{ env.SECP256K1_VERSION }}"
+          
+          echo "📄 State file version: $STATE_VERSION"
+          echo "📦 Package.resolved version: $RESOLVED_VERSION"
+          
+          if [ "$STATE_VERSION" != "$RESOLVED_VERSION" ]; then
+            echo ""
+            echo "❌ ERROR: Version mismatch detected!"
+            echo ""
+            echo "State file version:        $STATE_VERSION"
+            echo "Package.resolved version:  $RESOLVED_VERSION"
+            echo ""
+            echo "The sitemap state file is out of sync with Package.resolved."
+            echo "This means the package version changed but the state file was not updated."
+            echo ""
+            echo "To fix this:"
+            echo "1. Ensure lefthook is installed: 'lefthook install'"
+            echo "2. The lefthook post-checkout hook will automatically update the state file"
+            echo "3. Commit the updated Resources/sitemap-state.json file"
+            echo ""
+            exit 1
+          fi
+          
+          echo "✅ Version match confirmed: $STATE_VERSION"
+      
       - name: Build target array for documentation generation
         id: build-targets
         run: |
