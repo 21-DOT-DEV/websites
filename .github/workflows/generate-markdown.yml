@@ -3,6 +3,10 @@ name: Generate Markdown Documentation
 on:
   workflow_call:
     inputs:
+      project-name:
+        description: 'Documentation project name (e.g., md-21-dev)'
+        required: true
+        type: string
       ref:
         description: 'Git ref to checkout (branch, tag, or SHA)'
         required: true
@@ -23,7 +27,7 @@ jobs:
     permissions:
       contents: read
     outputs:
-      artifact-name: md-21-dev
+      artifact-name: ${{ inputs.project-name }}
     
     steps:
       - name: Checkout repository
@@ -98,19 +102,20 @@ jobs:
       - name: Generate DocC archive
         run: |
           echo "🔨 Generating DocC archive..."
-          
-          if ! swift package \
+          swift package \
+            --allow-writing-to-package-directory \
             --allow-writing-to-directory ./Archives \
             generate-documentation \
             ${{ steps.build-targets.outputs.target-args }} \
-            --output-path ./Archives/md-21-dev.doccarchive \
-            --enable-experimental-combined-documentation; then
+            --output-path ./Archives/${{ inputs.project-name }}.doccarchive \
+            --enable-experimental-combined-documentation
+          if [ $? -ne 0 ]; then
             echo "❌ DocC generation failed"
             exit 1
           fi
           
           # Verify archive was created
-          if [ ! -d "./Archives/md-21-dev.doccarchive" ]; then
+          if [ ! -d "./Archives/${{ inputs.project-name }}.doccarchive" ]; then
             echo "❌ Archive not found after generation"
             ls -la Archives/ || echo "Archives directory is empty"
             exit 1
@@ -124,27 +129,27 @@ jobs:
           echo "📝 Exporting DocC archive to markdown..."
           
           if ! swift run docc4llm export \
-            Archives/md-21-dev.doccarchive \
+            Archives/${{ inputs.project-name }}.doccarchive \
             --format markdown \
-            --output md-21-dev-concatenated.md; then
+            --output ${{ inputs.project-name }}-concatenated.md; then
             echo "❌ Markdown export failed"
             exit 1
           fi
           
           # Verify export output was created
-          if [ ! -f "md-21-dev-concatenated.md" ]; then
+          if [ ! -f "${{ inputs.project-name }}-concatenated.md" ]; then
             echo "❌ Exported markdown file not found"
             ls -la
             exit 1
           fi
           
           echo "✅ Markdown export completed"
-          ls -lh md-21-dev-concatenated.md
+          ls -lh ${{ inputs.project-name }}-concatenated.md
       
       - name: Validate delimiter format
         run: |
-          START_COUNT=$(grep -c "^=== START FILE:" md-21-dev-concatenated.md || true)
-          END_COUNT=$(grep -c "^=== END FILE ===$" md-21-dev-concatenated.md || true)
+          START_COUNT=$(grep -c "^=== START FILE:" ${{ inputs.project-name }}-concatenated.md || true)
+          END_COUNT=$(grep -c "^=== END FILE ===$" ${{ inputs.project-name }}-concatenated.md || true)
           
           if [ "$START_COUNT" -eq 0 ] || [ "$END_COUNT" -eq 0 ]; then
             echo "❌ Format validation failed"
@@ -165,7 +170,7 @@ jobs:
       
       - name: Split markdown into individual files
         run: |
-          mkdir -p Websites/md-21-dev
+          mkdir -p Websites/${{ inputs.project-name }}
           
           awk '/=== START FILE: /{
             gsub(/ ===$/, "", $4);
@@ -196,7 +201,7 @@ jobs:
             
             # Keep crypto-specific files
             if (path ~ /sign|verify|signature|ecdsa|schnorr|recover|musig|keyagreement|sharedsecret|privatekey|publickey|xonlykey|nonce|sha256/) {
-              outpath="Websites/md-21-dev/"path;
+              outpath="Websites/${{ inputs.project-name }}/"path;
               system("mkdir -p \"$(dirname \""outpath"\")\"");
               next;
             }
@@ -204,7 +209,7 @@ jobs:
             # Keep shallow files (main types)
             depth = gsub(/\//, "/", path);
             if (depth <= 2) {
-              outpath="Websites/md-21-dev/"path;
+              outpath="Websites/${{ inputs.project-name }}/"path;
               system("mkdir -p \"$(dirname \""outpath"\")\"");
             }
             next;
@@ -216,15 +221,15 @@ jobs:
           }
           outpath{
             print > outpath
-          }' md-21-dev-concatenated.md
+          }' ${{ inputs.project-name }}-concatenated.md
           
-          FILE_COUNT=$(find Websites/md-21-dev -type f -name "*.md" | wc -l)
+          FILE_COUNT=$(find Websites/${{ inputs.project-name }} -type f -name "*.md" | wc -l)
           echo "✓ File splitting complete (files: $FILE_COUNT)"
       
       - name: Monitor deployment size
         run: |
-          FILE_COUNT=$(find Websites/md-21-dev -type f | wc -l)
-          SIZE_MB=$(du -sm Websites/md-21-dev | cut -f1)
+          FILE_COUNT=$(find Websites/${{ inputs.project-name }} -type f | wc -l)
+          SIZE_MB=$(du -sm Websites/${{ inputs.project-name }} | cut -f1)
           
           echo "Files: $FILE_COUNT"
           echo "Size: ${SIZE_MB}MB"
@@ -239,10 +244,10 @@ jobs:
       
       - name: Generate sitemap
         run: |
-          output_dir="Websites/md-21-dev"
+          output_dir="Websites/${{ inputs.project-name }}"
           sitemap_file="${output_dir}/sitemap.xml"
           
-          echo "🗺️  Generating sitemap for md-21-dev..."
+          echo "🗺️  Generating sitemap for ${{ inputs.project-name }}..."
           
           # Read lastmod date from state file (will be updated by lefthook-plugin when package version changes)
           if [ -f "Resources/sitemap-state.json" ]; then
@@ -296,37 +301,6 @@ jobs:
             exit 1
           fi
       
-      - name: Create root index
-        run: |
-          cd Websites/md-21-dev
-          
-          # Count total files
-          TOTAL_COUNT=$(find . -type f -name "*.md" | wc -l | tr -d ' ')
-          
-          cat > index.md << 'EOF'
-          # Swift secp256k1 Documentation
-          
-          LLM-optimized markdown documentation for the swift-secp256k1 library.
-          
-          **Total Files**: TOTAL_COUNT markdown files
-          
-          ## Modules
-          
-          - [P256K Module](./p256k.md) - secp256k1 Elliptic Curve cryptography
-          - [ZKP Module](./zkp.md) - Zero-Knowledge Proof operations
-          
-          ## Organization
-          
-          Each API symbol has its own markdown file at `/{module}/{symbol-name}.md`
-          
-          Navigate via module overviews or browse directories directly.
-          EOF
-          
-          # Replace placeholder with actual count
-          sed -i '' "s/TOTAL_COUNT/$TOTAL_COUNT/g" index.md
-          
-          echo "✓ Created index.md with $TOTAL_COUNT total files"
-            
       - name: Copy static resources
         run: |
           project="${{ inputs.project-name }}"
@@ -335,33 +309,45 @@ jobs:
           
           echo "📋 Copying static resources for ${project}..."
           
-          # Copy robots.txt if it exists
-          if [ -f "${resources_dir}/robots.txt" ]; then
-            cp "${resources_dir}/robots.txt" "${output_dir}/robots.txt"
-            echo "✅ Copied robots.txt"
+          # Copy all files from resources directory
+          if [ -d "${resources_dir}" ]; then
+            file_count=0
+            for file in "${resources_dir}"/*; do
+              if [ -f "$file" ]; then
+                cp "$file" "${output_dir}/"
+                echo "✅ Copied $(basename "$file")"
+                ((file_count++))
+              fi
+            done
+            
+            if [ "$file_count" -eq 0 ]; then
+              echo "⚠️  No static resources found in ${resources_dir}"
+            else
+              echo "✓ Copied ${file_count} static resource(s)"
+            fi
           else
-            echo "⚠️  No robots.txt found in ${resources_dir}"
+            echo "⚠️  Resources directory not found: ${resources_dir}"
           fi
       
       - name: Create markdown archive
         run: |
-          echo "📦 Creating archive for md-21-dev..."
+          echo "📦 Creating archive for ${{ inputs.project-name }}..."
           
           # Create zip archive (avoids GitHub Actions path validation issues)
           # Zip FROM INSIDE the directory to avoid nesting
-          cd Websites/md-21-dev
-          zip -r ../md-21-dev.zip .
+          cd Websites/${{ inputs.project-name }}
+          zip -r ../${{ inputs.project-name }}.zip .
           
           # Remove original directory to save space
           cd ..
-          rm -rf md-21-dev
+          rm -rf ${{ inputs.project-name }}
           
-          echo "✅ Archive created: Websites/md-21-dev.zip"
-          ls -lh md-21-dev.zip
+          echo "✅ Archive created: Websites/${{ inputs.project-name }}.zip"
+          ls -lh ${{ inputs.project-name }}.zip
       
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: md-21-dev
-          path: Websites/md-21-dev.zip
+          name: ${{ inputs.project-name }}
+          path: Websites/${{ inputs.project-name }}.zip
           retention-days: 1

@@ -1,7 +1,7 @@
 # Product Roadmap
 
-**Version:** v1.2.0  
-**Last Updated:** 2025-11-13
+**Version:** v1.3.1  
+**Last Updated:** 2025-11-20
 
 ## Vision & Goals
 
@@ -61,7 +61,41 @@
 
 ---
 
-### Phase 2 — Goal: Performance & Delivery Optimization (MEDIUM-HIGH PRIORITY)
+### Phase 2 — Goal: Build Utilities Library Refactoring (NEXT PRIORITY - HIGH)
+
+**Key Features**
+
+1. **Utilities Library Extraction**  
+   - Purpose & user value: Extract sitemap utilities and reusable workflow logic from DesignSystem into a dedicated `Utilities` library target, following industry-standard library + executable pattern, reducing code duplication across workflows and enabling type-safe CLI tooling for CI/CD automation.
+   - Success metrics:  
+     - `Utilities` library target created in Package.swift with all sitemap utilities migrated
+     - `util` CLI executable provides type-safe commands for sitemap generation, state management, URL validation
+     - Type-safe sitemap models with compile-time validation
+     - Unified lastmod tracking logic (git, package version, fallback) across all subdomain types
+     - Single Swift executable generates sitemaps for all subdomain types (21.dev, docs, md)
+     - Zero code duplication across GitHub Actions workflows (generate-docc.yml, generate-markdown.yml, deploy-cloudflare.yml)
+     - All workflow bash scripts replaced with `swift run util` commands for better error handling
+     - 100% test coverage maintained for migrated utilities (18+ existing tests pass)
+     - Sitemap generation runs in < 2 seconds for all subdomains combined
+     - Build time remains under 2 minutes (no performance regression)
+   - Dependencies: Sitemap Infrastructure Overhaul (Phase 1 must complete first - utilities exist to extract)
+   - Notes: **Extracted from 001-sitemap-infrastructure T057** - Cross-cutting architectural refactor benefiting multiple features beyond sitemap. Follows subtree pattern (library + executable). Consolidates bash duplication with type-safe Swift CLI.
+
+2. **Workflow Migration to Utilities CLI**  
+   - Purpose & user value: Replace inline bash scripts in workflows with type-safe `swift run util` commands, providing consistent error handling, better debugging, and reduced maintenance burden through centralized logic.
+   - Success metrics:  
+     - generate-docc.yml migrates sitemap generation to `util generate-sitemap --docs`
+     - generate-markdown.yml migrates sitemap generation to `util generate-sitemap --markdown`
+     - State file management migrates to `util state-file validate|update`
+     - All workflow changes maintain 100% backward compatibility (no deployment disruption)
+     - CI build times remain under current baseline (< 5 min total)
+     - Zero production incidents during migration
+   - Dependencies: Utilities Library Extraction (library must exist first)
+   - Notes: Gradual migration strategy - one workflow at a time with rollback capability. Bash remains for simple operations (file copying, directory creation).
+
+---
+
+### Phase 3 — Goal: Performance & Delivery Optimization (MEDIUM-HIGH PRIORITY)
 
 **Key Features**
 
@@ -177,7 +211,7 @@
 
 ---
 
-### Phase 2.5 — Goal: DesignSystem Foundation & Refactoring (MEDIUM PRIORITY)
+### Phase 3.5 — Goal: DesignSystem Foundation & Refactoring (MEDIUM PRIORITY)
 
 **Key Features**
 
@@ -206,7 +240,7 @@
 
 ---
 
-### Phase 3 — Goal: Content & Accessibility (MEDIUM PRIORITY)
+### Phase 4 — Goal: Content & Accessibility (MEDIUM PRIORITY)
 
 **Key Features**
 
@@ -278,7 +312,7 @@
 
 ---
 
-### Phase 3.5 — Goal: Dark Mode & Theme Support (MEDIUM PRIORITY)
+### Phase 4.5 — Goal: Dark Mode & Theme Support (MEDIUM PRIORITY)
 
 **Key Features**
 
@@ -296,7 +330,7 @@
 
 ---
 
-### Phase 4 — Goal: Advanced Features & Analytics (FUTURE)
+### Phase 5 — Goal: Advanced Features & Analytics (FUTURE)
 
 **Key Features**
 
@@ -366,19 +400,7 @@
    - Dependencies: Sitemap Infrastructure Overhaul (foundation must exist first)
    - Notes: Enhancement to basic sitemap; not critical but improves crawl efficiency
 
-4. **Swift-Based Sitemap Generator Utility**  
-   - Purpose & user value: Consolidate sitemap generation logic into a unified Swift utility replacing bash scripts, providing type-safe implementation, better error handling, and consistent behavior across all three subdomains.
-   - Success metrics:  
-     - Single Swift executable generates sitemaps for all subdomain types (21.dev, docs, md)
-     - Type-safe sitemap models with compile-time validation
-     - Unified lastmod tracking logic (git, package version, fallback)
-     - 100% feature parity with bash script implementation
-     - Reduced maintenance burden (single codebase vs. multiple scripts)
-     - Sitemap generation runs in < 2 seconds for all subdomains combined
-   - Dependencies: Sitemap Infrastructure Overhaul (initial bash implementation must exist first)
-   - Notes: Refactoring/optimization of Phase 1 implementation; improves maintainability but not user-facing; aligns with project's Swift-first philosophy
-
-5. **GitHub Actions Workflow Validation with actionlint**  
+4. **GitHub Actions Workflow Validation with actionlint**  
    - Purpose & user value: Implement automated validation of GitHub Actions workflows including embedded bash scripts to catch syntax errors, undefined variables, and shellcheck violations before CI execution, reducing deployment failures.
    - Success metrics:  
      - SPM plugin wrapper for actionlint created and integrated
@@ -393,7 +415,7 @@
 
 ---
 
-### Phase 5 — Goal: Advanced DesignSystem Components (LOW PRIORITY)
+### Phase 6 — Goal: Advanced DesignSystem Components (LOW PRIORITY)
 
 **Note**: These components depend on new features being added to 21-dev site or new sites. Implement only when actual use cases emerge.
 
@@ -503,6 +525,7 @@
 
 ## Feature Areas (capability map)
 
+- **Build Infrastructure** - **Utilities library + CLI**, sitemap generation utilities, state file management, workflow automation, type-safe CI/CD tooling
 - **Search & Discovery** - Sitemaps, robots.txt, automated submissions, meta tags, structured data, **instant search**, changelog
 - **Performance & Delivery** - Caching headers, Core Web Vitals, edge optimizations, asset delivery, **performance budgets**, broken link detection
 - **Security & Trust** - **CSP headers**, **security.txt**, vulnerability disclosure, XSS prevention
@@ -524,7 +547,11 @@
 1. Sitemap Infrastructure Overhaul → robots.txt Standardization → Search Engine Submission Automation
 2. Mobile Usability Fixes (independent, parallel track)
 
-**Performance & Security Track** (Phase 2):
+**Architectural Refactoring Track** (Phase 2 - NEXT PRIORITY):
+1. Sitemap Infrastructure (Phase 1) → Utilities Library Extraction (sitemap utilities exist to extract)
+2. Utilities Library Extraction → Workflow Migration to Utilities CLI (library must exist first)
+
+**Performance & Security Track** (Phase 3):
 1. Brand Assets → HTML `<head>` Hygiene (OG images needed) → Social Proof Metrics
 2. _headers Optimization → CSP & Security Headers (shares same file) → Core Web Vitals Optimization
 3. Performance Budgets → Core Web Vitals (establishes baseline)
@@ -532,28 +559,28 @@
 5. security.txt (independent)
 6. Broken Link Detection (independent, CI integration)
 
-**DesignSystem Track** (Phase 2.5 - MEDIUM):
+**DesignSystem Track** (Phase 3.5 - MEDIUM):
 1. Token System Expansion → Layout Component Library (spacing tokens needed)
-2. Token System Expansion → Dark Mode Support (Phase 3.5 - color tokens with dark variants required)
+2. Token System Expansion → Dark Mode Support (Phase 4.5 - color tokens with dark variants required)
 
-**Content & Accessibility Track** (Phase 3):
+**Content & Accessibility Track** (Phase 4):
 1. RSS Feed Implementation (independent)
 2. Blog Tags & Filtering (independent)
 3. **Search Functionality** (independent, CRITICAL for docs.21.dev)
 4. Changelog & Release Notes (independent)
 5. Accessibility Audit (after mobile fixes for efficiency) → Automated Accessibility Testing (CI integration)
 
-**Theme Track** (Phase 3.5 - MEDIUM):
-1. Token System Expansion (Phase 2.5) → Dark Mode Support (blocked until color tokens exist)
+**Theme Track** (Phase 4.5 - MEDIUM):
+1. Token System Expansion (Phase 3.5) → Dark Mode Support (blocked until color tokens exist)
 
-**Future Track** (Phase 4):
+**Future Track** (Phase 5):
 1. Privacy Policy (must complete before Plausible)
 2. Plausible Analytics → Privacy Policy (analytics requires policy)
 3. Documentation Versioning (when multiple major versions exist)
 4. HTML `<head>` Hygiene → i18n Foundation (lang attributes prerequisite)
 5. Sitemap Overhaul → Sitemap Priority Optimization (enhancement to foundation)
 
-**Advanced Components & Community Track** (Phase 5 - LOW, feature-dependent):
+**Advanced Components & Community Track** (Phase 6 - LOW, feature-dependent):
 1. Token System → Form Components (when newsletter/contact form added)
 2. Token System → Feedback Components (when interactive features added)
 3. Core Web Vitals → Media Components (when multi-author blog or video content added)
@@ -565,9 +592,10 @@
 9. DesignSystem maturity (50+ components) → Component Usage Analytics
 
 **Critical Cross-Phase Dependencies**:
-- **Token System Expansion (Phase 2.5) BLOCKS Dark Mode (Phase 3.5)** - Must complete first
-- **Privacy Policy (Phase 4) BLOCKS Plausible Analytics (Phase 4)** - GDPR requirement
-- **Accessibility Audit (Phase 3) → Automated Accessibility Testing (Phase 3)** - Baseline needed
+- **Sitemap Infrastructure (Phase 1) → Utilities Library (Phase 2)** - Utilities must exist before extraction
+- **Token System Expansion (Phase 3.5) BLOCKS Dark Mode (Phase 4.5)** - Must complete first
+- **Privacy Policy (Phase 5) BLOCKS Plausible Analytics (Phase 5)** - GDPR requirement
+- **Accessibility Audit (Phase 4) → Automated Accessibility Testing (Phase 4)** - Baseline needed
 - Brand Assets must complete before HTML `<head>` Hygiene (favicons/OG images needed)
 - Brand Assets must complete before Social Proof Metrics (badges are visual)
 - Mobile Usability Fixes should complete before Accessibility Audit (reduces duplicate effort)
@@ -586,22 +614,22 @@
 - Organic search traffic increases 50%+ within 90 days of Phase 1 completion
 - Google Search Console indexed pages reaches 95%+ coverage
 - Zero sitemap submission errors across all subdomains
-- **30%+ of docs visitors use search within 90 days** (Phase 3 - Search)
-- Zero broken links across all three subdomains (Phase 2 - Link Detection)
+- **30%+ of docs visitors use search within 90 days** (Phase 4 - Search)
+- Zero broken links across all three subdomains (Phase 3 - Link Detection)
 
 **Performance**:
 - P75 LCP improves from 1,288ms to < 1,000ms
 - P90 LCP improves from 2,180ms to < 1,500ms
 - Lighthouse Performance score ≥ 95 on all pages
 - **Performance budgets enforced in CI** (HTML < 100KB, CSS < 50KB, JS < 50KB)
-- **Zero performance regressions merged** (Phase 2 - Performance Budgets)
+- **Zero performance regressions merged** (Phase 3 - Performance Budgets)
 
 **Security & Trust**:
-- **Zero XSS vulnerabilities reported** (Phase 2 - CSP Headers)
-- **CSP headers deployed in strict mode** (Phase 2)
-- **security.txt passes validation** at securitytxt.org (Phase 2)
-- **Vulnerability disclosure process documented** (Phase 2)
-- **Conversion rate improves 10%+ after social proof metrics added** (Phase 2)
+- **Zero XSS vulnerabilities reported** (Phase 3 - CSP Headers)
+- **CSP headers deployed in strict mode** (Phase 3)
+- **security.txt passes validation** at securitytxt.org (Phase 3)
+- **Vulnerability disclosure process documented** (Phase 3)
+- **Conversion rate improves 10%+ after social proof metrics added** (Phase 3)
 
 **User Experience**:
 - Mobile bounce rate decreases by 30%+
@@ -612,19 +640,19 @@
 - Lighthouse Accessibility score ≥ 95 on all pages
 - Zero WCAG AA violations
 - Keyboard navigation works for 100% of interactive elements
-- **Zero new accessibility violations merged to main** (Phase 3 - Automated Testing)
-- **Automated a11y checks in CI** (Phase 3)
+- **Zero new accessibility violations merged to main** (Phase 4 - Automated Testing)
+- **Automated a11y checks in CI** (Phase 4)
 
 **Content Quality**:
 - RSS feed subscribers reach 20%+ of regular blog readers within 90 days
 - Blog tag filtering increases pages-per-session by 30%+
-- **Users can quickly understand what changed between versions** (Phase 3 - Changelog)
-- **Changelog RSS feed separate from blog** (Phase 3)
+- **Users can quickly understand what changed between versions** (Phase 4 - Changelog)
+- **Changelog RSS feed separate from blog** (Phase 4)
 
 **Engagement & Conversion**:
 - Conversion rate on "Get Started" CTA improves by 15%+ (via Plausible)
-- **Social proof metrics visible** (GitHub stars, download counts) (Phase 2)
-- **10%+ of blog posts receive community comments** (Phase 5 - Comments System)
+- **Social proof metrics visible** (GitHub stars, download counts) (Phase 3)
+- **10%+ of blog posts receive community comments** (Phase 6 - Comments System)
 
 **Infrastructure**:
 - Browser cache hit rate reaches 80%+
@@ -641,14 +669,14 @@
 - ClassModifier usage reduces by 80%+ after Layout Component Library
 - Dark mode adoption reaches 40%+ of users within 30 days of launch
 - Component development velocity increases 50%+ (measured by time to build new pages)
-- Zero visual regressions caught in production (Phase 5 goal)
-- **Component usage tracked** for data-driven refactoring (Phase 5)
-- **New contributor onboarding time < 15 minutes** (Phase 5 - Local Dev Docs)
+- Zero visual regressions caught in production (Phase 6 goal)
+- **Component usage tracked** for data-driven refactoring (Phase 6)
+- **New contributor onboarding time < 15 minutes** (Phase 6 - Local Dev Docs)
 
 **Privacy & Compliance**:
-- **Privacy policy deployed before analytics launch** (Phase 4 - GDPR requirement)
+- **Privacy policy deployed before analytics launch** (Phase 5 - GDPR requirement)
 - **Zero GDPR consent popups required** (cookie-free design)
-- **Data retention policy documented** (Phase 4)
+- **Data retention policy documented** (Phase 5)
 
 ---
 
@@ -678,6 +706,8 @@
 
 ## Change Log
 
+- v1.3.1 (2025-11-20): Removed duplicate **Phase 5 Feature 4 (Swift-Based Sitemap Generator Utility)** - fully covered by Phase 2 Feature 1 (Utilities Library Extraction). Consolidated unique success metrics (type-safe models, unified lastmod logic, < 2s generation time) into Phase 2. Renumbered Phase 5 features. — **PATCH** (duplicate removal, no new features)
+- v1.3.0 (2025-11-20): Added **Phase 2 - Utilities Library Refactoring** as next priority feature after Phase 1 completion. Extracts sitemap utilities and workflow logic from DesignSystem into dedicated `Utilities` library + `util` CLI executable, following industry-standard pattern (matches subtree architecture). Reduces code duplication across GitHub Actions workflows, enables type-safe CLI tooling for CI/CD. Renumbered all subsequent phases (old Phase 2 → Phase 3, old Phase 2.5 → Phase 3.5, etc.). — **MINOR** (new architectural refactoring phase, cross-cutting infrastructure improvement extracted from 001-sitemap-infrastructure T057)
 - v1.2.0 (2025-11-13): Added 15 critical missing features based on industry best practices: **Search Functionality** (Phase 3 - CRITICAL for docs), Security features (CSP, security.txt, broken link detection - Phase 2), Changelog & Automated Accessibility Testing (Phase 3), Privacy Policy & Documentation Versioning (Phase 4), Comments System & Editorial Workflow (Phase 5). Elevates security, content quality, and community engagement. — **MINOR** (substantial feature additions, security focus, search capability)
 - v1.1.0 (2025-11-13): Added DesignSystem improvements (Token System, Layout Components, Dark Mode) as Phase 2.5/3.5 (MEDIUM priority) and advanced components as Phase 5 (LOW priority, feature-dependent). Reflects focus on foundation refactoring before feature expansion. — **MINOR** (expanded scope, DesignSystem focus)
 - v1.0.0 (2025-11-13): Initial roadmap covering search discoverability, performance optimization, mobile experience, accessibility, and analytics migration. Organized into 4 phases prioritized by user impact and current pain points. — **MINOR** (new product roadmap, comprehensive feature planning)
@@ -689,6 +719,10 @@
 Use `/speckit.specify` to create detailed specifications for each feature:
 
 ```text
+# Phase 2 - Build Infrastructure (NEXT PRIORITY - HIGH)
+Next: /speckit.specify "Feature: Utilities Library Extraction — Extract sitemap utilities and workflow logic from DesignSystem into dedicated Utilities library + util CLI executable following library+executable pattern"
+
+# Phase 1 - Foundation & Discoverability (COMPLETE)
 Next: /speckit.specify "Feature: Sitemap Infrastructure Overhaul — Generate comprehensive sitemaps for all subdomains with automated submission to search engines"
 Next: /speckit.specify "Feature: robots.txt Standardization — Consistent crawl directives across 21.dev, docs.21.dev, md.21.dev"
 Next: /speckit.specify "Feature: Mobile Usability Fixes — Eliminate responsive design issues and navigation problems on mobile devices"
@@ -703,7 +737,10 @@ Next: /speckit.specify "Feature: Performance Budgets & CI Enforcement — Lighth
 Next: /speckit.specify "Feature: Broken Link Detection & Monitoring — Automated link checking in CI and scheduled external link scans"
 Next: /speckit.specify "Feature: Social Proof & Metrics Display — Display GitHub stars, download counts, and usage statistics for trust building"
 
-# Phase 3 - Content & Accessibility (MEDIUM PRIORITY)
+# Phase 3 - Performance & Delivery Optimization (MEDIUM-HIGH PRIORITY)
+(Phase 3 features listed above under Phase 1)
+
+# Phase 4 - Content & Accessibility (MEDIUM PRIORITY)
 Next: /speckit.specify "Feature: RSS Feed Implementation — Atom/RSS 2.0 feed for blog subscriptions"
 Next: /speckit.specify "Feature: Blog Tags & Filtering — Surface tag metadata with archive pages and filtering"
 Next: /speckit.specify "Feature: Search Functionality — Instant client-side search for docs.21.dev using Pagefind or lunr.js"
@@ -711,20 +748,20 @@ Next: /speckit.specify "Feature: Changelog & Release Notes — Structured change
 Next: /speckit.specify "Feature: Automated Accessibility Testing — Integrate axe-core in CI to prevent new WCAG violations"
 Next: /speckit.specify "Feature: Accessibility Audit & Remediation — WCAG AA compliance across all pages"
 
-# Phase 2.5 - DesignSystem Foundation (MEDIUM PRIORITY)
+# Phase 3.5 - DesignSystem Foundation (MEDIUM PRIORITY)
 Next: /speckit.specify "Feature: Token System Expansion — Comprehensive design token library with Color, Spacing, Typography, Shadow, Border, ZIndex, Animation, and Breakpoint tokens"
 Next: /speckit.specify "Feature: Layout Component Library — Reusable Container, VStack, HStack, Grid, Spacer, and Divider components"
 
-# Phase 3.5 - Dark Mode (MEDIUM PRIORITY)  
+# Phase 4.5 - Dark Mode (MEDIUM PRIORITY)  
 Next: /speckit.specify "Feature: Dark Mode Support — System-respecting dark theme with prefers-color-scheme and localStorage persistence"
 
-# Phase 4 - Future Features
+# Phase 5 - Future Features
 Next: /speckit.specify "Feature: Privacy Policy & Legal Pages — Transparent privacy policy for GDPR compliance and user trust"
 Next: /speckit.specify "Feature: Plausible Analytics Migration — Self-hosted, cookie-free analytics with conversion tracking"
 Next: /speckit.specify "Feature: Documentation Versioning — Version selector for swift-secp256k1 docs matching installed package versions"
 Next: /speckit.specify "Feature: Internationalization Foundation — i18n-ready structure and scaffolding for future multi-language support"
 
-# Phase 5 - Advanced Components & Community (LOW PRIORITY, feature-dependent)
+# Phase 6 - Advanced Components & Community (LOW PRIORITY, feature-dependent)
 Next: /speckit.specify "Feature: Form Component Library — Accessible Input, TextArea, Select, Checkbox, Radio components with validation"
 Next: /speckit.specify "Feature: Feedback Component Suite — Toast, Alert, Banner, and ProgressBar components with ARIA live regions"
 Next: /speckit.specify "Feature: Media & Content Components — Optimized Image, Avatar, Badge, and Video components with lazy loading"
