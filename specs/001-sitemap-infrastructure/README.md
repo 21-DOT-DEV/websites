@@ -4,100 +4,190 @@
 
 This feature requires API credentials for automated sitemap submission to search engines.
 
+## Search Engine Submission Setup
+
 ### Google Search Console Setup
 
-**1. Create a Service Account**:
+1. **Create a Google Cloud Project**:
    - Go to [Google Cloud Console](https://console.cloud.google.com/)
-   - Create a new project or select existing project
-   - Enable the "Web Search Indexing API"
-   - Navigate to "IAM & Admin" → "Service Accounts"
-   - Click "Create Service Account"
-   - Name: `sitemap-submitter` (or your choice)
-   - Grant role: "Service Account User"
+   - Create a new project or select existing
 
-**2. Generate JSON Key**:
-   - Click on the created service account
+2. **Enable Search Console API**:
+   - Go to APIs & Services → Library
+   - Search for "Google Search Console API"
+   - Click "Enable"
+
+3. **Create Service Account**:
+   - Go to APIs & Services → Credentials
+   - Click "Create Credentials" → "Service Account"
+   - Name: `sitemap-submitter` (or your choice)
+   - No role assignment needed at Cloud level
+
+4. **Generate Service Account Key**:
+   - Click on the service account
    - Go to "Keys" tab
    - Click "Add Key" → "Create new key"
-   - Choose "JSON" format
-   - Download the JSON file
+   - Choose JSON format
+   - Save the downloaded JSON file securely
 
-**3. Verify Search Console Access**:
+5. **Add Service Account to Search Console**:
    - Go to [Google Search Console](https://search.google.com/search-console)
-   - Add your domain properties (21.dev, docs.21.dev, md.21.dev)
-   - Add the service account email as a user:
-     - Settings → Users and permissions
-     - Add user with service account email (found in JSON: `client_email`)
-     - Permission level: "Owner"
-
-**4. Add to GitHub Secrets**:
-   - Repository → Settings → Secrets and variables → Actions
-   - Click "New repository secret"
-   - Name: `GOOGLE_SERVICE_ACCOUNT_JSON`
-   - Value: Paste the entire contents of the downloaded JSON file
-   - Click "Add secret"
+   - For each property (21.dev, docs.21.dev, md.21.dev):
+     - Go to Settings → Users and permissions
+     - Click "Add user"
+     - Enter service account email (from JSON: `client_email`)
+     - Set permission: **Owner** (required for API access)
 
 ### Bing Webmaster Tools Setup
 
-**1. Get API Key**:
-   - Go to [Bing Webmaster Tools](https://www.bing.com/webmasters)
-   - Sign in with Microsoft account
-   - Add your sites (21.dev, docs.21.dev, md.21.dev)
-   - Verify ownership (DNS TXT record or meta tag)
-   - Navigate to Settings → API Access
-   - Generate new API key
-   - Copy the API key
+**Note**: Bing does not provide an automated sitemap submission API. Sitemaps must be submitted manually (one-time setup).
 
-**2. Add to GitHub Secrets**:
-   - Repository → Settings → Secrets and variables → Actions
+1. **Sign in to Bing Webmaster Tools**:
+   - Go to [Bing Webmaster Tools](https://www.bing.com/webmasters/)
+   - Sign in with your Microsoft account
+
+2. **Add/Verify Your Sites**:
+   - Add 21.dev, docs.21.dev, and md.21.dev
+   - Complete verification process (DNS, meta tag, or file)
+
+3. **Submit Sitemaps Manually**:
+   - For each site, go to Sitemaps section
+   - Click "Submit sitemap"
+   - Enter sitemap URL:
+     - `https://21.dev/sitemap.xml`
+     - `https://docs.21.dev/sitemap.xml`
+     - `https://md.21.dev/sitemap.xml`
+   - Click "Submit"
+
+**Important**: After initial manual submission, Bing will automatically discover sitemap updates via the `robots.txt` file and the `lastmod` dates in your sitemaps.
+
+### Configure GitHub Secrets
+
+Add this secret to your GitHub repository:
+
+1. **`GOOGLE_SERVICE_ACCOUNT_JSON`**:
+   - Go to Settings → Secrets and variables → Actions
    - Click "New repository secret"
-   - Name: `BING_API_KEY`
-   - Value: Paste the API key
-   - Click "Add secret"
-
-### Required Secrets Summary
-
-| Secret Name | Description | How to Get |
-|-------------|-------------|------------|
-| `GOOGLE_SERVICE_ACCOUNT_JSON` | Google service account credentials (JSON) | Google Cloud Console → Service Accounts → Create Key |
-| `BING_API_KEY` | Bing Webmaster Tools API key | Bing Webmaster Tools → Settings → API Access |
+   - Name: `GOOGLE_SERVICE_ACCOUNT_JSON`
+   - Value: Paste the entire contents of the service account JSON file (all lines, including braces)
 
 ### Verification
 
-After setting up secrets, the next production deployment will automatically:
+After setting up secrets and manual Bing submission, production deployments will automatically:
 1. Deploy to Cloudflare Pages
-2. Submit sitemap to Google Search Console
-3. Submit sitemap to Bing Webmaster Tools
+2. Submit sitemap to Google Search Console (automated)
+3. Bing discovers updates via robots.txt + lastmod (automatic after initial manual submission)
 
 Check the workflow logs for confirmation:
 - ✅ "Successfully submitted to Google Search Console"
-- ✅ "Successfully submitted to Bing Webmaster Tools"
+- HTTP Status: 204 (No Content - Success)
 
-If submission fails, warnings will appear in the logs without blocking deployment.
+If Google submission fails, warnings will appear in the logs without blocking deployment.
 
 ### Testing
 
-To test without production deployment:
-1. Temporarily set `deploy-to-production: true` in a PR workflow
-2. Monitor workflow logs for submission attempts
-3. Check for HTTP 200 responses
-4. Verify no deployment blocking on API failures
+**Local Testing** (recommended before relying on GitHub Actions):
+```bash
+# 1. Export your Google credentials
+export GOOGLE_SERVICE_ACCOUNT_JSON="$(cat path/to/service-account.json)"
+
+# 2. Test submission for one sitemap
+./scripts/test-sitemap-submission.sh https://docs.21.dev/sitemap.xml
+
+# 3. Test all sitemaps
+./scripts/test-sitemap-submission.sh https://21.dev/sitemap.xml
+./scripts/test-sitemap-submission.sh https://docs.21.dev/sitemap.xml
+./scripts/test-sitemap-submission.sh https://md.21.dev/sitemap.xml
+```
+
+**Expected Output**:
+```
+✅ Successfully submitted to Google Search Console
+HTTP Status: 204 (No Content - Success)
+```
+
+**GitHub Actions Testing**:
+1. Ensure `GOOGLE_SERVICE_ACCOUNT_JSON` secret is configured
+2. Trigger a production deployment with `deploy-to-production: true`
+3. Monitor workflow logs for submission attempts
+4. Check for HTTP 204 response
+5. Verify no deployment blocking on API failures
 
 ### Troubleshooting
 
 **Google Submission Fails**:
-- Verify service account has "Owner" permission in Search Console
-- Check API is enabled in Google Cloud Console
-- Ensure JSON secret is valid (no formatting issues)
-- Review error message in workflow logs
+- Verify service account has "Owner" permission in Search Console for each property
+- Check "Google Search Console API" (not Indexing API) is enabled in Google Cloud Console
+- Ensure JSON secret is valid (no formatting issues, complete JSON with all brackets)
+- Review error message in workflow logs (common: 403 = permission issue, 404 = site not verified)
 
-**Bing Submission Fails**:
-- Verify API key is active in Bing Webmaster Tools
-- Confirm sites are verified in Bing Webmaster Tools
-- Check API rate limits haven't been exceeded
-- Review error message in workflow logs
+**Bing Sitemaps Not Updating**:
+- Verify robots.txt contains sitemap reference
+- Check `lastmod` dates are updating in your sitemaps
+- Allow 24-48 hours for Bing to re-crawl after sitemap changes
+- Manually re-submit sitemap if needed (no API required)
 
-**Both Submissions Fail**:
-- Verify secrets are named correctly (case-sensitive)
-- Check secrets are available in repository settings
-- Ensure workflow has `secrets: inherit` when calling deploy-cloudflare.yml
+## Monitoring Checklist
+
+Use this checklist to verify sitemap infrastructure health after deployments.
+
+### Workflow Logs
+
+- [ ] Check latest production deployment workflow run
+- [ ] Verify sitemap generation step completed successfully for each subdomain
+- [ ] Confirm Google Search Console submission shows HTTP 204 response
+- [ ] Review any warnings or errors in submission logs
+
+### Search Console Verification
+
+**Google Search Console** (https://search.google.com/search-console):
+
+For each property (21.dev, docs.21.dev, md.21.dev):
+- [ ] Navigate to Sitemaps section
+- [ ] Verify sitemap.xml is listed with "Success" status
+- [ ] Check last read date is recent (within 7 days)
+- [ ] Review discovered URLs count matches expected page count
+- [ ] Check Coverage report shows no errors
+
+**Bing Webmaster Tools** (https://www.bing.com/webmasters/):
+
+For each site (21.dev, docs.21.dev, md.21.dev):
+- [ ] Navigate to Sitemaps section
+- [ ] Verify sitemap.xml shows recent "Last Crawled" date
+- [ ] Review URL count matches submitted sitemap
+- [ ] Check for any crawl errors or warnings
+
+### Sitemap Content Validation
+
+For each subdomain sitemap (view in browser or curl):
+- [ ] **21.dev/sitemap.xml**: Verify all static pages included
+- [ ] **docs.21.dev/sitemap.xml**: Verify all documentation pages included
+- [ ] **md.21.dev/sitemap.xml**: Verify all markdown files included
+- [ ] Check `<lastmod>` dates are accurate and updating correctly
+- [ ] Validate XML structure with https://www.xml-sitemaps.com/validate-xml-sitemap.html
+
+### robots.txt Verification
+
+For each subdomain (view in browser):
+- [ ] **21.dev/robots.txt**: Contains `Sitemap: https://21.dev/sitemap.xml`
+- [ ] **docs.21.dev/robots.txt**: Contains `Sitemap: https://docs.21.dev/sitemap.xml`
+- [ ] **md.21.dev/robots.txt**: Contains `Sitemap: https://md.21.dev/sitemap.xml`
+
+### Indexing Health (7-day check)
+
+After 7 days post-deployment:
+- [ ] Google Search Console shows 95%+ of submitted URLs indexed
+- [ ] No significant coverage errors or excluded URLs
+- [ ] Bing shows increasing indexed page count
+- [ ] Manual `site:` search shows recent pages indexed
+
+### State File Integrity
+
+- [ ] `Resources/sitemap-state.json` version matches `Package.resolved` swift-secp256k1 version
+- [ ] `generated_date` in state file is ISO 8601 format
+- [ ] Lefthook hooks are installed (`swift package --disable-sandbox lefthook check-install`)
+
+**Recommended Frequency**: 
+- Weekly after initial deployment
+- After each major content update
+- After Package.resolved changes (dependency updates)

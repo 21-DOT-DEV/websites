@@ -27,8 +27,6 @@ on:
         required: true
       google-service-account-json:
         required: false
-      bing-api-key:
-        required: false
     outputs:
       deployment-url:
         description: 'The URL where the site was deployed'
@@ -154,10 +152,75 @@ jobs:
           echo "skip=false" >> $GITHUB_OUTPUT
           echo "📍 Sitemap URL: $SITEMAP_URL"
       
-      - name: Submit sitemap to search engines
+      - name: Submit sitemap to Google Search Console
         if: inputs.deploy-to-production == true && steps.sitemap.outputs.skip != 'true'
-        uses: ./.github/actions/submit-sitemap
-        with:
-          sitemap_url: ${{ steps.sitemap.outputs.sitemap-url }}
-          google_service_account_json: ${{ secrets.google-service-account-json }}
-          bing_api_key: ${{ secrets.bing-api-key }}
+        continue-on-error: true
+        run: |
+          set +e
+          
+          echo "🔍 Submitting sitemap to Google Search Console..."
+          echo "   Sitemap URL: ${{ steps.sitemap.outputs.sitemap-url }}"
+          
+          # Extract domain for sc-domain format (Domain property)
+          DOMAIN=$(echo "${{ steps.sitemap.outputs.sitemap-url }}" | sed -E 's|https?://([^/]+).*|\1|')
+          SITE_URL="sc-domain:${DOMAIN}"
+          echo "   Site URL: $SITE_URL (Domain property)"
+          
+          # Write service account JSON to temporary file
+          SA_KEY_FILE=$(mktemp)
+          echo '${{ secrets.google-service-account-json }}' > "$SA_KEY_FILE"
+          
+          # Extract service account email
+          SA_EMAIL=$(jq -r '.client_email' "$SA_KEY_FILE")
+          
+          # Create JWT for OAuth with correct scope (webmasters, not indexing)
+          HEADER='{"alg":"RS256","typ":"JWT"}'
+          PAYLOAD='{"iss":"'$SA_EMAIL'","scope":"https://www.googleapis.com/auth/webmasters","aud":"https://oauth2.googleapis.com/token","exp":'$(($(date +%s)+3600))',"iat":'$(date +%s)'}'
+          
+          # Base64url encode
+          HEADER_B64=$(echo -n "$HEADER" | base64 | tr -d '=' | tr '/+' '_-' | tr -d '\n')
+          PAYLOAD_B64=$(echo -n "$PAYLOAD" | base64 | tr -d '=' | tr '/+' '_-' | tr -d '\n')
+          
+          # Sign with private key
+          SIGNATURE=$(echo -n "${HEADER_B64}.${PAYLOAD_B64}" | \
+            openssl dgst -sha256 -sign <(jq -r '.private_key' "$SA_KEY_FILE") | \
+            base64 | tr -d '=' | tr '/+' '_-' | tr -d '\n')
+          
+          JWT="${HEADER_B64}.${PAYLOAD_B64}.${SIGNATURE}"
+          
+          # Get OAuth access token
+          ACCESS_TOKEN=$(curl -s -X POST https://oauth2.googleapis.com/token \
+            -H "Content-Type: application/json" \
+            -d '{"grant_type":"urn:ietf:params:oauth:grant-type:jwt-bearer","assertion":"'$JWT'"}' | \
+            jq -r '.access_token')
+          
+          # Clean up temporary file
+          rm -f "$SA_KEY_FILE"
+          
+          if [ -z "$ACCESS_TOKEN" ] || [ "$ACCESS_TOKEN" = "null" ]; then
+            echo "::warning::Failed to obtain Google OAuth token"
+            exit 0
+          fi
+          
+          # URL-encode the site URL and sitemap URL for API
+          SITE_URL_ENCODED=$(printf %s "$SITE_URL" | jq -sRr @uri)
+          SITEMAP_URL_ENCODED=$(printf %s "${{ steps.sitemap.outputs.sitemap-url }}" | jq -sRr @uri)
+          
+          # Submit sitemap using Search Console API (PUT request)
+          RESPONSE=$(curl -s -w "\n%{http_code}" -X PUT \
+            "https://www.googleapis.com/webmasters/v3/sites/${SITE_URL_ENCODED}/sitemaps/${SITEMAP_URL_ENCODED}" \
+            -H "Content-Type: application/json" \
+            -H "Authorization: Bearer $ACCESS_TOKEN")
+          
+          HTTP_CODE=$(echo "$RESPONSE" | tail -n1)
+          BODY=$(echo "$RESPONSE" | sed '$d')
+          
+          if [ "$HTTP_CODE" = "204" ]; then
+            echo "✅ Successfully submitted to Google Search Console"
+            echo "   HTTP Status: $HTTP_CODE (No Content - Success)"
+          else
+            echo "::warning::Google Search Console submission failed with HTTP $HTTP_CODE"
+            if [ -n "$BODY" ]; then
+              echo "   Response: $BODY"
+            fi
+          fi

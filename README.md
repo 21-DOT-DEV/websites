@@ -1,5 +1,18 @@
 # websites
 
+## Features
+
+### Sitemap Infrastructure
+
+Automated sitemap generation and search engine submission across all subdomains:
+- **21.dev**: Static site sitemap with git-based lastmod dates
+- **docs.21.dev**: DocC documentation sitemap
+- **md.21.dev**: Markdown documentation sitemap
+
+Each subdomain maintains its own `sitemap.xml` and `robots.txt`, with automated submission to Google Search Console on production deployments.
+
+**Setup & Configuration**: See [specs/001-sitemap-infrastructure/README.md](specs/001-sitemap-infrastructure/README.md) for API credential setup and monitoring instructions.
+
 ## Setup
 
 ### Lefthook (Git Hooks)
