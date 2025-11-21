@@ -24,7 +24,7 @@ public struct NosIcon: View {
                     SVGStop(offset: 1, color: SVGColor.hex("#AF5F00"), opacity: 1)
                 }
                 .modifier(AttributeModifier("id", value: "paint0_linear_nos"))
-
+                
                 SVGLinearGradient(
                     start: Point(x: 108.355, y: 367.282),
                     end: Point(x: 404, y: 127.671),

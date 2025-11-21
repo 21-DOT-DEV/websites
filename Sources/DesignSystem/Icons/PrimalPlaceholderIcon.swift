@@ -22,7 +22,7 @@ public struct PrimalPlaceholderIcon: View {
                     .fontWeight("600")
                     .textAnchor("middle")
                     .fill(.hex("#333333"))
-
+                
                 SVGText("Primal", at: Point(x: 128, y: 140))
                     .fontSize("56")
                     .fontFamily("system-ui, -apple-system, sans-serif")

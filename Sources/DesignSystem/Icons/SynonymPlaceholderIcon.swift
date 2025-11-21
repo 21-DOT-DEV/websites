@@ -22,7 +22,7 @@ public struct SynonymPlaceholderIcon: View {
                     .fontWeight("600")
                     .textAnchor("middle")
                     .fill(.hex("#333333"))
-
+                
                 SVGText("Synonym", at: Point(x: 128, y: 140))
                     .fontSize("56")
                     .fontFamily("system-ui, -apple-system, sans-serif")

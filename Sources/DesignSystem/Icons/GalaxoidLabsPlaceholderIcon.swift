@@ -29,7 +29,7 @@ public struct GalaxoidLabsPlaceholderIcon: View {
                     .fontWeight("600")
                     .textAnchor("middle")
                     .fill(SVGColor.hex("#333333"))
-
+                
                 // Main text
                 SVGText("Galaxoid", at: Point(x: 128, y: 114))
                     .fontSize("56")

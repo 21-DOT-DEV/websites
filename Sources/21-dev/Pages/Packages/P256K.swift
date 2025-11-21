@@ -239,11 +239,6 @@ struct P256KPage {
             }
         )
     ])
-
-    // CSS components for rendering styles
-    static var cssComponents: [any HasComponentCSS] {
-        [SiteDefaults.header, codeHeroSection, installationSection, faqAccordion]
-    }
     
     static var page: some View {
         BasePage(title: "P256K - Swift secp256k1 for Bitcoin Development") {

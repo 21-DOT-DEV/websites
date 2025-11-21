@@ -29,7 +29,7 @@ public struct NosturIcon: View {
                     SVGStop(offset: 1, color: SVGColor.hex("#475E66"), opacity: 1)
                 }
                 .modifier(AttributeModifier("id", value: "XMLID_3_nostur"))
-
+                
                 SVGLinearGradient(
                     start: Point(x: 534.8233, y: 333.4573),
                     end: Point(x: 804.8233, y: 655.4573),
@@ -39,7 +39,7 @@ public struct NosturIcon: View {
                     SVGStop(offset: 1, color: SVGColor.hex("#0E1212"), opacity: 1)
                 }
                 .modifier(AttributeModifier("id", value: "XMLID_4_nostur"))
-
+                
                 SVGLinearGradient(
                     start: Point(x: 316.9406, y: 179.0295),
                     end: Point(x: 656.9406, y: 701.0295),
