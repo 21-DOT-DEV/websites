@@ -35,7 +35,7 @@ public struct TabItem: Sendable {
 ///     }
 /// }
 /// ```
-public struct Tabs: View, HasComponentCSS {
+public struct Tabs: View, StyleModifier {
     
     /// Unique identifier for this tab group
     public let id: String
@@ -66,7 +66,7 @@ public struct Tabs: View, HasComponentCSS {
     }
     
     /// Instance-based CSS generation using actual tab configuration
-    public var componentCSS: String {
+    public var style: String {
         return Self.generateCSS(id: id, numberOfTabs: tabs.count)
     }
     

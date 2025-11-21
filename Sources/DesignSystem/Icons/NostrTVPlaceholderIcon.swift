@@ -22,7 +22,7 @@ public struct NostrTVPlaceholderIcon: View {
                     .fontWeight("600")
                     .textAnchor("middle")
                     .fill(SVGColor.hex("#333333"))
-
+                
                 SVGText("nostrTV", at: Point(x: 128, y: 140))
                     .fontSize("56")
                     .fontFamily("system-ui, -apple-system, sans-serif")

@@ -22,7 +22,7 @@ public struct OlasPlaceholderIcon: View {
                     .fontWeight("600")
                     .textAnchor("middle")
                     .fill(SVGColor.hex("#333333"))
-
+                
                 SVGText("Olas", at: Point(x: 128, y: 140))
                     .fontSize("56")
                     .fontFamily("system-ui, -apple-system, sans-serif")

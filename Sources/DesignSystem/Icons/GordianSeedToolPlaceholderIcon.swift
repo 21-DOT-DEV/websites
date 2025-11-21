@@ -29,7 +29,7 @@ public struct GordianSeedToolPlaceholderIcon: View {
                     .fontWeight("600")
                     .textAnchor("middle")
                     .fill(.hex("#333333"))
-
+                
                 // Main text
                 SVGText("Gordian", at: Point(x: 128, y: 114))
                     .fontSize("56")

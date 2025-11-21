@@ -19,11 +19,6 @@ struct BlogPostPage {
         self.post = post
     }
     
-    // CSS components for rendering styles
-    static var cssComponents: [any HasComponentCSS] {
-        [SiteDefaults.header]
-    }
-    
     static func page(for slug: String) -> (any View)? {
         guard let post = BlogService.loadPost(slug: slug) else {
             return nil
