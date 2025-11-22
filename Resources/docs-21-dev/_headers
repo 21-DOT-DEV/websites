@@ -1,0 +1,49 @@
+# Cloudflare Pages Headers — docs.21.dev
+# Production builds serve static DocC content; previews omit HSTS for safety.
+
+# Production HTML (DocC) — strict baseline + CSP allowing DocC assets and analytics
+# NOTE: Extend CSP allowlists by appending origins (e.g., extra script host) instead of removing defaults to keep minimum protections intact.
+# CF-PAGES-ENV: production
+/*
+  Strict-Transport-Security: max-age=63072000; includeSubDomains; preload
+  Content-Security-Policy: default-src 'self'; connect-src 'self' https://static.cloudflareinsights.com; font-src 'self' data:; img-src 'self' data:; script-src 'self' https://static.cloudflareinsights.com; style-src 'self' 'unsafe-inline'; frame-ancestors 'none'; object-src 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests
+  X-Frame-Options: DENY
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: geolocation=(), microphone=(), camera=(), payment=(), fullscreen=(self)
+  Cross-Origin-Opener-Policy: same-origin
+  Cross-Origin-Resource-Policy: same-origin
+  Cache-Control: public, max-age=300, must-revalidate
+  Vary: Accept-Encoding
+
+# Preview HTML — same policy without HSTS
+# CF-PAGES-ENV: preview
+/*
+  Content-Security-Policy: default-src 'self'; connect-src 'self' https://static.cloudflareinsights.com; font-src 'self' data:; img-src 'self' data:; script-src 'self' https://static.cloudflareinsights.com; style-src 'self' 'unsafe-inline'; frame-ancestors 'none'; object-src 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests
+  X-Frame-Options: DENY
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: geolocation=(), microphone=(), camera=(), payment=(), fullscreen=(self)
+  Cross-Origin-Opener-Policy: same-origin
+  Cross-Origin-Resource-Policy: same-origin
+  Cache-Control: public, max-age=300, must-revalidate
+  Vary: Accept-Encoding
+
+# Static assets inside DocC bundle
+/documentation/**/static/*
+  Cache-Control: public, max-age=86400
+  Vary: Accept-Encoding
+
+# JavaScript bundle (DocC search)
+/js/*
+  Cache-Control: public, max-age=86400
+  Vary: Accept-Encoding
+
+# No-store zones (well-known + JSON)
+/.well-known/*
+  Cache-Control: no-store
+  Pragma: no-cache
+
+/**/*.json
+  Cache-Control: no-store
+  Pragma: no-cache

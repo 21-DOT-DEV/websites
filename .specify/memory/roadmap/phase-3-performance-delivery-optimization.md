@@ -9,32 +9,8 @@
 Optimize caching, delivery, and site structure to achieve excellent Core Web Vitals, strong security posture, and reliable content delivery.
 
 ## Features
-
-### Feature 1 — Cloudflare _headers Optimization
-- **Name:** Cloudflare _headers Optimization
-- **Purpose & user value:** Implement aggressive caching strategies, security headers, and performance optimizations via Cloudflare's _headers file to dramatically improve load times and Core Web Vitals scores.
-- **Success metrics:**
-  - Browser cache hit rate increases to 80%+
-  - P75 LCP improves from 1,288ms to < 1,000ms
-  - P90 LCP improves from 2,180ms to < 1,500ms
-  - Security headers (CSP, X-Frame-Options) present on all pages
-  - Immutable caching for static assets (CSS, images)
-- **Dependencies:** None
-- **Notes:** Current _headers only has basic content-type rules; huge optimization opportunity.
-
-### Feature 2 — Cloudflare _redirects Implementation
-- **Name:** Cloudflare _redirects Implementation
-- **Purpose & user value:** Handle URL redirects efficiently at the edge (not requiring manual Cloudflare Rules) for cleaner migrations, short URLs, and legacy path support without performance penalty.
-- **Success metrics:**
-  - All redirects execute in < 10ms at edge
-  - Zero manual Cloudflare Page Rules needed for redirects
-  - 301 redirects properly preserve SEO value
-  - Redirect configuration lives in version control
-  - Support for 50+ redirect rules without performance impact
-- **Dependencies:** None
-- **Notes:** Currently no _redirects file exists; using manual Cloudflare Rules (harder to maintain).
-
-### Feature 3 — Core Web Vitals Optimization
+ 
+### Feature 1 — Core Web Vitals Optimization
 - **Name:** Core Web Vitals Optimization
 - **Purpose & user value:** Systematically improve Largest Contentful Paint (LCP), Interaction to Next Paint (INP), and Cumulative Layout Shift (CLS) to provide faster, smoother user experiences and improve search rankings.
 - **Success metrics:**
@@ -46,7 +22,7 @@ Optimize caching, delivery, and site structure to achieve excellent Core Web Vit
 - **Dependencies:** Cloudflare _headers Optimization (caching needed for LCP improvement).
 - **Notes:** docs.21.dev has "needs improvement" segment; P99 latency concerning.
 
-### Feature 4 — HTML `<head>` Hygiene & SEO
+### Feature 2 — HTML `<head>` Hygiene & SEO
 - **Name:** HTML `<head>` Hygiene & SEO
 - **Purpose & user value:** Implement comprehensive meta tags, Open Graph markup, structured data, and proper head elements to maximize search visibility, social sharing, and discoverability.
 - **Success metrics:**
@@ -58,7 +34,7 @@ Optimize caching, delivery, and site structure to achieve excellent Core Web Vit
 - **Dependencies:** Brand Assets & Favicons (for favicons and OG images).
 - **Notes:** Currently only has basic charset, title, viewport; missing critical SEO elements.
 
-### Feature 5 — Brand Assets & Favicons
+### Feature 3 — Brand Assets & Favicons
 - **Name:** Brand Assets & Favicons
 - **Purpose & user value:** Provide professional favicon suite, app icons, and Open Graph images to improve brand recognition, mobile home screen experience, and social media presence.
 - **Success metrics:**
@@ -70,7 +46,7 @@ Optimize caching, delivery, and site structure to achieve excellent Core Web Vit
 - **Dependencies:** None (can use placeholder assets initially).
 - **Notes:** Currently zero brand assets exist; all missing.
 
-### Feature 6 — Content Security Policy (CSP) & Security Headers
+### Feature 4 — Content Security Policy (CSP) & Security Headers
 - **Name:** Content Security Policy (CSP) & Security Headers
 - **Purpose & user value:** Implement strict Content Security Policy headers to prevent XSS attacks and other injection vulnerabilities, protecting users and maintaining trust in the platform.
 - **Success metrics:**
@@ -82,7 +58,7 @@ Optimize caching, delivery, and site structure to achieve excellent Core Web Vit
 - **Dependencies:** Cloudflare _headers Optimization (shares same file).
 - **Notes:** OWASP Top 10 mitigation; critical for security-conscious developer tools.
 
-### Feature 7 — security.txt & Vulnerability Disclosure
+### Feature 5 — security.txt & Vulnerability Disclosure
 - **Name:** security.txt & Vulnerability Disclosure
 - **Purpose & user value:** Provide RFC 9116 compliant security.txt file for responsible vulnerability disclosure, enabling security researchers to report issues properly.
 - **Success metrics:**
@@ -94,7 +70,7 @@ Optimize caching, delivery, and site structure to achieve excellent Core Web Vit
 - **Dependencies:** None.
 - **Notes:** Industry best practice for open source projects; GitHub, Cloudflare, Mozilla all have this.
 
-### Feature 8 — Performance Budgets & CI Enforcement
+### Feature 6 — Performance Budgets & CI Enforcement
 - **Name:** Performance Budgets & CI Enforcement
 - **Purpose & user value:** Establish and enforce performance budgets in CI to prevent regressions, ensuring fast load times remain consistent across all deployments.
 - **Success metrics:**
@@ -106,7 +82,7 @@ Optimize caching, delivery, and site structure to achieve excellent Core Web Vit
 - **Dependencies:** Core Web Vitals Optimization (baseline metrics needed).
 - **Notes:** Ongoing monitoring, not one-time optimization; prevents performance decay.
 
-### Feature 9 — Broken Link Detection & Monitoring
+### Feature 7 — Broken Link Detection & Monitoring
 - **Name:** Broken Link Detection & Monitoring
 - **Purpose & user value:** Automatically detect and prevent broken internal/external links through CI checks and scheduled scans, maintaining documentation quality and user trust.
 - **Success metrics:**
@@ -118,7 +94,7 @@ Optimize caching, delivery, and site structure to achieve excellent Core Web Vit
 - **Dependencies:** None.
 - **Notes:** Use lychee or htmlproofer; critical for docs site credibility.
 
-### Feature 10 — Social Proof & Metrics Display
+### Feature 8 — Social Proof & Metrics Display
 - **Name:** Social Proof & Metrics Display
 - **Purpose & user value:** Display GitHub stars, download counts, and usage statistics to build trust and social proof, increasing package adoption through visible community validation.
 - **Success metrics:**
@@ -133,9 +109,9 @@ Optimize caching, delivery, and site structure to achieve excellent Core Web Vit
 ## Phase Dependencies & Sequencing
 
 - Brand Assets & Favicons → HTML `<head>` Hygiene & SEO → Social Proof & Metrics Display.
-- Cloudflare _headers Optimization → Content Security Policy (CSP) & Security Headers → Core Web Vitals Optimization.
+- Content Security Policy (CSP) & Security Headers → Core Web Vitals Optimization.
 - Performance Budgets & CI Enforcement builds on Core Web Vitals Optimization to enforce baselines.
-- _redirects Implementation, security.txt, and Broken Link Detection & Monitoring can proceed independently.
+- security.txt and Broken Link Detection & Monitoring can proceed independently.
 
 ## Phase Metrics
 

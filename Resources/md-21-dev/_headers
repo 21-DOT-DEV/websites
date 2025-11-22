@@ -1,57 +1,47 @@
-# Cloudflare Pages Headers Configuration — 21.dev
-# https://developers.cloudflare.com/pages/platform/headers/
+# Cloudflare Pages Headers — md.21.dev
+# Markdown pages behave like HTML; downloads (.md/.txt/.json) inherit security headers except HSTS.
+# NOTE: When adding new origins (fonts, analytics), append them to the relevant CSP directive instead of removing the defaults below.
 
-# Production HTML pages — include strict security headers + HSTS
-# NOTE: Extend CSP allowlists by appending origins to the existing directive (e.g., add another `connect-src` host) rather than removing defaults.
+# Production Markdown-as-HTML pages
 # CF-PAGES-ENV: production
-/*
+/*.md
   Strict-Transport-Security: max-age=63072000; includeSubDomains; preload
   Content-Security-Policy: default-src 'self'; connect-src 'self' https://static.cloudflareinsights.com; font-src 'self'; img-src 'self' data:; script-src 'self' https://static.cloudflareinsights.com; style-src 'self' 'unsafe-inline'; frame-ancestors 'none'; object-src 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests
   X-Frame-Options: DENY
   X-Content-Type-Options: nosniff
   Referrer-Policy: strict-origin-when-cross-origin
-  Permissions-Policy: geolocation=(), microphone=(), camera=(), payment=(), usb=(), fullscreen=(self)
+  Permissions-Policy: geolocation=(), microphone=(), camera=(), payment=(), fullscreen=(self)
   Cross-Origin-Opener-Policy: same-origin
   Cross-Origin-Resource-Policy: same-origin
-  Cache-Control: public, max-age=300, must-revalidate
-  Vary: Accept-Encoding
 
-# Preview HTML pages — identical security headers without HSTS
+# Preview Markdown pages — same baseline, no HSTS
 # CF-PAGES-ENV: preview
-/*
+/*.md
   Content-Security-Policy: default-src 'self'; connect-src 'self' https://static.cloudflareinsights.com; font-src 'self'; img-src 'self' data:; script-src 'self' https://static.cloudflareinsights.com; style-src 'self' 'unsafe-inline'; frame-ancestors 'none'; object-src 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests
   X-Frame-Options: DENY
   X-Content-Type-Options: nosniff
   Referrer-Policy: strict-origin-when-cross-origin
-  Permissions-Policy: geolocation=(), microphone=(), camera=(), payment=(), usb=(), fullscreen=(self)
+  Permissions-Policy: geolocation=(), microphone=(), camera=(), payment=(), fullscreen=(self)
   Cross-Origin-Opener-Policy: same-origin
   Cross-Origin-Resource-Policy: same-origin
-  Cache-Control: public, max-age=300, must-revalidate
-  Vary: Accept-Encoding
 
-# Static assets — long-lived caching
-/static/*
-  Cache-Control: public, max-age=86400
-  Vary: Accept-Encoding
-
-/assets/*
-  Cache-Control: public, max-age=86400
-  Vary: Accept-Encoding
-
-# Serve plain text files with correct content-type
+# Downloads (raw Markdown, txt, JSON) — keep baseline headers but omit HSTS; these files are served as-is and should not be executed by the browser
 /*.txt
   Content-Type: text/plain; charset=utf-8
   X-Content-Type-Options: nosniff
 
-# Serve XML files
-/*.xml
-  Content-Type: application/xml; charset=utf-8
+/.well-known/*
+  Content-Security-Policy: default-src 'self'
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+  Cache-Control: no-store
+  Pragma: no-cache
 
-# No-store endpoints (JSON + well-known configs)
 /*.json
   Cache-Control: no-store
   Pragma: no-cache
 
-/.well-known/*
-  Cache-Control: no-store
-  Pragma: no-cache
+# Static assets used by md export
+/assets/*
+  Cache-Control: public, max-age=86400
+  Vary: Accept-Encoding

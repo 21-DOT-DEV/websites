@@ -210,12 +210,35 @@ jobs:
           
           echo "📋 Copying static resources for ${project}..."
           
-          # Copy robots.txt if it exists
-          if [ -f "${resources_dir}/robots.txt" ]; then
-            cp "${resources_dir}/robots.txt" "${output_dir}/robots.txt"
-            echo "✅ Copied robots.txt"
+          if [ -d "${resources_dir}" ]; then
+            file_count=0
+            for file in "${resources_dir}"/*; do
+              if [ -f "$file" ]; then
+                name="$(basename "$file")"
+                if [ "$name" = "_headers" ]; then
+                  cp "$file" "${output_dir}/_headers"
+                  echo "✅ Copied _headers"
+                else
+                  cp "$file" "${output_dir}/"
+                  echo "✅ Copied $name"
+                fi
+                ((file_count++))
+              fi
+            done
+            
+            if [ "$file_count" -eq 0 ]; then
+              echo "⚠️  No static resources found in ${resources_dir}"
+            else
+              echo "✓ Copied ${file_count} static resource(s)"
+            fi
           else
-            echo "⚠️  No robots.txt found in ${resources_dir}"
+            echo "⚠️  Resources directory not found: ${resources_dir}"
+          fi
+
+          if [ ! -f "${output_dir}/_headers" ]; then
+            echo "❌ Error: _headers file not present in ${output_dir}"
+            echo "Ensure Resources/${project}/_headers exists before deploying."
+            exit 1
           fi
       
       - name: Create documentation archive

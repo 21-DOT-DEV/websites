@@ -27,6 +27,8 @@ Implement comprehensive sitemap infrastructure across all three subdomains (21.d
 - `.github/workflows/generate-markdown.yml` - Add sitemap generation + API submission for md.21.dev
 - `.github/workflows/deploy-cloudflare.yml` - Add subdomain sitemap deployments
 
+> **Note**: The sitemap-related bash in these workflows is an intentional first implementation for this feature. In follow-up feature **002-utilities-library**, this logic is expected to move into a dedicated `Utilities` library + `util` CLI, replacing inline shell with `swift run util …` commands.
+
 **Key Design Decisions**:
 1. **Per-Subdomain Sitemaps**: Each subdomain generates and maintains its own sitemap.xml independently (standard industry practice)
 2. **lastmod Strategy**: Hybrid - git history for 21.dev, package version tracking for docs/md via lefthook-plugin SPM package

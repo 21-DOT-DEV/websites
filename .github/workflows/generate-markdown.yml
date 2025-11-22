@@ -314,8 +314,14 @@ jobs:
             file_count=0
             for file in "${resources_dir}"/*; do
               if [ -f "$file" ]; then
-                cp "$file" "${output_dir}/"
-                echo "✅ Copied $(basename "$file")"
+                name="$(basename "$file")"
+                if [ "$name" = "_headers" ]; then
+                  cp "$file" "${output_dir}/_headers"
+                  echo "✅ Copied _headers"
+                else
+                  cp "$file" "${output_dir}/"
+                  echo "✅ Copied $name"
+                fi
                 ((file_count++))
               fi
             done
@@ -327,6 +333,12 @@ jobs:
             fi
           else
             echo "⚠️  Resources directory not found: ${resources_dir}"
+          fi
+
+          if [ ! -f "${output_dir}/_headers" ]; then
+            echo "❌ Error: _headers file not present in ${output_dir}"
+            echo "Ensure Resources/${project}/_headers exists before deploying."
+            exit 1
           fi
       
       - name: Create markdown archive

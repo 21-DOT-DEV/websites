@@ -46,7 +46,19 @@ Improve content discovery, documentation usability, and accessibility through fe
 - **Dependencies:** None (use Pagefind or lunr.js - zero-dependency, static).
 - **Notes:** Critical missing feature for docs.21.dev; documentation without search is effectively unusable.
 
-### Feature 4 — Changelog & Release Notes
+### Feature 4 — Mobile Usability Fixes
+- **Name:** Mobile Usability Fixes
+- **Purpose & user value:** Eliminate mobile-specific layout issues and navigation problems that currently make the site difficult to use on smartphones and tablets, ensuring seamless experience across all devices.
+- **Success metrics:**
+  - Zero mobile usability errors in Google Search Console
+  - Touch targets meet 48px minimum size requirement
+  - Navigation works flawlessly on mobile (hamburger menu, dropdowns)
+  - Mobile bounce rate decreases by 30%+
+  - 95%+ pass rate on mobile-friendly test
+- **Dependencies:** None
+- **Notes:** High priority user experience issue affecting real visitors today.
+
+### Feature 5 — Changelog & Release Notes
 - **Name:** Changelog & Release Notes
 - **Purpose & user value:** Provide structured changelog for swift-secp256k1 releases distinct from blog, following Keep a Changelog format for easy version upgrade planning.
 - **Success metrics:**
@@ -58,7 +70,7 @@ Improve content discovery, documentation usability, and accessibility through fe
 - **Dependencies:** None.
 - **Notes:** Keep a Changelog format (keepachangelog.com); industry standard for package managers.
 
-### Feature 5 — Automated Accessibility Testing
+### Feature 6 — Automated Accessibility Testing
 - **Name:** Automated Accessibility Testing
 - **Purpose & user value:** Integrate automated WCAG checks in CI to prevent new accessibility violations from being introduced, maintaining high accessibility standards continuously.
 - **Success metrics:**
@@ -70,7 +82,7 @@ Improve content discovery, documentation usability, and accessibility through fe
 - **Dependencies:** Accessibility Audit & Remediation (establishes baseline).
 - **Notes:** Complements manual audit with ongoing automated checks; used by GOV.UK, BBC, Microsoft.
 
-### Feature 6 — Accessibility Audit & Remediation
+### Feature 7 — Accessibility Audit & Remediation
 - **Name:** Accessibility Audit & Remediation
 - **Purpose & user value:** Conduct comprehensive WCAG audit and fix all accessibility issues to ensure developers with disabilities can fully access documentation and site features.
 - **Success metrics:**
@@ -79,13 +91,13 @@ Improve content discovery, documentation usability, and accessibility through fe
   - Keyboard navigation works for all interactive elements
   - Screen reader testing passes on macOS (VoiceOver)
   - Color contrast ratios meet WCAG AA minimum (4.5:1 for text)
-- **Dependencies:** Mobile Usability Fixes (Phase 1) to avoid duplicate work.
+- **Dependencies:** Mobile Usability Fixes (this phase) to avoid duplicate work.
 - **Notes:** No audit conducted yet; unknown issue count but medium priority.
 
 ## Phase Dependencies & Sequencing
 
-- RSS Feed Implementation, Blog Tags & Filtering, Search Functionality, and Changelog & Release Notes can proceed independently.
-- Accessibility Audit & Remediation should precede Automated Accessibility Testing.
+- RSS Feed Implementation, Blog Tags & Filtering, Search Functionality, Mobile Usability Fixes, and Changelog & Release Notes can proceed independently.
+- Accessibility Audit & Remediation should precede Automated Accessibility Testing and will likely surface additional issues related to Mobile Usability Fixes.
 
 ## Phase Metrics
 
