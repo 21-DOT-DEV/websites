@@ -40,7 +40,8 @@
 # Preview HTML — same policy without HSTS
 # CF-PAGES-ENV: preview
 /*
-  Content-Security-Policy: default-src 'self'; connect-src 'self' https://static.cloudflareinsights.com; font-src 'self' data:; img-src 'self' data:; script-src 'self' https://static.cloudflareinsights.com; style-src 'self' 'unsafe-inline'; frame-ancestors 'none'; object-src 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests
+  Content-Security-Policy: default-src 'self'; connect-src 'self' https://static.cloudflareinsights.com; font-src 'self' data:; img-src 'self' data:; script-src 'self' https://static.cloudflareinsights.com 'sha256-Tmnua9Q+ofeiLwDiFowbjAxSJRmhO2KE+f0QIsqwNfw='; style-src 'self' 'unsafe-inline'; frame-ancestors 'none'; object-src 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests
+
   X-Frame-Options: DENY
   X-Content-Type-Options: nosniff
   Referrer-Policy: strict-origin-when-cross-origin
