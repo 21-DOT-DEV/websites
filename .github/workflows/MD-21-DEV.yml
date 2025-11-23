@@ -13,6 +13,7 @@ on:
       - '.github/workflows/generate-markdown.yml'
       - '.github/workflows/deploy-cloudflare.yml'
       - '.github/workflows/MD-21-DEV.yml'
+      - 'Resources/md-21-dev/**'
       - 'Package.swift'
       - 'Package.resolved'
   
