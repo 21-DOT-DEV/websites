@@ -7,6 +7,9 @@
 //
 //  See the accompanying file LICENSE for information
 //
+/// NOTE: This utility module is a temporary home for sitemap-related helpers.
+/// In feature **002-utilities-library**, it is expected to move into the
+/// dedicated `Utilities` library target and be consumed via the `util` CLI.
 
 import Foundation
 import Subprocess

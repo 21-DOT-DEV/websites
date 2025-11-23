@@ -6,6 +6,8 @@
 
 ## Entity Definitions
 
+> **Source of truth for XML tag structure**: Detailed sitemap element/tag schema (including full XML examples and protocol-level constraints) lives in `contracts/sitemap-schema.md`. This `data-model.md` focuses on the logical entities and their relationships.
+
 ### 1. URL Entry (Sitemap)
 
 **Purpose**: Represents a single page URL in a sitemap.xml file

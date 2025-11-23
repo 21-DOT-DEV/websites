@@ -24,7 +24,7 @@
 
 ### Phases Overview
 
-This roadmap is now split into a slim index (this file) and detailed phase files under `.specify/memory/roadmap/`. Use the table below to navigate.
+This roadmap is now split into a **slim index** (this file) and detailed per-phase documents under `.specify/memory/roadmap/`. Treat this file as the navigation table of contents; all feature descriptions, metrics, and sequencing live in the phase files referenced below.
 
 | Phase | Name / Goal                                | Priority          | Status       | Phase File Path                                                                 |
 |-------|--------------------------------------------|-------------------|-------------|-------------------------------------------------------------------------------|
@@ -61,7 +61,6 @@ Detailed feature descriptions, metrics, and sequencing for each phase now live i
 
 **Critical Path** (Phase 1):
 1. Sitemap Infrastructure Overhaul → robots.txt Standardization → Search Engine Submission Automation
-2. Mobile Usability Fixes (independent, parallel track)
 
 **Architectural Refactoring Track** (Phase 2 - NEXT PRIORITY):
 1. Sitemap Infrastructure (Phase 1) → Utilities Library Extraction (sitemap utilities exist to extract)
@@ -69,9 +68,10 @@ Detailed feature descriptions, metrics, and sequencing for each phase now live i
 
 **Performance & Security Track** (Phase 3):
 1. Brand Assets → HTML `<head>` Hygiene (OG images needed) → Social Proof Metrics
-2. _headers Optimization → CSP & Security Headers (shares same file) → Core Web Vitals Optimization
-3. Performance Budgets → Core Web Vitals (establishes baseline)
-4. _redirects Implementation (independent)
+2. Phase 1 Cloudflare `_headers` baseline → CSP & Security Headers → Core Web Vitals Optimization
+3. Hashed asset filenames for all static builds (Slipstream + DocC + Markdown) → enables immutable/year-long Cache-Control policies without stale assets
+4. Performance Budgets → Core Web Vitals (establishes baseline)
+5. Phase 1 Cloudflare `_redirects` baseline (independent)
 5. security.txt (independent)
 6. Broken Link Detection (independent, CI integration)
 
@@ -242,7 +242,6 @@ Next: /speckit.specify "Feature: Utilities Library Extraction — Extract sitema
 # Phase 1 - Foundation & Discoverability (COMPLETE)
 Next: /speckit.specify "Feature: Sitemap Infrastructure Overhaul — Generate comprehensive sitemaps for all subdomains with automated submission to search engines"
 Next: /speckit.specify "Feature: robots.txt Standardization — Consistent crawl directives across 21.dev, docs.21.dev, md.21.dev"
-Next: /speckit.specify "Feature: Mobile Usability Fixes — Eliminate responsive design issues and navigation problems on mobile devices"
 Next: /speckit.specify "Feature: Cloudflare _headers Optimization — Implement caching, security, and performance headers"
 Next: /speckit.specify "Feature: Cloudflare _redirects Implementation — Version-controlled edge redirects without manual Page Rules"
 Next: /speckit.specify "Feature: Core Web Vitals Optimization — Systematic LCP, INP, CLS improvements for 95+ Lighthouse scores"
@@ -261,6 +260,7 @@ Next: /speckit.specify "Feature: Social Proof & Metrics Display — Display GitH
 Next: /speckit.specify "Feature: RSS Feed Implementation — Atom/RSS 2.0 feed for blog subscriptions"
 Next: /speckit.specify "Feature: Blog Tags & Filtering — Surface tag metadata with archive pages and filtering"
 Next: /speckit.specify "Feature: Search Functionality — Instant client-side search for docs.21.dev using Pagefind or lunr.js"
+Next: /speckit.specify "Feature: Mobile Usability Fixes — Eliminate responsive design issues and navigation problems on mobile devices"
 Next: /speckit.specify "Feature: Changelog & Release Notes — Structured changelog for swift-secp256k1 following Keep a Changelog format"
 Next: /speckit.specify "Feature: Automated Accessibility Testing — Integrate axe-core in CI to prevent new WCAG violations"
 Next: /speckit.specify "Feature: Accessibility Audit & Remediation — WCAG AA compliance across all pages"

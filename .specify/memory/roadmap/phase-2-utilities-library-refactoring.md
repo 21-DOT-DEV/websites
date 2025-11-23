@@ -16,6 +16,7 @@ Extract sitemap utilities and reusable workflow logic into a dedicated `Utilitie
 - **Success metrics:**
   - `Utilities` library target created in Package.swift with all sitemap utilities migrated
   - `util` CLI executable provides type-safe commands for sitemap generation, state management, URL validation
+  - HeadersValidator CLI and environment-aware `_headers` generation commands ship inside `util`
   - Type-safe sitemap models with compile-time validation
   - Unified lastmod tracking logic (git, package version, fallback) across all subdomain types
   - Single Swift executable generates sitemaps for all subdomain types (21.dev, docs, md)
@@ -33,6 +34,7 @@ Extract sitemap utilities and reusable workflow logic into a dedicated `Utilitie
 - **Success metrics:**
   - generate-docc.yml migrates sitemap generation to `util generate-sitemap --docs`
   - generate-markdown.yml migrates sitemap generation to `util generate-sitemap --markdown`
+  - `_headers` authoring/validation commands (`util headers scaffold|validate --env <env>`) replace ad-hoc scripts
   - State file management migrates to `util state-file validate|update`
   - All workflow changes maintain 100% backward compatibility (no deployment disruption)
   - CI build times remain under current baseline (< 5 min total)
