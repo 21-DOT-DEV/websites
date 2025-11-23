@@ -1,6 +1,27 @@
 # Cloudflare Pages Headers — docs.21.dev
 # Production builds serve static DocC content; previews omit HSTS for safety.
 
+# Cloudflare Pages matches top-to-bottom; keep specific asset/JSON patterns above the catch-all HTML sections below.
+
+# Static assets inside DocC bundle
+/documentation/**/static/*
+  Cache-Control: public, max-age=86400
+  Vary: Accept-Encoding
+
+# JavaScript bundle (DocC search)
+/js/*
+  Cache-Control: public, max-age=86400
+  Vary: Accept-Encoding
+
+# No-store zones (well-known + JSON)
+/.well-known/*
+  Cache-Control: no-store
+  Pragma: no-cache
+
+/**/*.json
+  Cache-Control: no-store
+  Pragma: no-cache
+
 # Production HTML (DocC) — strict baseline + CSP allowing DocC assets and analytics
 # NOTE: Extend CSP allowlists by appending origins (e.g., extra script host) instead of removing defaults to keep minimum protections intact.
 # CF-PAGES-ENV: production
@@ -28,22 +49,3 @@
   Cross-Origin-Resource-Policy: same-origin
   Cache-Control: public, max-age=300, must-revalidate
   Vary: Accept-Encoding
-
-# Static assets inside DocC bundle
-/documentation/**/static/*
-  Cache-Control: public, max-age=86400
-  Vary: Accept-Encoding
-
-# JavaScript bundle (DocC search)
-/js/*
-  Cache-Control: public, max-age=86400
-  Vary: Accept-Encoding
-
-# No-store zones (well-known + JSON)
-/.well-known/*
-  Cache-Control: no-store
-  Pragma: no-cache
-
-/**/*.json
-  Cache-Control: no-store
-  Pragma: no-cache
