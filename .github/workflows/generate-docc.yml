@@ -169,8 +169,9 @@ jobs:
           
           # Find all HTML files under documentation/ directory and generate URL entries
           find "${output_dir}/documentation" -name "*.html" -type f | sort | while read -r file; do
-            # Convert file path to URL path
-            url_path=$(echo "$file" | sed "s|^${output_dir}/||")
+            # Convert file path to URL path, stripping index.html for canonical URLs
+            # (Cloudflare Pages redirects /path/index.html → /path/)
+            url_path=$(echo "$file" | sed -e "s|^${output_dir}/||" -e 's|/index\.html$|/|')
             
             # Build absolute URL (docs.21.dev subdomain)
             url="https://docs.21.dev/${url_path}"

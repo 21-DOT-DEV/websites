@@ -33,7 +33,10 @@ struct BlogPostPage {
     }
     
     var body: some View {
-        BasePage(title: "\(post.metadata.title) - Blog - 21.dev") {
+        BasePage(
+            title: "\(post.metadata.title) - Blog - 21.dev",
+            canonicalURL: URL(string: "https://21.dev/blog/\(post.metadata.slug)/")
+        ) {
             SiteDefaults.header
             
             // Main content using compound BlogPost component

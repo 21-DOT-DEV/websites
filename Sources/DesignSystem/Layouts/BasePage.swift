@@ -14,6 +14,7 @@ import Slipstream
 public struct BasePage: View {
     let title: String
     let stylesheet: String
+    let canonicalURL: URL?
     let bodyContent: any View
     
     /// Creates a base page with the specified title and custom body content.
@@ -24,10 +25,12 @@ public struct BasePage: View {
     public init<Content: View>(
         title: String,
         stylesheet: String = "./static/style.css",
+        canonicalURL: URL? = nil,
         @ViewBuilder bodyContent: () -> Content
     ) {
         self.title = title
         self.stylesheet = stylesheet
+        self.canonicalURL = canonicalURL
         self.bodyContent = bodyContent()
     }
     
@@ -39,10 +42,12 @@ public struct BasePage: View {
     public init(
         title: String,
         stylesheet: String = "./static/style.css",
+        canonicalURL: URL? = nil,
         text: String = "Initial Website"
     ) {
         self.title = title
         self.stylesheet = stylesheet
+        self.canonicalURL = canonicalURL
         self.bodyContent = PlaceholderView(text: text)
     }
     
@@ -52,6 +57,7 @@ public struct BasePage: View {
                 Charset(.utf8)
                 Title(title)
                 Viewport.mobileFriendly
+                Canonical(canonicalURL)
                 Stylesheet(URL(string: stylesheet))
             }
             Body {

@@ -19,7 +19,10 @@ struct Homepage {
     }
     
     static var page: some View {
-        BasePage(title: "21.dev - Bitcoin Development Tools") {
+        BasePage(
+            title: "21.dev - Bitcoin Development Tools",
+            canonicalURL: URL(string: "https://21.dev/")
+        ) {
             SiteDefaults.header
 
             HeroSection(
