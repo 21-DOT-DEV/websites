@@ -96,3 +96,4 @@ iOSInjectionProject/
 .vscode
 .aider*
 .env
+*.code-workspace

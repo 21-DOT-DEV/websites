@@ -44,6 +44,28 @@ jobs:
       - name: Generate site
         run: swift run ${{ inputs.website }}
       
+      - name: Select environment-specific headers
+        run: |
+          website="${{ inputs.website }}"
+          resources_dir="Resources/${website}"
+          output_dir="Websites/${website}"
+          
+          if [ "${{ github.ref }}" = "refs/heads/main" ]; then
+            echo "🔒 Production build: using _headers.prod"
+            header_source="${resources_dir}/_headers.prod"
+          else
+            echo "🔓 Preview build: using _headers.dev"
+            header_source="${resources_dir}/_headers.dev"
+          fi
+          
+          if [ ! -f "$header_source" ]; then
+            echo "❌ Error: Header file not found: $header_source"
+            exit 1
+          fi
+          
+          cp "$header_source" "${output_dir}/_headers"
+          echo "✅ Copied $header_source → ${output_dir}/_headers"
+      
       - name: Compile Tailwind CSS
         run: |
           website="${{ inputs.website }}"

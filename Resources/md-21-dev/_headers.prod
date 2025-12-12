@@ -1,0 +1,38 @@
+# Cloudflare Pages Headers — md.21.dev (Production)
+# Markdown pages behave like HTML; downloads (.md/.txt/.json) inherit security headers.
+# NOTE: When adding new origins (fonts, analytics), append them to the relevant CSP directive instead of removing the defaults below.
+# Cloudflare applies the first matching rule, so keep specific asset/download patterns above the catch-all `/*.md` blocks below.
+
+# Static assets used by md export
+/assets/*
+  Cache-Control: public, max-age=86400
+  Vary: Accept-Encoding
+
+# Downloads (raw Markdown, txt, JSON) — keep baseline headers but omit HSTS; these files are served as-is and should not be executed by the browser
+/*.txt
+  Content-Type: text/plain; charset=utf-8
+  X-Content-Type-Options: nosniff
+
+/.well-known/*
+  Content-Security-Policy: default-src 'self'
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+  Cache-Control: no-store
+  Pragma: no-cache
+
+/*.json
+  Cache-Control: no-store
+  Pragma: no-cache
+
+# Production Markdown-as-HTML pages — strict security headers + HSTS
+/*.md
+  Strict-Transport-Security: max-age=63072000; includeSubDomains; preload
+  Content-Security-Policy: default-src 'self'; connect-src 'self' https://static.cloudflareinsights.com; font-src 'self'; img-src 'self' data:; script-src 'self' https://static.cloudflareinsights.com; style-src 'self' 'unsafe-inline'; frame-ancestors 'none'; object-src 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests
+  X-Frame-Options: DENY
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: geolocation=(), microphone=(), camera=(), payment=(), fullscreen=(self)
+  Cross-Origin-Opener-Policy: same-origin
+  Cross-Origin-Resource-Policy: same-origin
+  Cache-Control: public, max-age=300, must-revalidate
+  Vary: Accept-Encoding

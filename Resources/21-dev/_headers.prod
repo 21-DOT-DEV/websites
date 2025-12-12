@@ -1,0 +1,45 @@
+# Cloudflare Pages Headers Configuration — 21.dev (Production)
+# https://developers.cloudflare.com/pages/platform/headers/
+
+# Specific patterns must appear before the catch-all `/*` rules because Cloudflare applies the first match. Add new patterns above the HTML fallback sections below.
+
+# Static assets — daily caching until filenames are hashed
+/static/*
+  Cache-Control: public, max-age=86400
+  Vary: Accept-Encoding
+
+/assets/*
+  Cache-Control: public, max-age=86400
+  Vary: Accept-Encoding
+
+# Serve plain text files with correct content-type
+/*.txt
+  Content-Type: text/plain; charset=utf-8
+  X-Content-Type-Options: nosniff
+
+# Serve XML files
+/*.xml
+  Content-Type: application/xml; charset=utf-8
+
+# No-store endpoints (JSON + well-known configs)
+/*.json
+  Cache-Control: no-store
+  Pragma: no-cache
+
+/.well-known/*
+  Cache-Control: no-store
+  Pragma: no-cache
+
+# Production HTML pages — include strict security headers + HSTS
+# NOTE: Extend CSP allowlists by appending origins to the existing directive (e.g., add another `connect-src` host) rather than removing defaults.
+/*
+  Strict-Transport-Security: max-age=63072000; includeSubDomains; preload
+  Content-Security-Policy: default-src 'self'; connect-src 'self' https://static.cloudflareinsights.com; font-src 'self'; img-src 'self' data:; script-src 'self' https://static.cloudflareinsights.com; style-src 'self' 'unsafe-inline'; frame-ancestors 'none'; object-src 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests
+  X-Frame-Options: DENY
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: geolocation=(), microphone=(), camera=(), payment=(), usb=(), fullscreen=(self)
+  Cross-Origin-Opener-Policy: same-origin
+  Cross-Origin-Resource-Policy: same-origin
+  Cache-Control: public, max-age=300, must-revalidate
+  Vary: Accept-Encoding
