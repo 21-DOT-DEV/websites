@@ -24,7 +24,7 @@
   Cache-Control: no-store
   Pragma: no-cache
 
-# Production Markdown-as-HTML pages — strict security headers + HSTS
+# Production Markdown-as-HTML pages — strict security headers + HSTS, noindex (LLM-only content)
 /*.md
   Strict-Transport-Security: max-age=63072000; includeSubDomains; preload
   Content-Security-Policy: default-src 'self'; connect-src 'self' https://static.cloudflareinsights.com; font-src 'self'; img-src 'self' data:; script-src 'self' https://static.cloudflareinsights.com; style-src 'self' 'unsafe-inline'; frame-ancestors 'none'; object-src 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests
@@ -34,5 +34,6 @@
   Permissions-Policy: geolocation=(), microphone=(), camera=(), payment=(), fullscreen=(self)
   Cross-Origin-Opener-Policy: same-origin
   Cross-Origin-Resource-Policy: same-origin
+  X-Robots-Tag: noindex, nofollow
   Cache-Control: public, max-age=300, must-revalidate
   Vary: Accept-Encoding
