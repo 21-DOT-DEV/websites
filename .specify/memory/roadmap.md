@@ -1,7 +1,7 @@
 # Product Roadmap
 
-**Version:** v1.3.2  
-**Last Updated:** 2025-11-20
+**Version:** v1.3.3  
+**Last Updated:** 2025-12-12
 
 ## Vision & Goals
 
@@ -69,11 +69,12 @@ Detailed feature descriptions, metrics, and sequencing for each phase now live i
 **Performance & Security Track** (Phase 3):
 1. Brand Assets → HTML `<head>` Hygiene (OG images needed) → Social Proof Metrics
 2. Phase 1 Cloudflare `_headers` baseline → CSP & Security Headers → Core Web Vitals Optimization
-3. Hashed asset filenames for all static builds (Slipstream + DocC + Markdown) → enables immutable/year-long Cache-Control policies without stale assets
-4. Performance Budgets → Core Web Vitals (establishes baseline)
-5. Phase 1 Cloudflare `_redirects` baseline (independent)
-5. security.txt (independent)
-6. Broken Link Detection (independent, CI integration)
+3. **[INVESTIGATE]** DocC CSS/JS content-based hashes — Verify whether DocC-generated `/css/*` and `/js/*` assets use content-based hashes (e.g., `app.12345abc.js`). If confirmed, update `Resources/docs-21-dev/_headers.prod` to cache these assets for 1 year (`max-age=31536000, immutable`) instead of current 1-day policy.
+4. Hashed asset filenames for all static builds (Slipstream + DocC + Markdown) → enables immutable/year-long Cache-Control policies without stale assets
+5. Performance Budgets → Core Web Vitals (establishes baseline)
+6. Phase 1 Cloudflare `_redirects` baseline (independent)
+7. security.txt (independent)
+8. Broken Link Detection (independent, CI integration)
 
 **DesignSystem Track** (Phase 3.5 - MEDIUM):
 1. Token System Expansion → Layout Component Library (spacing tokens needed)
@@ -222,6 +223,7 @@ Detailed feature descriptions, metrics, and sequencing for each phase now live i
 
 ## Change Log
 
+- v1.3.3 (2025-12-12): Added **[INVESTIGATE]** item for DocC CSS/JS content-based hashes in Performance & Security Track. If DocC assets use content hashes, enables 1-year cache policy for `/css/*` and `/js/*` in docs.21.dev headers. — **PATCH** (investigation item, potential quick win for cache performance)
 - v1.3.2 (2025-11-20): Refactored roadmap into multi-file structure with a slim index and per-phase documents under `.specify/memory/roadmap/`. Renumbered phases for clarity (DesignSystem foundation promoted to Phase 4) without changing feature intent or priorities. — **PATCH** (structural documentation reorganization)
 - v1.3.1 (2025-11-20): Removed duplicate **Phase 5 Feature 4 (Swift-Based Sitemap Generator Utility)** - fully covered by Phase 2 Feature 1 (Utilities Library Extraction). Consolidated unique success metrics (type-safe models, unified lastmod logic, < 2s generation time) into Phase 2. Renumbered Phase 5 features. — **PATCH** (duplicate removal, no new features)
 - v1.3.0 (2025-11-20): Added **Phase 2 - Utilities Library Refactoring** as next priority feature after Phase 1 completion. Extracts sitemap utilities and workflow logic from DesignSystem into dedicated `Utilities` library + `util` CLI executable, following industry-standard pattern (matches subtree architecture). Reduces code duplication across GitHub Actions workflows, enables type-safe CLI tooling for CI/CD. Renumbered all subsequent phases (old Phase 2 → Phase 3, old Phase 2.5 → Phase 3.5, etc.). — **MINOR** (new architectural refactoring phase, cross-cutting infrastructure improvement extracted from 001-sitemap-infrastructure T057)

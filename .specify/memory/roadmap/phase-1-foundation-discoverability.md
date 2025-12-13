@@ -2,7 +2,7 @@
 
 **Status:** In Progress
 **Priority:** High
-**Last Updated:** 2025-11-20
+**Last Updated:** 2025-12-12
 
 ## Phase Goal
 
@@ -42,18 +42,29 @@ Ensure all content across 21.dev, docs.21.dev, and md.21.dev is discoverable, mo
 
 ### Feature 3 — Cloudflare _headers for All Subdomains
 - **Name:** Cloudflare _headers Optimization
+- **Status:** Completed
 - **Purpose & user value:** Implement baseline caching strategies, security headers, and performance optimizations via Cloudflare's `_headers` file across 21.dev, docs.21.dev, and md.21.dev to improve load times and Core Web Vitals scores.
 - **Success metrics:**
   - Browser cache hit rate increases to 80%+
   - P75 LCP improves from 1,288ms to < 1,000ms
   - P90 LCP improves from 2,180ms to < 1,500ms
-  - Security headers (CSP, X-Frame-Options) present on all pages
+  - Security headers (CSP, X-Frame-Options) present on all pages ✅ Verified via CSP Evaluator
   - Immutable caching for static assets (CSS, images)
 - **Dependencies:** None
-- **Notes:** Current `_headers` only has basic content-type rules; this establishes a cross-subdomain baseline for performance and security early in the roadmap.
+- **Completed work (2025-12-12):**
+  - Split `_headers` into `.prod`/`.dev` variants for all 3 subdomains (environment-specific)
+  - Production: includes HSTS; Preview: omits HSTS + adds `X-Robots-Tag: noindex`
+  - Updated all workflows (`build-slipstream.yml`, `generate-docc.yml`, `generate-markdown.yml`) with branch-based header selection (`main` → prod)
+  - Added `<link rel="canonical">` to all 21-dev pages (Homepage, Blog, P256K)
+  - Fixed docs.21.dev sitemap to use canonical URLs (stripped `index.html`)
+  - Added `X-Robots-Tag: noindex, nofollow` to md-21-dev (both environments) — LLM-only content
+  - Verified CSP headers working correctly via Google CSP Evaluator (all directives pass)
+- **Remaining (future optimization):**
+  - Investigate DocC CSS/JS content-based hashes → potential 1-year cache policy (added to roadmap)
 
 ### Feature 4 — Cloudflare _redirects for All Subdomains
 - **Name:** Cloudflare _redirects Implementation
+- **Status:** Not Started
 - **Purpose & user value:** Handle URL redirects efficiently at the edge (not requiring manual Cloudflare Rules) for cleaner migrations, short URLs, and legacy path support without performance penalty across all subdomains.
 - **Success metrics:**
   - All redirects execute in < 10ms at edge
