@@ -169,8 +169,9 @@ jobs:
           
           # Find all HTML files under documentation/ directory and generate URL entries
           find "${output_dir}/documentation" -name "*.html" -type f | sort | while read -r file; do
-            # Convert file path to URL path
-            url_path=$(echo "$file" | sed "s|^${output_dir}/||")
+            # Convert file path to URL path, stripping index.html for canonical URLs
+            # (Cloudflare Pages redirects /path/index.html → /path/)
+            url_path=$(echo "$file" | sed -e "s|^${output_dir}/||" -e 's|/index\.html$|/|')
             
             # Build absolute URL (docs.21.dev subdomain)
             url="https://docs.21.dev/${url_path}"
@@ -210,26 +211,43 @@ jobs:
           
           echo "📋 Copying static resources for ${project}..."
           
+          # Select environment-specific headers based on branch
+          if [ "${{ github.ref }}" = "refs/heads/main" ]; then
+            echo "🔒 Production build: using _headers.prod"
+            header_source="${resources_dir}/_headers.prod"
+          else
+            echo "🔓 Preview build: using _headers.dev"
+            header_source="${resources_dir}/_headers.dev"
+          fi
+          
+          if [ ! -f "$header_source" ]; then
+            echo "❌ Error: Header file not found: $header_source"
+            exit 1
+          fi
+          
+          cp "$header_source" "${output_dir}/_headers"
+          echo "✅ Copied $header_source → ${output_dir}/_headers"
+          
+          # Copy other static resources (excluding _headers variants)
           if [ -d "${resources_dir}" ]; then
             file_count=0
             for file in "${resources_dir}"/*; do
               if [ -f "$file" ]; then
                 name="$(basename "$file")"
-                if [ "$name" = "_headers" ]; then
-                  cp "$file" "${output_dir}/_headers"
-                  echo "✅ Copied _headers"
-                else
-                  cp "$file" "${output_dir}/"
-                  echo "✅ Copied $name"
+                # Skip _headers files (already handled above)
+                if [[ "$name" == _headers* ]]; then
+                  continue
                 fi
+                cp "$file" "${output_dir}/"
+                echo "✅ Copied $name"
                 ((file_count++))
               fi
             done
             
             if [ "$file_count" -eq 0 ]; then
-              echo "⚠️  No static resources found in ${resources_dir}"
+              echo "ℹ️  No additional static resources found in ${resources_dir}"
             else
-              echo "✓ Copied ${file_count} static resource(s)"
+              echo "✓ Copied ${file_count} additional static resource(s)"
             fi
           else
             echo "⚠️  Resources directory not found: ${resources_dir}"
@@ -237,7 +255,6 @@ jobs:
 
           if [ ! -f "${output_dir}/_headers" ]; then
             echo "❌ Error: _headers file not present in ${output_dir}"
-            echo "Ensure Resources/${project}/_headers exists before deploying."
             exit 1
           fi
       

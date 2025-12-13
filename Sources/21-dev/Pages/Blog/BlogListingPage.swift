@@ -19,7 +19,10 @@ struct BlogListingPage {
     }
     
     static var page: some View {
-        BasePage(title: "Blog - 21.dev") {
+        BasePage(
+            title: "Blog - 21.dev",
+            canonicalURL: URL(string: "https://21.dev/blog/")
+        ) {
             SiteDefaults.header
             
             // Blog posts section

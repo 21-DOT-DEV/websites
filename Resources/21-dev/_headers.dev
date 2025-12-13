@@ -1,4 +1,4 @@
-# Cloudflare Pages Headers Configuration — 21.dev
+# Cloudflare Pages Headers Configuration — 21.dev (Preview/Development)
 # https://developers.cloudflare.com/pages/platform/headers/
 
 # Specific patterns must appear before the catch-all `/*` rules because Cloudflare applies the first match. Add new patterns above the HTML fallback sections below.
@@ -30,23 +30,8 @@
   Cache-Control: no-store
   Pragma: no-cache
 
-# Production HTML pages — include strict security headers + HSTS
+# Preview HTML pages — security headers without HSTS, noindex to prevent search indexing
 # NOTE: Extend CSP allowlists by appending origins to the existing directive (e.g., add another `connect-src` host) rather than removing defaults.
-# CF-PAGES-ENV: production
-/*
-  Strict-Transport-Security: max-age=63072000; includeSubDomains; preload
-  Content-Security-Policy: default-src 'self'; connect-src 'self' https://static.cloudflareinsights.com; font-src 'self'; img-src 'self' data:; script-src 'self' https://static.cloudflareinsights.com; style-src 'self' 'unsafe-inline'; frame-ancestors 'none'; object-src 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests
-  X-Frame-Options: DENY
-  X-Content-Type-Options: nosniff
-  Referrer-Policy: strict-origin-when-cross-origin
-  Permissions-Policy: geolocation=(), microphone=(), camera=(), payment=(), usb=(), fullscreen=(self)
-  Cross-Origin-Opener-Policy: same-origin
-  Cross-Origin-Resource-Policy: same-origin
-  Cache-Control: public, max-age=300, must-revalidate
-  Vary: Accept-Encoding
-
-# Preview HTML pages — identical security headers without HSTS
-# CF-PAGES-ENV: preview
 /*
   Content-Security-Policy: default-src 'self'; connect-src 'self' https://static.cloudflareinsights.com; font-src 'self'; img-src 'self' data:; script-src 'self' https://static.cloudflareinsights.com; style-src 'self' 'unsafe-inline'; frame-ancestors 'none'; object-src 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests
   X-Frame-Options: DENY
@@ -55,5 +40,6 @@
   Permissions-Policy: geolocation=(), microphone=(), camera=(), payment=(), usb=(), fullscreen=(self)
   Cross-Origin-Opener-Policy: same-origin
   Cross-Origin-Resource-Policy: same-origin
+  X-Robots-Tag: noindex, nofollow
   Cache-Control: public, max-age=300, must-revalidate
   Vary: Accept-Encoding
