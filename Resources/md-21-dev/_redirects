@@ -1,0 +1,10 @@
+# md.21.dev redirects
+# Redirect root to main index file for LLM and developer access
+#
+# Syntax: source destination [status]
+# Example: /old-path /new-path 301
+#
+# Status codes: 301 (permanent), 302 (temporary)
+# Docs: https://developers.cloudflare.com/pages/configuration/redirects/
+
+/ /index.md 301
