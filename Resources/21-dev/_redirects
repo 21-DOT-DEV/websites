@@ -1,0 +1,15 @@
+# 21.dev redirects
+# Path-based redirects for the main site
+#
+# Syntax: source destination [status]
+# Example: /old-path /new-path 301
+#
+# Status codes: 301 (permanent), 302 (temporary)
+# Docs: https://developers.cloudflare.com/pages/configuration/redirects/
+#
+# Note: Canonical domain redirect (www.21.dev → 21.dev) remains in
+# Cloudflare Rules due to requiring dynamic expressions.
+
+# Common aliases for documentation
+/docs https://docs.21.dev/documentation/ 301
+/api https://docs.21.dev/documentation/ 301

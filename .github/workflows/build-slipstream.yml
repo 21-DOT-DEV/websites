@@ -66,6 +66,24 @@ jobs:
           cp "$header_source" "${output_dir}/_headers"
           echo "✅ Copied $header_source → ${output_dir}/_headers"
       
+      - name: Copy static resources
+        run: |
+          website="${{ inputs.website }}"
+          resources_dir="Resources/${website}"
+          output_dir="Websites/${website}"
+          
+          # Copy _redirects if exists
+          if [ -f "${resources_dir}/_redirects" ]; then
+            cp "${resources_dir}/_redirects" "${output_dir}/_redirects"
+            echo "✅ Copied _redirects"
+          fi
+          
+          # Copy robots.txt if exists
+          if [ -f "${resources_dir}/robots.txt" ]; then
+            cp "${resources_dir}/robots.txt" "${output_dir}/robots.txt"
+            echo "✅ Copied robots.txt"
+          fi
+      
       - name: Compile Tailwind CSS
         run: |
           website="${{ inputs.website }}"
