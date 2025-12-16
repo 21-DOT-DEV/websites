@@ -7,133 +7,20 @@
 //
 //  See the accompanying file LICENSE for information
 //
-/// NOTE: This utility module is a temporary home for sitemap-related helpers.
-/// In feature **002-utilities-library**, it is expected to move into the
-/// dedicated `Utilities` library target and be consumed via the `util` CLI.
+/// DEPRECATED: These utilities have moved to the `Utilities` library.
+/// Import `Utilities` directly and use the `util` CLI for sitemap operations.
+/// This file re-exports the APIs for backward compatibility.
+
+@_exported import Utilities
 
 import Foundation
-import Subprocess
 
-// MARK: - Sitemap XML Generation
-
-/// Generates the standard XML header for a sitemap conforming to protocol 0.9
-/// - Returns: XML header string with namespace declaration
-public func sitemapXMLHeader() -> String {
-    return """
-    <?xml version="1.0" encoding="UTF-8"?>
-    <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-    
-    """
-}
-
-/// Generates the closing tag for a sitemap XML file
-/// - Returns: XML footer string
-public func sitemapXMLFooter() -> String {
-    return "</urlset>"
-}
-
-/// Generates a complete URL entry for a sitemap
-/// - Parameters:
-///   - url: The absolute URL for the page
-///   - lastmod: ISO 8601 formatted last modification date
-/// - Returns: Complete `<url>` XML element
-public func sitemapURLEntry(url: String, lastmod: String) -> String {
-    let escapedURL = xmlEscape(url)
-    return """
-    <url>
-      <loc>\(escapedURL)</loc>
-      <lastmod>\(lastmod)</lastmod>
-    </url>
-    
-    """
-}
-
-// MARK: - Git Utilities
+// MARK: - Deprecated Re-exports
 
 /// Get the last modification date for a file from git history
 /// - Parameter filePath: Relative path to the file in the repository
 /// - Returns: ISO8601 formatted date string from git, or current date if git history unavailable
+@available(*, deprecated, message: "Use SitemapGenerator.getGitLastmod(for:) from the Utilities library")
 public func getGitLastModDate(filePath: String) async throws -> String {
-    do {
-        let result = try await Subprocess.run(
-            .name("git"),
-            arguments: .init([
-                "log",
-                "-1",
-                "--format=%cI",  // ISO8601 format with timezone
-                "--",
-                filePath
-            ]),
-            output: .string(limit: 4096),
-            error: .string(limit: 1024)
-        )
-        
-        // Check if git command succeeded
-        guard case .exited(0) = result.terminationStatus else {
-            // Fallback to current timestamp if git command failed
-            return ISO8601DateFormatter().string(from: Date())
-        }
-        
-        // Get stdout and trim whitespace
-        guard let dateString = result.standardOutput?
-            .trimmingCharacters(in: .whitespacesAndNewlines),
-              !dateString.isEmpty else {
-            // Fallback to current timestamp if git returned empty
-            return ISO8601DateFormatter().string(from: Date())
-        }
-        
-        return dateString
-        
-    } catch {
-        // Fallback to current timestamp on any error (git not available, file not in repo, etc.)
-        return ISO8601DateFormatter().string(from: Date())
-    }
-}
-
-// MARK: - Sitemap Utility Functions
-
-/// Escapes special XML characters in a string to ensure valid XML output
-/// - Parameter text: The input string to escape
-/// - Returns: XML-safe string with escaped characters (&, <, >, ', ")
-public func xmlEscape(_ text: String) -> String {
-    return text
-        .replacingOccurrences(of: "&", with: "&amp;")
-        .replacingOccurrences(of: "<", with: "&lt;")
-        .replacingOccurrences(of: ">", with: "&gt;")
-        .replacingOccurrences(of: "'", with: "&apos;")
-        .replacingOccurrences(of: "\"", with: "&quot;")
-}
-
-/// Validates a URL for inclusion in a sitemap according to protocol 0.9 specifications
-/// - Parameter url: The URL string to validate
-/// - Returns: true if the URL is valid for sitemap inclusion, false otherwise
-///
-/// Validation rules:
-/// - Must use HTTP or HTTPS scheme
-/// - Must be a valid, well-formed URL
-/// - Maximum length of 2048 characters (sitemap protocol limit)
-/// - Must be an absolute URL (not relative)
-public func isValidSitemapURL(_ url: String) -> Bool {
-    // Check length limit (sitemap protocol 0.9 max)
-    guard url.count <= 2048 else {
-        return false
-    }
-    
-    // Parse URL
-    guard let parsedURL = URL(string: url) else {
-        return false
-    }
-    
-    // Validate scheme (must be http or https)
-    guard let scheme = parsedURL.scheme,
-          scheme == "http" || scheme == "https" else {
-        return false
-    }
-    
-    // Ensure it's an absolute URL (has a host)
-    guard parsedURL.host != nil else {
-        return false
-    }
-    
-    return true
+    return await SitemapGenerator.getGitLastmod(for: filePath)
 }

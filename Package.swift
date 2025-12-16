@@ -18,6 +18,7 @@ let package = Package(
         .package(url: "https://github.com/P24L/DocC4LLM.git", exact: "1.0.0"),
         .package(url: "https://github.com/swiftlang/swift-subprocess.git", exact: "0.2.1"),
         .package(url: "https://github.com/csjones/lefthook-plugin", exact: "2.0.4"),
+        .package(url: "https://github.com/apple/swift-argument-parser", from: "1.5.0"),
     ],
     targets: makeDocumentationTargets() + [
         // Targets are the basic building blocks of a package, defining a module or a test suite.
@@ -54,6 +55,33 @@ let package = Package(
                 "DesignSystem",
                 "21-dev",
                 "TestUtils"
+            ]
+        ),
+        // MARK: - Utilities Library & CLI
+        .target(
+            name: "Utilities",
+            dependencies: [
+                .product(name: "Subprocess", package: "swift-subprocess")
+            ]
+        ),
+        .executableTarget(
+            name: "util",
+            dependencies: [
+                .target(name: "Utilities"),
+                .product(name: "ArgumentParser", package: "swift-argument-parser")
+            ]
+        ),
+        .testTarget(
+            name: "UtilitiesTests",
+            dependencies: ["Utilities"]
+        ),
+        .testTarget(
+            name: "UtilitiesCLITests",
+            dependencies: [
+                "Utilities",
+                "util",
+                "TestUtils",
+                .product(name: "Subprocess", package: "swift-subprocess")
             ]
         )
     ]

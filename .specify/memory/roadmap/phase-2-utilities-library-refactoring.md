@@ -55,3 +55,7 @@ This phase primarily contributes to product-level metrics for **Infrastructure**
 - Sitemap generation runs efficiently as part of CI.
 - CI build times remain under 5 minutes.
 - Zero deployment failures caused by workflow scripting errors after migration.
+
+## Backlog (Future Enhancements)
+
+- **Full Sitemap Protocol Support**: Add optional `<changefreq>` and `<priority>` elements to sitemap generation via CLI flags (e.g., `--include-changefreq`, `--include-priority`). Currently deferred as Google ignores these fields.
