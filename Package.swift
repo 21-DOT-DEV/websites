@@ -34,7 +34,8 @@ let package = Package(
             name: "DesignSystem",
             dependencies: [
                 .product(name: "Slipstream", package: "slipstream"),
-                .product(name: "Subprocess", package: "swift-subprocess")
+                .product(name: "Subprocess", package: "swift-subprocess"),
+                .target(name: "Utilities")
             ]
         ),
         .target(
