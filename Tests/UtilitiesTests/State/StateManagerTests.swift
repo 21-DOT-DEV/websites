@@ -119,7 +119,7 @@ struct StateManagerIOTests {
         
         let state = try StateManager.read(from: statePath.path)
         
-        #expect(state.packageVersion == "0.21.1")
+        #expect(state?.packageVersion == "0.21.1")
     }
     
     @Test("StateManager returns nil for non-existent file")
@@ -147,7 +147,7 @@ struct StateManagerIOTests {
         
         #expect(FileManager.default.fileExists(atPath: statePath.path))
         
-        let content = try String(contentsOfFile: statePath.path)
+        let content = try String(contentsOfFile: statePath.path, encoding: .utf8)
         #expect(content.contains("package_version"))
         #expect(content.contains("1.0.0"))
     }
