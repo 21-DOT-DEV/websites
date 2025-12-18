@@ -11,6 +11,7 @@
 import Foundation
 import Slipstream
 import DesignSystem
+import Utilities
 
 @main
 struct SiteGenerator {
@@ -48,7 +49,7 @@ struct SiteGenerator {
     private static func generateSitemapXML(from sitemap: Sitemap, to outputURL: URL, filename: String = "sitemap.xml", baseURL: String = "https://21.dev/") async throws {
         // Get lastmod date from git history of the site generator file
         // This represents "when was the site code last updated"
-        let lastModDate = try await getGitLastModDate(filePath: "Sources/21-dev/SiteGenerator.swift")
+        let lastModDate = await SitemapGenerator.getGitLastmod(for: "Sources/21-dev/SiteGenerator.swift")
         
         // Start with standard sitemap header
         var xmlContent = sitemapXMLHeader()

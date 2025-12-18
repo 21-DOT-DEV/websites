@@ -1,8 +1,8 @@
 # Phase 2 — Utilities Library Refactoring
 
-**Status:** Not Started
+**Status:** In Progress
 **Priority:** High (Next Priority)
-**Last Updated:** 2025-11-20
+**Last Updated:** 2025-12-17
 
 ## Phase Goal
 
@@ -32,10 +32,16 @@ Extract sitemap utilities and reusable workflow logic into a dedicated `Utilitie
 - **Name:** Workflow Migration to Utilities CLI
 - **Purpose & user value:** Replace inline bash scripts in workflows with type-safe `swift run util` commands, providing consistent error handling, better debugging, and reduced maintenance burden through centralized logic.
 - **Success metrics:**
-  - generate-docc.yml migrates sitemap generation to `util generate-sitemap --docs`
-  - generate-markdown.yml migrates sitemap generation to `util generate-sitemap --markdown`
-  - `_headers` authoring/validation commands (`util headers scaffold|validate --env <env>`) replace ad-hoc scripts
-  - State file management migrates to `util state-file validate|update`
+  - ✅ generate-docc.yml migrates sitemap generation to `swift run util sitemap generate --site docs-21-dev`
+  - ✅ generate-markdown.yml migrates sitemap generation to `swift run util sitemap generate --site md-21-dev`
+  - ✅ `util headers validate --site <site> --env <env>` implemented
+  - ❌ `util headers scaffold` — deferred
+  - ✅ `util state validate` and `util state update` implemented
+  - ❌ Redirect verification commands (`util redirects verify --site <site>`) — not started
+  - ❌ Sitemap submission to Google (`util sitemap submit --site <site>`) — not started
+  - ❌ Environment header selection (`util headers select --site <site> --env <env>`) — not started
+  - ❌ Build output verification (`util build verify --site <site>`) — not started
+  - ❌ Pre-built release binary via git LFS — not started (avoids rebuilding util on every CI run)
   - All workflow changes maintain 100% backward compatibility (no deployment disruption)
   - CI build times remain under current baseline (< 5 min total)
   - Zero production incidents during migration

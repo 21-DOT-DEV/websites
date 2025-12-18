@@ -1,5 +1,6 @@
 import Testing
 import Foundation
+import Utilities
 
 @testable import DesignSystem
 
@@ -12,7 +13,7 @@ struct GitLastModTests {
         let testFilePath = "Sources/21-dev/SiteGenerator.swift"
         
         // Call the function
-        let lastModDate = try await getGitLastModDate(filePath: testFilePath)
+        let lastModDate = await SitemapGenerator.getGitLastmod(for: testFilePath)
         
         // Verify it's a valid ISO8601 date string
         #expect(lastModDate.contains("T"))
@@ -40,7 +41,7 @@ struct GitLastModTests {
         }
         
         // Call the function - should fallback to current timestamp
-        let lastModDate = try await getGitLastModDate(filePath: tempFilePath)
+        let lastModDate = await SitemapGenerator.getGitLastmod(for: tempFilePath)
         
         // Verify it's today's date
         let formatter = ISO8601DateFormatter()
@@ -63,7 +64,7 @@ struct GitLastModTests {
         let nonExistentPath = "does-not-exist-\(UUID().uuidString).swift"
         
         // Call the function - should fallback to current timestamp
-        let lastModDate = try await getGitLastModDate(filePath: nonExistentPath)
+        let lastModDate = await SitemapGenerator.getGitLastmod(for: nonExistentPath)
         
         // Verify it's today's date (fallback behavior)
         let formatter = ISO8601DateFormatter()
@@ -85,7 +86,7 @@ struct GitLastModTests {
         // Test with a known file
         let testFilePath = "Package.swift"
         
-        let lastModDate = try await getGitLastModDate(filePath: testFilePath)
+        let lastModDate = await SitemapGenerator.getGitLastmod(for: testFilePath)
         
         // Verify ISO8601 format with timezone
         // Format should be: YYYY-MM-DDTHH:MM:SS+HH:MM or YYYY-MM-DDTHH:MM:SSZ

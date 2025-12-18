@@ -1,7 +1,7 @@
 # Product Roadmap
 
-**Version:** v1.3.3  
-**Last Updated:** 2025-12-12
+**Version:** v1.3.4  
+**Last Updated:** 2025-12-17
 
 ## Vision & Goals
 
@@ -29,7 +29,7 @@ This roadmap is now split into a **slim index** (this file) and detailed per-pha
 | Phase | Name / Goal                                | Priority          | Status       | Phase File Path                                                                 |
 |-------|--------------------------------------------|-------------------|-------------|-------------------------------------------------------------------------------|
 | 1     | Foundation & Discoverability               | High              | In Progress | `.specify/memory/roadmap/phase-1-foundation-discoverability.md`              |
-| 2     | Utilities Library Refactoring              | High (Next)       | Not Started | `.specify/memory/roadmap/phase-2-utilities-library-refactoring.md`           |
+| 2     | Utilities Library Refactoring              | High (Next)       | In Progress | `.specify/memory/roadmap/phase-2-utilities-library-refactoring.md`           |
 | 3     | Performance & Delivery Optimization        | Medium-High       | Not Started | `.specify/memory/roadmap/phase-3-performance-delivery-optimization.md`       |
 | 4     | DesignSystem Foundation & Refactoring      | Medium            | Not Started | `.specify/memory/roadmap/phase-4-designsystem-foundation-refactoring.md`     |
 | 5     | Content & Accessibility                    | Medium            | Not Started | `.specify/memory/roadmap/phase-5-content-accessibility.md`                   |
@@ -223,6 +223,7 @@ Detailed feature descriptions, metrics, and sequencing for each phase now live i
 
 ## Change Log
 
+- v1.3.4 (2025-12-17): **Phase 2 Feature 1 Complete** — Utilities Library Extraction finished (specs/004-utilities-library). Created `Utilities` library target + `util` CLI executable with sitemap, headers, and state subcommands. Migrated sitemap generation in generate-docc.yml and generate-markdown.yml. Feature 2 (full workflow migration) remains in progress — additional commands needed for redirect verification, sitemap submission, header selection, build verification. — **PATCH** (feature 1 completion, phase continues)
 - v1.3.3 (2025-12-12): Added **[INVESTIGATE]** item for DocC CSS/JS content-based hashes in Performance & Security Track. If DocC assets use content hashes, enables 1-year cache policy for `/css/*` and `/js/*` in docs.21.dev headers. — **PATCH** (investigation item, potential quick win for cache performance)
 - v1.3.2 (2025-11-20): Refactored roadmap into multi-file structure with a slim index and per-phase documents under `.specify/memory/roadmap/`. Renumbered phases for clarity (DesignSystem foundation promoted to Phase 4) without changing feature intent or priorities. — **PATCH** (structural documentation reorganization)
 - v1.3.1 (2025-11-20): Removed duplicate **Phase 5 Feature 4 (Swift-Based Sitemap Generator Utility)** - fully covered by Phase 2 Feature 1 (Utilities Library Extraction). Consolidated unique success metrics (type-safe models, unified lastmod logic, < 2s generation time) into Phase 2. Renumbered Phase 5 features. — **PATCH** (duplicate removal, no new features)

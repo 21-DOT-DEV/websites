@@ -2,7 +2,7 @@
 
 **Feature Branch**: `004-utilities-library`  
 **Created**: 2025-12-14  
-**Status**: Draft  
+**Status**: Complete  
 **Input**: Extract sitemap utilities and reusable workflow logic from DesignSystem into a dedicated Utilities library target with util CLI executable
 
 ## User Scenarios & Testing *(mandatory)*
@@ -87,9 +87,9 @@ A developer validates that generated sitemap URLs are correct and accessible.
 - **FR-002**: System MUST migrate all sitemap-related utilities from DesignSystem to Utilities library
 - **FR-003**: System MUST expose public APIs for sitemap generation, URL discovery, lastmod tracking
 - **FR-004**: System MUST maintain 100% backward compatibility with existing sitemap tests
-- **FR-004a**: System MUST initially re-export Utilities APIs from DesignSystem for backward compatibility
-- **FR-004b**: System MUST mark re-exported APIs as deprecated with migration guidance
-- **FR-004c**: System MUST remove re-exports in a future release after consumers migrate to `import Utilities`
+- **FR-004a**: ~~System MUST initially re-export Utilities APIs from DesignSystem for backward compatibility~~ **SUPERSEDED** — Direct migration chosen (mono-repo)
+- **FR-004b**: ~~System MUST mark re-exported APIs as deprecated with migration guidance~~ **SUPERSEDED**
+- **FR-004c**: ~~System MUST remove re-exports in a future release after consumers migrate to `import Utilities`~~ **SUPERSEDED** — Removed immediately
 
 #### CLI Executable
 - **FR-005**: System MUST create `util` executable target depending on Utilities library

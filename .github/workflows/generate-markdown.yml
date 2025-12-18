@@ -244,58 +244,23 @@ jobs:
       
       - name: Generate sitemap
         run: |
-          output_dir="Websites/${{ inputs.project-name }}"
-          sitemap_file="${output_dir}/sitemap.xml"
+          project="${{ inputs.project-name }}"
+          echo "🗺️  Generating sitemap for ${project}..."
           
-          echo "🗺️  Generating sitemap for ${{ inputs.project-name }}..."
+          # Use util CLI to generate sitemap
+          swift run util sitemap generate --site "${project}" --verbose
           
-          # Read lastmod date from state file (will be updated by lefthook-plugin when package version changes)
-          if [ -f "Resources/sitemap-state.json" ]; then
-            lastmod=$(jq -r '.generated_date' Resources/sitemap-state.json)
-            echo "📅 Using lastmod from state file: $lastmod"
-          else
-            # Fallback to current date if state file doesn't exist
-            lastmod=$(date -u +"%Y-%m-%d")
-            echo "⚠️  State file not found, using current date: $lastmod"
+          # Validate sitemap was generated and is not empty
+          sitemap_file="Websites/${project}/sitemap.xml"
+          if [ ! -f "$sitemap_file" ]; then
+            echo "❌ Error: Sitemap file not created"
+            exit 1
           fi
           
-          # Start sitemap XML
-          cat > "$sitemap_file" << 'EOF'
-          <?xml version="1.0" encoding="UTF-8"?>
-          <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-          
-          EOF
-          
-          # Find all markdown files and generate URL entries
-          find "${output_dir}" -name "*.md" -type f | sort | while read -r file; do
-            # Convert file path to URL path
-            url_path=$(echo "$file" | sed "s|^${output_dir}/||")
-            
-            # Build absolute URL (md.21.dev subdomain)
-            url="https://md.21.dev/${url_path}"
-            
-            # Escape XML special characters in URL (using basic sed substitution)
-            escaped_url=$(echo "$url" | sed 's/&/\&amp;/g; s/</\&lt;/g; s/>/\&gt;/g; s/'"'"'/\&apos;/g; s/"/\&quot;/g')
-            
-            # Add URL entry to sitemap
-            cat >> "$sitemap_file" << EOF
-          <url>
-            <loc>${escaped_url}</loc>
-            <lastmod>${lastmod}</lastmod>
-          </url>
-          
-          EOF
-          done
-          
-          # Close sitemap XML
-          echo "</urlset>" >> "$sitemap_file"
-          
-          # Count URLs and display summary
           url_count=$(grep -c "<loc>" "$sitemap_file" || echo "0")
-          echo "✅ Sitemap generated with ${url_count} URLs"
           echo "📄 Sitemap location: ${sitemap_file}"
+          echo "📊 Total URLs: ${url_count}"
           
-          # Validate sitemap is not empty
           if [ "$url_count" -eq 0 ]; then
             echo "❌ Error: Sitemap contains no URLs"
             exit 1
