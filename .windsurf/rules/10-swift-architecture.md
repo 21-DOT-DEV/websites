@@ -15,7 +15,14 @@ description: >
 ## Module Boundaries
 - Executable targets for each site in `Sources/<SiteName>/`.
 - Shared UI components and utilities in `Sources/DesignSystem/`.
-- Keep DesignSystem agnostic of any single site’s business logic.
+- Shared CLI utilities in `Sources/Utilities/`.
+- Keep DesignSystem agnostic of any single site's business logic.
+
+## Code Migration
+- **Mono-repo rule**: When moving code between targets in this repository, prefer direct migration over deprecation-with-re-export. All consumers are known.
+- **Before deleting shared code**: Search for all usages across `Sources/` and `Tests/` (e.g., `grep -r "functionName" Sources/ Tests/`)
+- **Update consumers first**: Migrate all import statements and API calls before deleting the source file.
+- **Fix tests immediately**: Run `swift build` after deletion to catch any missed consumers.
 
 ## Conventions
 - File and type names must be descriptive and follow Swift naming guidelines.

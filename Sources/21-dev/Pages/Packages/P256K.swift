@@ -23,7 +23,7 @@ struct P256KPage {
         sponsorLogos: [.geyser, .openSats],
         ctaButton: CTAButton(
             text: "Get Started",
-            href: "https://github.com/21-dev/p256k",
+            href: "https://github.com/21-DOT-DEV/swift-secp256k1",
             style: .primary,
             isExternal: true
         ),
@@ -233,7 +233,7 @@ struct P256KPage {
                 Link("documentation site", destination: URL(string: "https://docs.21.dev/p256k")!)
                     .textColor(.palette(.orange, darkness: 500))
                 Span(" for tutorials, API reference, and real-world examples. You can also explore the ")
-                Link("example projects", destination: URL(string: "https://github.com/21-dev/p256k-examples")!)
+                Link("example projects", destination: URL(string: "https://github.com/21-DOT-DEV/swift-secp256k1")!)
                     .textColor(.palette(.orange, darkness: 500))
                 Span(" repository on GitHub.")
             }

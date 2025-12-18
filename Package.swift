@@ -27,7 +27,8 @@ let package = Package(
             name: "21-dev",
             dependencies: [
                 .product(name: "Slipstream", package: "slipstream"),
-                .target(name: "DesignSystem")
+                .target(name: "DesignSystem"),
+                .target(name: "Utilities")
             ]
         ),
         .target(
@@ -48,14 +49,15 @@ let package = Package(
         ),
         .testTarget(
             name: "DesignSystemTests",
-            dependencies: ["DesignSystem", "TestUtils"]
+            dependencies: ["DesignSystem", "TestUtils", "Utilities"]
         ),
         .testTarget(
             name: "IntegrationTests",
             dependencies: [
                 "DesignSystem",
                 "21-dev",
-                "TestUtils"
+                "TestUtils",
+                "Utilities"
             ]
         ),
         // MARK: - Utilities Library & CLI
@@ -94,13 +96,13 @@ let package = Package(
 /// These targets exist solely to allow swift-docc-plugin to generate combined documentation.
 func makeDocumentationTargets() -> [Target] {
     return [
-        .executableTarget(
-            name: "docs-21-dev-P256K",
-            dependencies: [ .product(name: "P256K", package: "swift-secp256k1"), ]
-        ),
-        .executableTarget(
-            name: "docs-21-dev-ZKP",
-            dependencies: [ .product(name: "ZKP", package: "swift-secp256k1"), ]
-        ),
+       .executableTarget(
+           name: "docs-21-dev-P256K",
+           dependencies: [ .product(name: "P256K", package: "swift-secp256k1"), ]
+       ),
+       .executableTarget(
+           name: "docs-21-dev-ZKP",
+           dependencies: [ .product(name: "ZKP", package: "swift-secp256k1"), ]
+       ),
     ]
 }
