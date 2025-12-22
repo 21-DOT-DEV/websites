@@ -59,7 +59,7 @@ public enum CodeBlockType: Sendable {
 ///     ]))
 /// )
 /// ```
-public struct CodeHeroSection: View, HasComponentCSS {
+public struct CodeHeroSection: View {
     /// Optional icon to display next to the title
     public let icon: String?
     /// The product/section title
@@ -115,20 +115,6 @@ public struct CodeHeroSection: View, HasComponentCSS {
                 }
             }
         })
-    }
-    
-    // Instance-based CSS generation using actual tab configuration
-    public var componentCSS: String {
-        if let tabs = tabs {
-            return tabs.componentCSS
-        } else {
-            // No CSS needed for simple code blocks
-            return ""
-        }
-    }
-    
-    public var componentName: String {
-        return "CodeHeroSection"
     }
     
     /// Creates a new CodeHeroSection with a plain text description.

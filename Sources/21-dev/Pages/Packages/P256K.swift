@@ -239,11 +239,6 @@ struct P256KPage {
             }
         )
     ])
-
-    // CSS components for rendering styles
-    static var cssComponents: [any HasComponentCSS] {
-        [SiteDefaults.header, codeHeroSection, installationSection, faqAccordion]
-    }
     
     static var page: some View {
         BasePage(
