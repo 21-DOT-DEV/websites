@@ -3,19 +3,103 @@
 @tailwind utilities;
 
 
-/* Component-specific styles */
-/* SiteHeader */
-/* SiteHeader Mobile Menu Styles */
-@media (max-width: 767px) {
-    .menu-button {
-        background: none;
-    }
-    .menu-items {
-        display: none;
-    }
+@layer components {
+  /* SiteHeader */
+  /* SiteHeader Mobile Menu Styles */
+  @media (max-width: 767px) {
+      .menu-button {
+          background: none;
+      }
+      .menu-items {
+          display: none;
+      }
 
-    div:has(#menu-toggle:checked) ~ .menu-items {
-        display: flex;
-    }
+      div:has(#menu-toggle:checked) ~ .menu-items {
+          display: flex;
+      }
+  }
+
+  /* Tabs[code-hero] */
+  /* code-hero Tabs Component Styles */
+
+  /* Hide all tab contents by default */
+  .tab-content {
+      display: none;
+  }
+
+  /* Show first tab content by default */
+  #code-hero-content-0 {
+      display: block;
+  }
+
+  /* Show content when corresponding radio is checked */
+  #code-hero-tab-0:checked ~ div:nth-of-type(2) #code-hero-content-0 { display: block !important; }
+  #code-hero-tab-1:checked ~ div:nth-of-type(2) #code-hero-content-1 { display: block !important; }
+
+  /* Hide other content when a radio is checked */
+  #code-hero-tab-0:checked ~ div:nth-of-type(2) .tab-content:not(#code-hero-content-0) { display: none; }
+  #code-hero-tab-1:checked ~ div:nth-of-type(2) .tab-content:not(#code-hero-content-1) { display: none; }
+
+  /* Active tab styling - target labels in the tab buttons container */
+  #code-hero-tab-0:checked ~ div:first-of-type label[for="code-hero-tab-0"] { color: #ea580c !important; border-bottom-color: #ea580c !important; }
+  #code-hero-tab-1:checked ~ div:first-of-type label[for="code-hero-tab-1"] { color: #ea580c !important; border-bottom-color: #ea580c !important; }
+
+  /* Tabs[install] */
+  /* install Tabs Component Styles */
+
+  /* Hide all tab contents by default */
+  .tab-content {
+      display: none;
+  }
+
+  /* Show first tab content by default */
+  #install-content-0 {
+      display: block;
+  }
+
+  /* Show content when corresponding radio is checked */
+  #install-tab-0:checked ~ div:nth-of-type(2) #install-content-0 { display: block !important; }
+  #install-tab-1:checked ~ div:nth-of-type(2) #install-content-1 { display: block !important; }
+  #install-tab-2:checked ~ div:nth-of-type(2) #install-content-2 { display: block !important; }
+
+  /* Hide other content when a radio is checked */
+  #install-tab-0:checked ~ div:nth-of-type(2) .tab-content:not(#install-content-0) { display: none; }
+  #install-tab-1:checked ~ div:nth-of-type(2) .tab-content:not(#install-content-1) { display: none; }
+  #install-tab-2:checked ~ div:nth-of-type(2) .tab-content:not(#install-content-2) { display: none; }
+
+  /* Active tab styling - target labels in the tab buttons container */
+  #install-tab-0:checked ~ div:first-of-type label[for="install-tab-0"] { color: #ea580c !important; border-bottom-color: #ea580c !important; }
+  #install-tab-1:checked ~ div:first-of-type label[for="install-tab-1"] { color: #ea580c !important; border-bottom-color: #ea580c !important; }
+  #install-tab-2:checked ~ div:first-of-type label[for="install-tab-2"] { color: #ea580c !important; border-bottom-color: #ea580c !important; }
+
+  /* Accordion */
+  /* Accordion CSS-only interactions */
+  .accordion-toggle {
+      display: none;
+  }
+
+  .accordion-content {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.3s ease-in-out, padding 0.3s ease-in-out;
+      padding: 0 1.5rem;
+  }
+
+  .accordion-toggle:checked + .accordion-label + .accordion-content {
+      max-height: 500px;
+      padding: 1.25rem 1.5rem;
+  }
+
+  .accordion-icon {
+      transition: transform 0.3s ease-in-out;
+  }
+
+  .accordion-toggle:checked + .accordion-label .accordion-icon {
+      transform: rotate(90deg);
+  }
+
+  .accordion-item:hover {
+      background-color: rgb(249 250 251);
+  }
+
 }
-

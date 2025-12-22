@@ -13,10 +13,6 @@ import Slipstream
 import DesignSystem
 
 struct BlogListingPage {
-    // CSS components for rendering styles
-    static var cssComponents: [any HasComponentCSS] {
-        [SiteDefaults.header]
-    }
     
     static var page: some View {
         BasePage(

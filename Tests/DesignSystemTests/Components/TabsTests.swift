@@ -117,7 +117,7 @@ struct TabsTests {
             TabItem(title: "CocoaPods") { Text("Content 2") }
         ])
         
-        let css = tabs.componentCSS
+        let css = tabs.style
         
         // Verify CSS contains tab-specific selectors
         #expect(css.contains("install Tabs Component Styles"))
@@ -144,8 +144,8 @@ struct TabsTests {
             TabItem(title: "C") { Text("C") }
         ])
         
-        let twoTabsCSS = twoTabs.componentCSS
-        let threeTabsCSS = threeTabs.componentCSS
+        let twoTabsCSS = twoTabs.style
+        let threeTabsCSS = threeTabs.style
         
         // Two tabs CSS should not contain third tab selectors
         #expect(twoTabsCSS.contains("#two-tab-0"))
@@ -169,15 +169,15 @@ struct TabsTests {
         #expect(!css.contains("#static-test-tab-3"))
     }
     
-    @Test("Tabs HasComponentCSS conformance")
-    func testTabsHasComponentCSSConformance() throws {
+    @Test("Tabs StyleModifier conformance")
+    func testTabsStyleModifierConformance() throws {
         let tabs = Tabs(id: "css-test", tabs: [
             TabItem(title: "Test") { Text("Content") }
         ])
         
-        // Should implement HasComponentCSS protocol
+        // Should implement StyleModifier protocol
         #expect(tabs.componentName == "Tabs[css-test]")
-        #expect(!tabs.componentCSS.isEmpty)
+        #expect(!tabs.style.isEmpty)
     }
     
     @Test("Tabs builder pattern with Tab function")
@@ -208,7 +208,7 @@ struct TabsTests {
         let tabs = Tabs(id: "empty", tabs: [])
         
         let html = try TestUtils.renderHTML(tabs)
-        let css = tabs.componentCSS
+        let css = tabs.style
         
         // Should render without errors
         #expect(html.contains("<div"))
@@ -267,7 +267,7 @@ struct TabsTests {
             TabItem(title: "Test") { Text("Test") }
         ])
         
-        let css = tabs.componentCSS
+        let css = tabs.style
         
         // Verify essential CSS rules are present (allowing for whitespace differences)
         #expect(css.contains("complete Tabs Component Styles"))

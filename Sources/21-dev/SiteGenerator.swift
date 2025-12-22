@@ -89,27 +89,8 @@ struct SiteGenerator {
         let resourcesURL = projectURL.appending(path: "../Resources/21-dev")
         let outputURL = projectURL.appending(path: "../Websites/21-dev")
         
-        var stylemap = [
-            "static/style.input.css": Homepage.cssComponents,
-            "packages/p256k/static/style.input.css": P256KPage.cssComponents,
-            "blog/static/style.input.css": BlogListingPage.cssComponents
-        ]
-        
-        // Add CSS for individual blog posts
+        // Build sitemap with all pages
         let posts = BlogService.loadAllPosts()
-        for post in posts {
-            stylemap["blog/\(post.metadata.slug)/static/style.input.css"] = BlogPostPage.cssComponents
-        }
-        
-        for style in stylemap {
-            try renderStyles(
-                from: style.value,
-                baseCSS: projectURL.appending(path: "../Resources/21-dev/static/style.base.css"),
-                to: projectURL.appending(path: "../Resources/21-dev/\(style.key)")
-            )
-        }
-        
-        // Then render site
         var sitemap: Sitemap = [
             "index.html": Homepage.page,
             "packages/p256k/index.html": P256KPage.page,
@@ -123,9 +104,15 @@ struct SiteGenerator {
             }
         }
         
-        try renderSitemap(sitemap, to: outputURL)
+        // Render site with automatic CSS collection and generation
+        try await renderSitemap(
+            sitemap,
+            to: outputURL,
+            baseCSS: projectURL.appending(path: "../Resources/21-dev/static/style.base.css"),
+            stylesheet: "../../Resources/21-dev/static/style.input.css"
+        )
         
-        // Generate sitemap.xml for 21.dev with git-based lastmod dates
+        // Generate sitemap.xml
         try await generateSitemapXML(from: sitemap, to: outputURL)
         
         // Copy static resources after site generation
