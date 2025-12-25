@@ -7,9 +7,25 @@
 # Status codes: 301 (permanent), 302 (temporary)
 # Docs: https://developers.cloudflare.com/pages/configuration/redirects/
 
+# Root -> docs landing (canonical)
 / /documentation/ 301
-/p256k /documentation/ 301
+/index.html /documentation/ 301
 
-# Redirect index.html to clean URLs (canonical)
-# Note: Cloudflare splat captures full path; trailing slash ensures clean URL
+# P256K framework paths -> canonical docs (exact, trailing slash, index.html, subpaths)
+/p256k /documentation/p256k/ 301
+/p256k/ /documentation/p256k/ 301
+/p256k/index.html /documentation/p256k/ 301
+/p256k/*/index.html /documentation/p256k/:splat/ 301
+/p256k/*/ /documentation/p256k/:splat/ 301
+/p256k/* /documentation/p256k/:splat/ 301
+
+# ZKP framework paths -> canonical docs (exact, trailing slash, index.html, subpaths)
+/zkp /documentation/zkp/ 301
+/zkp/ /documentation/zkp/ 301
+/zkp/index.html /documentation/zkp/ 301
+/zkp/*/index.html /documentation/zkp/:splat/ 301
+/zkp/*/ /documentation/zkp/:splat/ 301
+/zkp/* /documentation/zkp/:splat/ 301
+
+# Strip index.html to clean trailing-slash URLs
 /*/index.html /:splat/ 301
