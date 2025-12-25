@@ -24,7 +24,17 @@
 
 User-Agent: *
 Content-Signal: ai-train=no, search=yes, ai-input=yes
-Allow: /
+
+# Block DocC data directory (symbol JSON used for client-side navigation)
+# Other noindex paths (/js/, /css/, /.well-known/) are allowed for rendering
+# but marked noindex via X-Robots-Tag in _headers.prod
+Disallow: /data/
+
+# Block root-level JSON files (theme-settings.json, etc.)
+Disallow: /theme-settings.json
+
+# Allow all documentation (canonical URLs via sitemap + 301 redirects)
+Allow: /documentation/
 
 # Tell crawlers where to find your sitemap
 Sitemap: https://docs.21.dev/sitemap.xml

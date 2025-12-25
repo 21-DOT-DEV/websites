@@ -9,3 +9,7 @@
 
 / /documentation/ 301
 /p256k /documentation/ 301
+
+# Redirect index.html to clean URLs (canonical)
+# Note: Cloudflare splat captures full path; trailing slash ensures clean URL
+/*/index.html /:splat/ 301
