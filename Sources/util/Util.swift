@@ -25,6 +25,7 @@ struct Util: AsyncParsableCommand {
             SitemapCommand.self,
             HeadersCommand.self,
             StateCommand.self,
+            CanonicalCommand.self,
         ]
     )
 }

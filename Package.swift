@@ -19,6 +19,7 @@ let package = Package(
         .package(url: "https://github.com/swiftlang/swift-subprocess.git", exact: "0.2.1"),
         .package(url: "https://github.com/csjones/lefthook-plugin", exact: "2.0.4"),
         .package(url: "https://github.com/apple/swift-argument-parser", from: "1.5.0"),
+        .package(url: "https://github.com/scinfu/SwiftSoup.git", from: "2.8.8"),
     ],
     targets: makeDocumentationTargets() + [
         // Targets are the basic building blocks of a package, defining a module or a test suite.
@@ -64,7 +65,8 @@ let package = Package(
         .target(
             name: "Utilities",
             dependencies: [
-                .product(name: "Subprocess", package: "swift-subprocess")
+                .product(name: "Subprocess", package: "swift-subprocess"),
+                .product(name: "SwiftSoup", package: "SwiftSoup")
             ]
         ),
         .executableTarget(
