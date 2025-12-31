@@ -14,6 +14,10 @@ on:
       - '.github/workflows/deploy-cloudflare.yml'
       - '.github/workflows/DOCS-21-DEV.yml'
       - 'Resources/docs-21-dev/**'
+      - 'Sources/docs-21-dev-P256K/**'
+      - 'Sources/docs-21-dev-ZKP/**'
+      - 'Sources/Utilities/**'
+      - 'Sources/util/**'
       - 'Package.swift'
       - 'Package.resolved'
   
