@@ -221,6 +221,29 @@ jobs:
             exit 1
           fi
       
+      - name: Fix canonical URLs
+        run: |
+          project="${{ inputs.project-name }}"
+          output_dir="Websites/${project}"
+          # Derive base URL: docs-21-dev → https://docs.21.dev
+          BASE_URL="https://${project//-/.}"
+          
+          echo "🔗 Fixing canonical URLs for ${project}..."
+          echo "   Base URL: $BASE_URL"
+          echo "   Path: $output_dir"
+          
+          # Fix missing canonical tags
+          swift run util canonical fix \
+            --path "$output_dir" \
+            --base-url "$BASE_URL"
+          
+          # Verify all canonicals are valid
+          swift run util canonical check \
+            --path "$output_dir" \
+            --base-url "$BASE_URL"
+          
+          echo "✅ Canonical URLs fixed and verified"
+      
       - name: Create documentation archive
         run: |
           project="${{ inputs.project-name }}"

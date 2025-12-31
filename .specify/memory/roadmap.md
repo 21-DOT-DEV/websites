@@ -1,7 +1,7 @@
 # Product Roadmap
 
-**Version:** v1.3.4  
-**Last Updated:** 2025-12-17
+**Version:** v1.3.5  
+**Last Updated:** 2025-12-29
 
 ## Vision & Goals
 
@@ -223,6 +223,7 @@ Detailed feature descriptions, metrics, and sequencing for each phase now live i
 
 ## Change Log
 
+- v1.3.5 (2025-12-29): **Phase 2 Feature 3 Added** — Canonical URL Management feature added to Phase 2. Provides `util canonical check` and `util canonical fix` commands for SEO validation and remediation across all generated HTML output. Site-agnostic design works on any subdomain post-generation. — **PATCH** (new feature in existing phase)
 - v1.3.4 (2025-12-17): **Phase 2 Feature 1 Complete** — Utilities Library Extraction finished (specs/004-utilities-library). Created `Utilities` library target + `util` CLI executable with sitemap, headers, and state subcommands. Migrated sitemap generation in generate-docc.yml and generate-markdown.yml. Feature 2 (full workflow migration) remains in progress — additional commands needed for redirect verification, sitemap submission, header selection, build verification. — **PATCH** (feature 1 completion, phase continues)
 - v1.3.3 (2025-12-12): Added **[INVESTIGATE]** item for DocC CSS/JS content-based hashes in Performance & Security Track. If DocC assets use content hashes, enables 1-year cache policy for `/css/*` and `/js/*` in docs.21.dev headers. — **PATCH** (investigation item, potential quick win for cache performance)
 - v1.3.2 (2025-11-20): Refactored roadmap into multi-file structure with a slim index and per-phase documents under `.specify/memory/roadmap/`. Renumbered phases for clarity (DesignSystem foundation promoted to Phase 4) without changing feature intent or priorities. — **PATCH** (structural documentation reorganization)
