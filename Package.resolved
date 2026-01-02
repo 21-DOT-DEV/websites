@@ -1,5 +1,5 @@
 {
-  "originHash" : "24bd4d2c3efb623aad19fd00b0ac88d17892f3a49aaf314a8824ef4d0a891121",
+  "originHash" : "2f8e52b3ce22f7a056fb4a8cf3262445479cbc4d9096cbad365d8b2ec80cd5cb",
   "pins" : [
     {
       "identity" : "docc4llm",
@@ -34,7 +34,7 @@
       "location" : "https://github.com/21-DOT-DEV/slipstream",
       "state" : {
         "branch" : "HasComponentCSS",
-        "revision" : "48d428abedce688d99f015d931fb4ff1153fcdce"
+        "revision" : "4c5ca420f20b43ac5615cdc0761bd958457e1717"
       }
     },
     {
@@ -42,8 +42,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/apple/swift-argument-parser",
       "state" : {
-        "revision" : "41982a3656a71c768319979febd796c6fd111d5c",
-        "version" : "1.5.0"
+        "revision" : "c5d11a805e765f52ba34ec7284bd4fcd6ba68615",
+        "version" : "1.7.0"
       }
     },
     {
@@ -97,7 +97,7 @@
       "location" : "https://github.com/apple/swift-markdown.git",
       "state" : {
         "branch" : "main",
-        "revision" : "f7a559ec0d1f4a6a31b82187b5cdf97c632f68f6"
+        "revision" : "b2135f426fca19029430fbf26564e953b2d0f3d3"
       }
     },
     {
@@ -141,8 +141,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/scinfu/SwiftSoup.git",
       "state" : {
-        "revision" : "4206bc7b8bd9a4ff8e9511211e1b4bff979ef9c4",
-        "version" : "2.11.1"
+        "revision" : "d86f244ed497d48012782e2f59c985a55e77b3f5",
+        "version" : "2.11.3"
       }
     }
   ],
