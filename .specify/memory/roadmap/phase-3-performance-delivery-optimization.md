@@ -2,15 +2,39 @@
 
 **Status:** Not Started
 **Priority:** Medium-High
-**Last Updated:** 2025-11-20
+**Last Updated:** 2026-01-01
 
 ## Phase Goal
 
 Optimize caching, delivery, and site structure to achieve excellent Core Web Vitals, strong security posture, and reliable content delivery.
 
 ## Features
- 
-### Feature 1 — Core Web Vitals Optimization
+
+### Feature 1 — Open Graph & Twitter Card Meta Tags
+- **Name:** Open Graph & Twitter Card Meta Tags
+- **Status:** Not Started
+- **Purpose & user value:** Control how links appear when shared on social media (LinkedIn, Twitter, Facebook) with proper titles, descriptions, and preview images. Increases click-through rates by 2-3x and creates professional appearance in link previews.
+- **Success metrics:**
+  - 100% of pages have proper Open Graph tags (og:title, og:description, og:url, og:type)
+  - og:image present on all pages (1200x630px recommended size)
+  - Twitter Card tags properly configured (twitter:card, fallback to Open Graph)
+  - Social media link previews render correctly across all platforms
+  - Zero missing meta tag warnings in social media debugger tools
+- **Dependencies:** Brand Assets & Favicons (for og:image generation)
+- **Notes:** All required data already exists (title, description, canonical URL from Phase 1 work). Only missing component is og:image assets. Can start with simple programmatic generation, enhance with professional design later.
+
+### Feature 2 — Theme Color Meta Tag
+- **Name:** Theme Color Meta Tag
+- **Status:** Not Started
+- **Purpose & user value:** Enables mobile browser UI theming to match site branding. Improves mobile UX by coloring browser chrome with brand color (#f97316 orange).
+- **Success metrics:**
+  - Theme color meta tag present on all pages
+  - Mobile browsers (Chrome, Safari, Edge) display correct brand color in UI
+  - Consistent brand experience across desktop and mobile
+- **Dependencies:** None
+- **Notes:** Simple one-line addition to BasePage. Uses existing brand color from Tailwind palette.
+
+### Feature 3 — Core Web Vitals Optimization
 - **Name:** Core Web Vitals Optimization
 - **Purpose & user value:** Systematically improve Largest Contentful Paint (LCP), Interaction to Next Paint (INP), and Cumulative Layout Shift (CLS) to provide faster, smoother user experiences and improve search rankings.
 - **Success metrics:**
@@ -22,19 +46,26 @@ Optimize caching, delivery, and site structure to achieve excellent Core Web Vit
 - **Dependencies:** Cloudflare _headers Optimization (caching needed for LCP improvement).
 - **Notes:** docs.21.dev has "needs improvement" segment; P99 latency concerning.
 
-### Feature 2 — HTML `<head>` Hygiene & SEO
+### Feature 4 — HTML `<head>` Hygiene & SEO
 - **Name:** HTML `<head>` Hygiene & SEO
-- **Purpose & user value:** Implement comprehensive meta tags, Open Graph markup, structured data, and proper head elements to maximize search visibility, social sharing, and discoverability.
+- **Status:** Partially Complete
+- **Purpose & user value:** Implement comprehensive meta tags, structured data, and proper head elements to maximize search visibility and discoverability.
 - **Success metrics:**
-  - All pages have unique meta descriptions (140-160 chars)
-  - Open Graph and Twitter Card tags present on all shareable pages
-  - Schema.org JSON-LD structured data for Organization, Website, BlogPosting
-  - Canonical URLs prevent duplicate content issues
-  - Social media preview images (1200x630px) for key pages
-- **Dependencies:** Brand Assets & Favicons (for favicons and OG images).
-- **Notes:** Currently only has basic charset, title, viewport; missing critical SEO elements.
+  - ✅ All pages have unique meta descriptions (140-160 chars)
+  - ✅ Language tag (lang="en") on HTML element
+  - ✅ Article metadata (published_time, author, tags) for blog posts
+  - ⏳ Schema.org JSON-LD structured data for Organization, Website, BlogPosting
+  - ✅ Canonical URLs prevent duplicate content issues
+- **Dependencies:** Open Graph & Twitter Cards (Features 1-2 handle social meta tags).
+- **Completed (2026-01-01):**
+  - Meta descriptions on all pages (Homepage, P256K, Blog listing, Blog posts)
+  - Article metadata using BlogMetadata with adapter pattern
+  - Language attribute for accessibility and SEO
+- **Remaining:**
+  - Schema.org JSON-LD structured data
+- **Notes:** Basic SEO foundation complete; Open Graph/Twitter moved to Features 1-2, structured data remains.
 
-### Feature 3 — Brand Assets & Favicons
+### Feature 5 — Brand Assets & Favicons
 - **Name:** Brand Assets & Favicons
 - **Purpose & user value:** Provide professional favicon suite, app icons, and Open Graph images to improve brand recognition, mobile home screen experience, and social media presence.
 - **Success metrics:**
@@ -46,7 +77,7 @@ Optimize caching, delivery, and site structure to achieve excellent Core Web Vit
 - **Dependencies:** None (can use placeholder assets initially).
 - **Notes:** Currently zero brand assets exist; all missing.
 
-### Feature 4 — Content Security Policy (CSP) & Security Headers
+### Feature 6 — Content Security Policy (CSP) & Security Headers
 - **Name:** Content Security Policy (CSP) & Security Headers
 - **Purpose & user value:** Implement strict Content Security Policy headers to prevent XSS attacks and other injection vulnerabilities, protecting users and maintaining trust in the platform.
 - **Success metrics:**
@@ -58,7 +89,7 @@ Optimize caching, delivery, and site structure to achieve excellent Core Web Vit
 - **Dependencies:** Cloudflare _headers Optimization (shares same file).
 - **Notes:** OWASP Top 10 mitigation; critical for security-conscious developer tools.
 
-### Feature 5 — security.txt & Vulnerability Disclosure
+### Feature 7 — security.txt & Vulnerability Disclosure
 - **Name:** security.txt & Vulnerability Disclosure
 - **Purpose & user value:** Provide RFC 9116 compliant security.txt file for responsible vulnerability disclosure, enabling security researchers to report issues properly.
 - **Success metrics:**
@@ -70,7 +101,7 @@ Optimize caching, delivery, and site structure to achieve excellent Core Web Vit
 - **Dependencies:** None.
 - **Notes:** Industry best practice for open source projects; GitHub, Cloudflare, Mozilla all have this.
 
-### Feature 6 — Performance Budgets & CI Enforcement
+### Feature 8 — Performance Budgets & CI Enforcement
 - **Name:** Performance Budgets & CI Enforcement
 - **Purpose & user value:** Establish and enforce performance budgets in CI to prevent regressions, ensuring fast load times remain consistent across all deployments.
 - **Success metrics:**
@@ -82,7 +113,7 @@ Optimize caching, delivery, and site structure to achieve excellent Core Web Vit
 - **Dependencies:** Core Web Vitals Optimization (baseline metrics needed).
 - **Notes:** Ongoing monitoring, not one-time optimization; prevents performance decay.
 
-### Feature 7 — Broken Link Detection & Monitoring
+### Feature 9 — Broken Link Detection & Monitoring
 - **Name:** Broken Link Detection & Monitoring
 - **Purpose & user value:** Automatically detect and prevent broken internal/external links through CI checks and scheduled scans, maintaining documentation quality and user trust.
 - **Success metrics:**
@@ -94,7 +125,7 @@ Optimize caching, delivery, and site structure to achieve excellent Core Web Vit
 - **Dependencies:** None.
 - **Notes:** Use lychee or htmlproofer; critical for docs site credibility.
 
-### Feature 8 — Social Proof & Metrics Display
+### Feature 10 — Social Proof & Metrics Display
 - **Name:** Social Proof & Metrics Display
 - **Purpose & user value:** Display GitHub stars, download counts, and usage statistics to build trust and social proof, increasing package adoption through visible community validation.
 - **Success metrics:**
@@ -108,10 +139,12 @@ Optimize caching, delivery, and site structure to achieve excellent Core Web Vit
 
 ## Phase Dependencies & Sequencing
 
-- Brand Assets & Favicons → HTML `<head>` Hygiene & SEO → Social Proof & Metrics Display.
-- Content Security Policy (CSP) & Security Headers → Core Web Vitals Optimization.
-- Performance Budgets & CI Enforcement builds on Core Web Vitals Optimization to enforce baselines.
-- security.txt and Broken Link Detection & Monitoring can proceed independently.
+- Brand Assets & Favicons (Feature 5) → Open Graph & Twitter Cards (Feature 1) → Social Proof & Metrics Display (Feature 10).
+- Theme Color (Feature 2) can proceed independently (no dependencies).
+- Content Security Policy (CSP) & Security Headers (Feature 6) → Core Web Vitals Optimization (Feature 3).
+- Performance Budgets & CI Enforcement (Feature 8) builds on Core Web Vitals Optimization (Feature 3) to enforce baselines.
+- security.txt (Feature 7) and Broken Link Detection & Monitoring (Feature 9) can proceed independently.
+- HTML `<head>` Hygiene (Feature 4) partially complete; JSON-LD can proceed after Open Graph implementation.
 
 ## Phase Metrics
 

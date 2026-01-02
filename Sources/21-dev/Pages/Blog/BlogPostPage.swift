@@ -27,10 +27,34 @@ struct BlogPostPage {
         return BlogPostPage(post: post).body
     }
     
+    private func generateDescription() -> String {
+        if !post.metadata.excerpt.isEmpty {
+            return post.metadata.excerpt
+        }
+        
+        let cleanContent = post.content
+            .replacingOccurrences(of: "\n", with: " ")
+            .replacingOccurrences(of: "  ", with: " ")
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        
+        if cleanContent.count <= 150 {
+            return cleanContent
+        }
+        
+        let truncated = String(cleanContent.prefix(150))
+        if let lastSpace = truncated.lastIndex(of: " ") {
+            return String(truncated[..<lastSpace]) + "..."
+        }
+        
+        return truncated + "..."
+    }
+    
     var body: some View {
         BasePage(
             title: "\(post.metadata.title) - Blog - 21.dev",
-            canonicalURL: URL(string: "https://21.dev/blog/\(post.metadata.slug)/")
+            description: generateDescription(),
+            canonicalURL: URL(string: "https://21.dev/blog/\(post.metadata.slug)/"),
+            articleMetadata: post.metadata.toArticleMetadata()
         ) {
             SiteDefaults.header
             
