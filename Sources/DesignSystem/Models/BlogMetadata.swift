@@ -54,4 +54,44 @@ public struct BlogMetadata: Codable, Sendable {
         let minutes = max(1, (wordCount + wordsPerMinute - 1) / wordsPerMinute)
         return "\(minutes) min read"
     }
+    
+    /// Convert date string to ISO8601 format for article metadata
+    ///
+    /// Converts the blog post date (yyyy-MM-dd) to ISO8601 format suitable
+    /// for Open Graph article:published_time meta tags.
+    ///
+    /// - Returns: ISO8601 formatted date string (e.g., "2025-01-01T00:00:00Z")
+    public var iso8601Date: String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd"
+        
+        guard let date = formatter.date(from: self.date) else {
+            return self.date
+        }
+        
+        let iso8601Formatter = ISO8601DateFormatter()
+        return iso8601Formatter.string(from: date)
+    }
+    
+    /// Convert BlogMetadata to ArticleMetadata for Open Graph article tags
+    ///
+    /// This adapter method transforms blog post frontmatter into the format
+    /// required for Open Graph article meta tags. Follows the Adapter Pattern
+    /// to decouple domain models (BlogMetadata) from presentation concerns (ArticleMetadata).
+    ///
+    /// - Parameter author: Author name to use for article:author tag. Defaults to "21.dev"
+    /// - Returns: ArticleMetadata suitable for rendering Open Graph article tags
+    ///
+    /// ## Example
+    /// ```swift
+    /// let blogPost = BlogPost.parse(from: markdownContent)
+    /// let articleMeta = blogPost.metadata.toArticleMetadata()
+    /// ```
+    public func toArticleMetadata(author: String = "21.dev") -> ArticleMetadata {
+        ArticleMetadata(
+            publishedTime: iso8601Date,
+            author: author,
+            tags: tags
+        )
+    }
 }

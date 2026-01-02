@@ -13,8 +13,10 @@ import Slipstream
 /// Can be customized with different stylesheets and body content as needed.
 public struct BasePage: View {
     let title: String
+    let description: String?
     let stylesheet: String
     let canonicalURL: URL?
+    let articleMetadata: ArticleMetadata?
     let bodyContent: any View
     
     /// Creates a base page with the specified title and custom body content.
@@ -24,13 +26,17 @@ public struct BasePage: View {
     ///   - bodyContent: The page body content
     public init<Content: View>(
         title: String,
+        description: String? = nil,
         stylesheet: String = "/static/style.css",
         canonicalURL: URL? = nil,
+        articleMetadata: ArticleMetadata? = nil,
         @ViewBuilder bodyContent: () -> Content
     ) {
         self.title = title
+        self.description = description
         self.stylesheet = stylesheet
         self.canonicalURL = canonicalURL
+        self.articleMetadata = articleMetadata
         self.bodyContent = bodyContent()
     }
     
@@ -41,13 +47,17 @@ public struct BasePage: View {
     ///   - text: The placeholder text (defaults to "Initial Website")
     public init(
         title: String,
+        description: String? = nil,
         stylesheet: String = "/static/style.css",
         canonicalURL: URL? = nil,
+        articleMetadata: ArticleMetadata? = nil,
         text: String = "Initial Website"
     ) {
         self.title = title
+        self.description = description
         self.stylesheet = stylesheet
         self.canonicalURL = canonicalURL
+        self.articleMetadata = articleMetadata
         self.bodyContent = PlaceholderView(text: text)
     }
     
@@ -56,6 +66,21 @@ public struct BasePage: View {
             Head {
                 Charset(.utf8)
                 Title(title)
+                if let description {
+                    Meta(.description, content: description)
+                }
+                if let article = articleMetadata {
+                    Meta("article:published_time", content: article.publishedTime)
+                    if let modifiedTime = article.modifiedTime {
+                        Meta("article:modified_time", content: modifiedTime)
+                    }
+                    if let author = article.author {
+                        Meta("article:author", content: author)
+                    }
+                    ForEach(article.tags, id: \.self) { tag in
+                        Meta("article:tag", content: tag)
+                    }
+                }
                 Viewport.mobileFriendly
                 Canonical(canonicalURL)
                 Stylesheet(URL(string: stylesheet))
@@ -64,5 +89,6 @@ public struct BasePage: View {
                 AnyView(bodyContent)
             }
         }
+        .language("en")
     }
 }

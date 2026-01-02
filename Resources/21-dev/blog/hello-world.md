@@ -2,7 +2,7 @@
 title: "Hello World"
 date: "2025-10-15"
 slug: "hello-world"
-excerpt: "We're an open-source organization building tools to make Bitcoin development simpler and more accessible."
+excerpt: "Welcome to 21.dev: why non-custodial Bitcoin is still hard—and our first tool, P256K (a Swift libsecp256k1 wrapper for ECDSA + Schnorr)."
 tags: ["announcement", "welcome", "first post"]
 ---
 
