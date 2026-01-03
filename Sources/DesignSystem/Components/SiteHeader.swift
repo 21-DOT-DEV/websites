@@ -135,8 +135,8 @@ public struct SiteHeader: View, StyleModifier {
 
 /// The logo/title component for the site header.
 /// 
-/// Renders the site logo as an H1 element with a link to the homepage.
-/// Uses large typography and proper semantic HTML for SEO and accessibility.
+/// Renders the site logo with a link to the homepage.
+/// Uses large typography for visual hierarchy while avoiding duplicate H1 tags for SEO.
 private struct SiteHeaderLogoTitle: View {
     /// The text to display as the logo/title
     let logoText: String
@@ -148,7 +148,7 @@ private struct SiteHeaderLogoTitle: View {
     }
     
     var body: some View {
-        H1 {
+        Div {
             Link(URL(string: "/")) {
                 Text(logoText)
                     .fontSize(.extraExtraExtraLarge)       // text-3xl
