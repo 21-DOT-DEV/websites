@@ -4,6 +4,7 @@ date: "2025-10-15"
 slug: "hello-world"
 excerpt: "Welcome to 21.dev: why non-custodial Bitcoin is still hard—and our first tool, P256K (a Swift libsecp256k1 wrapper for ECDSA + Schnorr)."
 tags: ["announcement", "welcome", "first post"]
+seoTitle: "Hello World: Why 21.dev Exists + Introducing P256K | 21.dev Blog"
 ---
 
 Welcome to 21.dev! We're an open-source organization working toward nonprofit status, focused on building practical tools for Bitcoin developers.

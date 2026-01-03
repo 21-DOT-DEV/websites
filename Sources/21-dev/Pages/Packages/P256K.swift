@@ -242,7 +242,7 @@ struct P256KPage {
     
     static var page: some View {
         BasePage(
-            title: "P256K - Swift secp256k1 for Bitcoin Development",
+            title: "P256K: Swift secp256k1 (ECDSA + Schnorr) + SPM | 21.dev",
             description: "P256K is a Swift libsecp256k1 wrapper (ECDSA + Schnorr) with type-safe APIs and SPM support for Bitcoin and Nostr apps—21.dev.",
             canonicalURL: URL(string: "https://21.dev/packages/p256k/")
         ) {

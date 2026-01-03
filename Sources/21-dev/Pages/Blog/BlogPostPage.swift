@@ -51,7 +51,7 @@ struct BlogPostPage {
     
     var body: some View {
         BasePage(
-            title: "\(post.metadata.title) - Blog - 21.dev",
+            title: post.metadata.seoTitle ?? "\(post.metadata.title) | 21.dev Blog",
             description: generateDescription(),
             canonicalURL: URL(string: "https://21.dev/blog/\(post.metadata.slug)/"),
             articleMetadata: post.metadata.toArticleMetadata()

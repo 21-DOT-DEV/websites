@@ -58,6 +58,7 @@ struct BlogPost {
         var slug = ""
         var excerpt = ""
         var tags: [String] = []
+        var seoTitle: String?
         
         let lines = yaml.components(separatedBy: .newlines)
         
@@ -88,6 +89,8 @@ struct BlogPost {
                         tags = tagsString.components(separatedBy: ", ")
                             .map { $0.trimmingCharacters(in: CharacterSet(charactersIn: "\"")) }
                     }
+                case "seoTitle":
+                    seoTitle = cleanValue
                 default:
                     break
                 }
@@ -98,7 +101,14 @@ struct BlogPost {
             throw BlogParsingError.missingRequiredFields
         }
         
-        return BlogMetadata(title: title, date: date, slug: slug, excerpt: excerpt, tags: tags)
+        let metadata = BlogMetadata(title: title, date: date, slug: slug, excerpt: excerpt, tags: tags, seoTitle: seoTitle)
+        
+        // Soft validation: log warning if seoTitle exceeds 60 characters
+        if metadata.shouldWarnAboutSeoTitleLength {
+            print("⚠️  SEO Title Warning: '\(slug)' has seoTitle longer than 60 characters (\(seoTitle?.count ?? 0) chars). Google typically displays 50-60 characters.")
+        }
+        
+        return metadata
     }
 }
 
