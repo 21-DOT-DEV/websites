@@ -16,7 +16,7 @@ struct Homepage {
     
     static var page: some View {
         BasePage(
-            title: "21.dev - Bitcoin Development Tools",
+            title: "Build Bitcoin Apps in Swift with Open-Source Tools | 21.dev",
             description: "Build Bitcoin apps in Swift with 21.dev—open-source libsecp256k1 wrapper, SPM tools, and docs to ship faster.",
             canonicalURL: URL(string: "https://21.dev/")
         ) {

@@ -17,13 +17,15 @@ public struct BlogMetadata: Codable, Sendable {
     public let slug: String
     public let excerpt: String
     public let tags: [String]
+    public let seoTitle: String?
     
-    public init(title: String, date: String, slug: String, excerpt: String, tags: [String]) {
+    public init(title: String, date: String, slug: String, excerpt: String, tags: [String], seoTitle: String? = nil) {
         self.title = title
         self.date = date
         self.slug = slug
         self.excerpt = excerpt
         self.tags = tags
+        self.seoTitle = seoTitle
     }
     
     /// Parse date string into a Date object for sorting
@@ -93,5 +95,17 @@ public struct BlogMetadata: Codable, Sendable {
             author: author,
             tags: tags
         )
+    }
+    
+    /// Check if seoTitle exceeds recommended length (60 characters)
+    ///
+    /// Google typically displays 50-60 characters in search results.
+    /// This property returns true if seoTitle is present and exceeds 60 characters,
+    /// indicating a soft warning should be logged during build.
+    ///
+    /// - Returns: true if seoTitle exists and exceeds 60 characters
+    public var shouldWarnAboutSeoTitleLength: Bool {
+        guard let seoTitle = seoTitle else { return false }
+        return seoTitle.count > 60
     }
 }

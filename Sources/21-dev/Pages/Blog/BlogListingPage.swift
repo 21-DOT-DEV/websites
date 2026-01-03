@@ -16,7 +16,7 @@ struct BlogListingPage {
     
     static var page: some View {
         BasePage(
-            title: "Blog - 21.dev",
+            title: "Bitcoin Dev + Swift Cryptography Tutorials & Updates | 21.dev Blog",
             description: "Practical Bitcoin developer notes, Swift cryptography tutorials, and the latest P256K open-source updates—21.dev.",
             canonicalURL: URL(string: "https://21.dev/blog/")
         ) {

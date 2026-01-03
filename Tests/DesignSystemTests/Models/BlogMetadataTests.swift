@@ -214,4 +214,74 @@ struct BlogMetadataTests {
         
         #expect(articleMeta.tags == specialTags)
     }
+    
+    // MARK: - SEO Title Tests
+    
+    @Test("BlogMetadata with optional seoTitle")
+    func testBlogMetadataWithSeoTitle() {
+        let metadata = BlogMetadata(
+            title: "Hello World",
+            date: "2025-01-01",
+            slug: "hello-world",
+            excerpt: "Test excerpt",
+            tags: [],
+            seoTitle: "Hello World: Why 21.dev Exists + Introducing P256K | 21.dev Blog"
+        )
+        
+        #expect(metadata.seoTitle == "Hello World: Why 21.dev Exists + Introducing P256K | 21.dev Blog")
+    }
+    
+    @Test("BlogMetadata without seoTitle defaults to nil")
+    func testBlogMetadataWithoutSeoTitle() {
+        let metadata = BlogMetadata(
+            title: "Test Post",
+            date: "2025-01-01",
+            slug: "test-post",
+            excerpt: "Test excerpt",
+            tags: []
+        )
+        
+        #expect(metadata.seoTitle == nil)
+    }
+    
+    @Test("SEO title validation warns for long titles")
+    func testSeoTitleValidationWarning() {
+        let shortTitle = "Short Title"
+        let optimalTitle = String(repeating: "x", count: 60)
+        let longTitle = String(repeating: "x", count: 80)
+        
+        let shortMeta = BlogMetadata(
+            title: "Test",
+            date: "2025-01-01",
+            slug: "test",
+            excerpt: "",
+            tags: [],
+            seoTitle: shortTitle
+        )
+        
+        let optimalMeta = BlogMetadata(
+            title: "Test",
+            date: "2025-01-01",
+            slug: "test",
+            excerpt: "",
+            tags: [],
+            seoTitle: optimalTitle
+        )
+        
+        let longMeta = BlogMetadata(
+            title: "Test",
+            date: "2025-01-01",
+            slug: "test",
+            excerpt: "",
+            tags: [],
+            seoTitle: longTitle
+        )
+        
+        // Should not warn for short/optimal titles
+        #expect(!shortMeta.shouldWarnAboutSeoTitleLength)
+        #expect(!optimalMeta.shouldWarnAboutSeoTitleLength)
+        
+        // Should warn for long title
+        #expect(longMeta.shouldWarnAboutSeoTitleLength)
+    }
 }
