@@ -1,6 +1,6 @@
 import Testing
 import Foundation
-import Utilities
+import UtilLib
 @testable import DesignSystem
 
 @Suite("Sitemap Utility Tests")

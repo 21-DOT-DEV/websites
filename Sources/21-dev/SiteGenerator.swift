@@ -11,7 +11,7 @@
 import Foundation
 import Slipstream
 import DesignSystem
-import Utilities
+import UtilLib
 
 @main
 struct SiteGenerator {

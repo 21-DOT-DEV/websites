@@ -10,7 +10,7 @@
 
 import ArgumentParser
 import Foundation
-import Utilities
+import UtilLib
 
 /// CLI command for state file management.
 struct StateCommand: ParsableCommand {

@@ -10,7 +10,7 @@
 
 import ArgumentParser
 import Foundation
-import Utilities
+import UtilLib
 
 struct CanonicalCommand: ParsableCommand {
     static let configuration = CommandConfiguration(
