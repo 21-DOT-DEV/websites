@@ -29,7 +29,7 @@ let package = Package(
             dependencies: [
                 .product(name: "Slipstream", package: "slipstream"),
                 .target(name: "DesignSystem"),
-                .target(name: "Utilities")
+                .target(name: "UtilLib")
             ]
         ),
         .target(
@@ -37,7 +37,7 @@ let package = Package(
             dependencies: [
                 .product(name: "Slipstream", package: "slipstream"),
                 .product(name: "Subprocess", package: "swift-subprocess"),
-                .target(name: "Utilities")
+                .target(name: "UtilLib")
             ]
         ),
         .target(
@@ -50,7 +50,7 @@ let package = Package(
         ),
         .testTarget(
             name: "DesignSystemTests",
-            dependencies: ["DesignSystem", "TestUtils", "Utilities"]
+            dependencies: ["DesignSystem", "TestUtils", "UtilLib"]
         ),
         .testTarget(
             name: "IntegrationTests",
@@ -58,12 +58,12 @@ let package = Package(
                 "DesignSystem",
                 "21-dev",
                 "TestUtils",
-                "Utilities"
+                "UtilLib"
             ]
         ),
         // MARK: - Utilities Library & CLI
         .target(
-            name: "Utilities",
+            name: "UtilLib",
             dependencies: [
                 .product(name: "Subprocess", package: "swift-subprocess"),
                 .product(name: "SwiftSoup", package: "SwiftSoup")
@@ -72,20 +72,17 @@ let package = Package(
         .executableTarget(
             name: "util",
             dependencies: [
-                .target(name: "Utilities"),
+                .target(name: "UtilLib"),
                 .product(name: "ArgumentParser", package: "swift-argument-parser")
             ]
         ),
         .testTarget(
-            name: "UtilitiesTests",
-            dependencies: ["Utilities"]
+            name: "UtilLibTests",
+            dependencies: ["UtilLib"]
         ),
         .testTarget(
-            name: "UtilitiesCLITests",
+            name: "UtilIntegrationTests",
             dependencies: [
-                "Utilities",
-                "util",
-                "TestUtils",
                 .product(name: "Subprocess", package: "swift-subprocess")
             ]
         )

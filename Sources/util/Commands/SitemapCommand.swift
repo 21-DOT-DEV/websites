@@ -10,7 +10,7 @@
 
 import ArgumentParser
 import Foundation
-import Utilities
+import UtilLib
 
 /// CLI command for sitemap generation operations.
 struct SitemapCommand: AsyncParsableCommand {

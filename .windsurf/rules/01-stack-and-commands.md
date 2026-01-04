@@ -14,6 +14,7 @@ description: >
 - **Tailwind CSS** via `swift-plugin-tailwindcss` for styling.
 - **swift-testing** package for all tests (no XCTest).
 - **TestUtils** target for shared test helpers across all test targets.
+- **UtilLib** library for utilities (sitemap, headers, canonical, state) - see [util-architecture.md](./util-architecture.md)
 
 ## Command Conventions
 - In `zsh`, **prefix all build/test commands** with `nocorrect` to avoid shell autocorrect:
@@ -35,3 +36,6 @@ description: >
 ## Related Workflows
 - **`/85-local-full-check`** — Complete build, test, compile CSS, and site generation.
 - **`/32-site-generate-and-verify`** — Build site HTML/CSS/JS outputs with verification.
+
+## Related Architecture
+- **`util-architecture.md`** — Library + executable pattern for util CLI tool.

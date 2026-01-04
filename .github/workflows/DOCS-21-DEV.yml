@@ -16,7 +16,7 @@ on:
       - 'Resources/docs-21-dev/**'
       - 'Sources/docs-21-dev-P256K/**'
       - 'Sources/docs-21-dev-ZKP/**'
-      - 'Sources/Utilities/**'
+      - 'Sources/UtilLib/**'
       - 'Sources/util/**'
       - 'Package.swift'
       - 'Package.resolved'

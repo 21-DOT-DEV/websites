@@ -9,7 +9,7 @@
 //
 
 import ArgumentParser
-import Utilities
+import UtilLib
 
 /// CLI utilities for 21.dev websites.
 ///
