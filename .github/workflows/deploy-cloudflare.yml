@@ -89,36 +89,17 @@ jobs:
           branch: ${{ env.DEPLOYMENT_BRANCH }}
           wranglerVersion: '3'
       
-      - name: Prepare deployment comment
-        if: github.event_name == 'pull_request'
-        id: format-output
-        run: |
-          if [ "${{ steps.cloudflare.outcome }}" == "failure" ]; then
-            DEPLOYMENT_STATUS="❌ Deployment Failed!"
-          else
-            DEPLOYMENT_STATUS="✅ Deployment Successful!"
-          fi
-
-          echo "DEPLOYMENT_TEXT<<EOF" >> $GITHUB_ENV
-          echo "### Deploying Preview for ${{ inputs.project-name }} 🚀" >> $GITHUB_ENV
-          echo "---" >> $GITHUB_ENV
-          echo "| **Name** | **Result** |" >> $GITHUB_ENV
-          echo "|---------------------------------|------------------------|" >> $GITHUB_ENV
-          echo "|🔀 Latest Commit | ${{ github.sha }} |" >> $GITHUB_ENV
-          echo "|🛰️ Status | $DEPLOYMENT_STATUS |" >> $GITHUB_ENV
-          echo "|🪵 Action Run | [View Logs](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}) |" >> $GITHUB_ENV
-          echo "|🔍 Preview URL | [${{ steps.cloudflare.outputs.url }}](${{ steps.cloudflare.outputs.url }}) |" >> $GITHUB_ENV
-          echo "|🕵🏻‍♂️ Alias URL | [${{ steps.cloudflare.outputs.alias }}](${{ steps.cloudflare.outputs.alias }}) |" >> $GITHUB_ENV
-          echo "EOF" >> $GITHUB_ENV
-      
-      - name: Comment deployment preview on PR
+      - name: Update deployment comment on PR
         if: github.event_name == 'pull_request'
         run: |
-          # Try to edit last comment, fallback to creating new comment if none exists
-          if ! gh issue comment ${{ github.event.pull_request.number }} --edit-last --body "${{ env.DEPLOYMENT_TEXT }}" 2>/dev/null; then
-            echo "No previous comment found, creating new comment..."
-            gh issue comment ${{ github.event.pull_request.number }} --body "${{ env.DEPLOYMENT_TEXT }}"
-          fi
+          swift run util comment \
+            --pr ${{ github.event.pull_request.number }} \
+            --project ${{ inputs.project-name }} \
+            --status ${{ steps.cloudflare.outcome == 'success' && 'success' || 'failure' }} \
+            --preview-url "${{ steps.cloudflare.outputs.url }}" \
+            --alias-url "${{ steps.cloudflare.outputs.alias }}" \
+            --commit "${{ github.event.pull_request.head.sha }}" \
+            --run-url "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
       
       - name: Deployment complete
         run: |

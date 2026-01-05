@@ -35,6 +35,13 @@ struct BlogListingPage {
         
         Div {
             Div {
+                H1 {
+                    Text("Blog")
+                }
+                .fontSize(.fourXLarge)
+                .fontWeight(.bold)
+                .margin(.bottom, 32)
+                
                 if posts.isEmpty {
                     // No posts message
                     Div {
