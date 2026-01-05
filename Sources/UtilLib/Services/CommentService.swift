@@ -64,9 +64,10 @@ public enum CommentService {
             lines.append("\(markerPrefix)\(jsonString)\(markerSuffix)")
         }
         
-        // Header with shared context
+        // Header with shared context (use short 7-char commit hash)
+        let shortCommit = String(state.commit.prefix(7))
         lines.append("### Deployment Preview 🚀")
-        lines.append("**Commit**: \(state.commit) | **Run**: [View Logs](\(state.runUrl))")
+        lines.append("**Commit**: \(shortCommit) | **Run**: [View Logs](\(state.runUrl))")
         lines.append("")
         
         // Table header
@@ -79,10 +80,19 @@ public enum CommentService {
         for (_, entry) in sortedDeployments {
             let subdomain = projectToSubdomain(entry.project)
             let status = entry.status.emoji
-            let previewLink = "[\(entry.previewUrl)](\(entry.previewUrl))"
+            
+            // Show ⏳ for empty/stale preview URLs, otherwise show link
+            let previewDisplay: String
+            if entry.previewUrl.isEmpty {
+                previewDisplay = "⏳"
+            } else {
+                previewDisplay = "[\(entry.previewUrl)](\(entry.previewUrl))"
+            }
+            
+            // Alias URL is fixed - always show link
             let aliasLink = "[\(entry.aliasUrl)](\(entry.aliasUrl))"
             
-            lines.append("| \(subdomain) | \(status) | \(previewLink) | \(aliasLink) |")
+            lines.append("| \(subdomain) | \(status) | \(previewDisplay) | \(aliasLink) |")
         }
         
         return lines.joined(separator: "\n")
@@ -149,8 +159,28 @@ public enum CommentService {
     // MARK: - T016: Merge Deployment
     
     /// Merges a new deployment entry into existing state (upsert by project key).
-    public static func mergeDeployment(_ entry: DeploymentEntry, into state: inout CommentState) {
+    /// If the commit has changed, resets other subdomains to pending status.
+    public static func mergeDeployment(_ entry: DeploymentEntry, into state: inout CommentState, newCommit: String) {
+        // Check if commit has changed - if so, reset other subdomains
+        if state.commit != newCommit {
+            resetOtherDeployments(except: entry.project, in: &state)
+        }
         state.deployments[entry.project] = entry
+    }
+    
+    /// Resets all deployments except the specified project to pending status.
+    /// Clears preview URLs but keeps alias URLs (which are fixed).
+    public static func resetOtherDeployments(except currentProject: String, in state: inout CommentState) {
+        for (project, existingEntry) in state.deployments {
+            if project != currentProject {
+                state.deployments[project] = DeploymentEntry(
+                    project: existingEntry.project,
+                    status: .pending,
+                    previewUrl: "",  // Clear stale preview URL
+                    aliasUrl: existingEntry.aliasUrl  // Keep fixed alias URL
+                )
+            }
+        }
     }
     
     // MARK: - US3: Parse Comment State (needed for US2 merge flow)

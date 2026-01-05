@@ -98,7 +98,7 @@ jobs:
             --status ${{ steps.cloudflare.outcome == 'success' && 'success' || 'failure' }} \
             --preview-url "${{ steps.cloudflare.outputs.url }}" \
             --alias-url "${{ steps.cloudflare.outputs.alias }}" \
-            --commit "${{ github.sha }}" \
+            --commit "${{ github.event.pull_request.head.sha }}" \
             --run-url "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
       
       - name: Deployment complete

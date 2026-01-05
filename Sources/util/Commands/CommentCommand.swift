@@ -100,8 +100,8 @@ struct CommentCommand: AsyncParsableCommand {
             )
         }
         
-        // Merge new deployment into state
-        CommentService.mergeDeployment(entry, into: &state!)
+        // Merge new deployment into state (resets other subdomains if commit changed)
+        CommentService.mergeDeployment(entry, into: &state!, newCommit: commit)
         
         // Update commit and runUrl to latest values
         state = CommentState(

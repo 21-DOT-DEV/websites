@@ -373,7 +373,7 @@ struct MergeDeploymentTests {
             runUrl: "https://github.com/runs/1"
         )
         
-        CommentService.mergeDeployment(entry, into: &state)
+        CommentService.mergeDeployment(entry, into: &state, newCommit: "abc123")
         
         #expect(state.deployments.count == 1)
         #expect(state.deployments["21-dev"] == entry)
@@ -400,14 +400,14 @@ struct MergeDeploymentTests {
             runUrl: "https://github.com/runs/1"
         )
         
-        CommentService.mergeDeployment(newEntry, into: &state)
+        CommentService.mergeDeployment(newEntry, into: &state, newCommit: "abc123")
         
         #expect(state.deployments.count == 1)
         #expect(state.deployments["21-dev"]?.status == .success)
         #expect(state.deployments["21-dev"]?.previewUrl == "https://new.pages.dev")
     }
     
-    @Test("mergeDeployment preserves other deployments")
+    @Test("mergeDeployment preserves other deployments with same commit")
     func preserveOthers() {
         let existingEntry = DeploymentEntry(
             project: "docs-21-dev",
@@ -428,7 +428,7 @@ struct MergeDeploymentTests {
             runUrl: "https://github.com/runs/1"
         )
         
-        CommentService.mergeDeployment(newEntry, into: &state)
+        CommentService.mergeDeployment(newEntry, into: &state, newCommit: "abc123")
         
         #expect(state.deployments.count == 2)
         #expect(state.deployments["docs-21-dev"] == existingEntry)
@@ -450,13 +450,78 @@ struct MergeDeploymentTests {
         ]
         
         for entry in entries {
-            CommentService.mergeDeployment(entry, into: &state)
+            CommentService.mergeDeployment(entry, into: &state, newCommit: "xyz789")
         }
         
         #expect(state.deployments.count == 3)
         #expect(state.deployments["21-dev"]?.status == .success)
         #expect(state.deployments["docs-21-dev"]?.status == .failure)
         #expect(state.deployments["md-21-dev"]?.status == .pending)
+    }
+    
+    @Test("mergeDeployment resets other subdomains when commit changes")
+    func resetsOnCommitChange() {
+        let existingEntry = DeploymentEntry(
+            project: "docs-21-dev",
+            status: .success,
+            previewUrl: "https://old-docs.pages.dev",
+            aliasUrl: "https://preview.docs.21.dev"
+        )
+        let newEntry = DeploymentEntry(
+            project: "21-dev",
+            status: .success,
+            previewUrl: "https://new-main.pages.dev",
+            aliasUrl: "https://preview.21.dev"
+        )
+        
+        var state = CommentState(
+            deployments: ["docs-21-dev": existingEntry],
+            commit: "oldcommit123",
+            runUrl: "https://github.com/runs/1"
+        )
+        
+        // Merge with different commit - should reset docs-21-dev
+        CommentService.mergeDeployment(newEntry, into: &state, newCommit: "newcommit456")
+        
+        #expect(state.deployments.count == 2)
+        #expect(state.deployments["21-dev"]?.status == .success)
+        #expect(state.deployments["21-dev"]?.previewUrl == "https://new-main.pages.dev")
+        // docs-21-dev should be reset to pending with empty preview URL
+        #expect(state.deployments["docs-21-dev"]?.status == .pending)
+        #expect(state.deployments["docs-21-dev"]?.previewUrl == "")
+        // Alias URL should be preserved
+        #expect(state.deployments["docs-21-dev"]?.aliasUrl == "https://preview.docs.21.dev")
+    }
+    
+    @Test("mergeDeployment does not reset when commit is the same")
+    func noResetOnSameCommit() {
+        let existingEntry = DeploymentEntry(
+            project: "docs-21-dev",
+            status: .success,
+            previewUrl: "https://docs.pages.dev",
+            aliasUrl: "https://preview.docs.21.dev"
+        )
+        let newEntry = DeploymentEntry(
+            project: "21-dev",
+            status: .success,
+            previewUrl: "https://main.pages.dev",
+            aliasUrl: "https://preview.21.dev"
+        )
+        
+        var state = CommentState(
+            deployments: ["docs-21-dev": existingEntry],
+            commit: "samecommit",
+            runUrl: "https://github.com/runs/1"
+        )
+        
+        // Merge with same commit - should NOT reset docs-21-dev
+        CommentService.mergeDeployment(newEntry, into: &state, newCommit: "samecommit")
+        
+        #expect(state.deployments.count == 2)
+        #expect(state.deployments["21-dev"]?.status == .success)
+        // docs-21-dev should remain unchanged
+        #expect(state.deployments["docs-21-dev"]?.status == .success)
+        #expect(state.deployments["docs-21-dev"]?.previewUrl == "https://docs.pages.dev")
     }
 }
 
