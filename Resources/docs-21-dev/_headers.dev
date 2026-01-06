@@ -22,20 +22,20 @@
 
 # No-store zones (well-known + JSON)
 /.well-known/*
-  Cache-Control: no-store
-  Pragma: no-cache
+  Cache-Control: public, max-age=300, must-revalidate
+  Vary: Accept-Encoding
   X-Robots-Tag: noindex
 
 # DocC data directory (symbol JSON)
 /data/*
-  Cache-Control: no-store
-  Pragma: no-cache
+  Cache-Control: public, max-age=300, must-revalidate
+  Vary: Accept-Encoding
   X-Robots-Tag: noindex
 
 # Catch-all JSON (linkable-entities, etc.)
 /**/*.json
-  Cache-Control: no-store
-  Pragma: no-cache
+  Cache-Control: public, max-age=300, must-revalidate
+  Vary: Accept-Encoding
   X-Robots-Tag: noindex
 
 # Preview HTML (DocC) — security headers without HSTS, noindex to prevent search indexing
