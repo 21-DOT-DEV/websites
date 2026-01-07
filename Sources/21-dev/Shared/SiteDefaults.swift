@@ -27,7 +27,7 @@ public struct SiteDefaults {
         companyName: "21.dev",
         companyDescription: "Equipping developers with the tools they need today to build the Bitcoin apps of tomorrow.",
         resourceLinks: [
-            FooterLink(text: "Documentation", href: "https://docs.21.dev/", isExternal: true),
+            FooterLink(text: "Documentation", href: "https://docs.21.dev/documentation/", isExternal: true),
             FooterLink(text: "Blog", href: "/blog/"),
             FooterLink(text: "P256K", href: "/packages/p256k/")
         ],
