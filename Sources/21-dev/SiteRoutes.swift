@@ -18,12 +18,11 @@ struct SiteRoutes {
     
     // MARK: - Indexed Pages (included in sitemap.xml)
     
-    /// Static pages with fixed paths
+    /// Static pages with fixed paths (pages that don't depend on posts)
     static var staticPages: Sitemap {
         [
             "index.html": Homepage.page,
-            "packages/p256k/index.html": P256KPage.page,
-            "blog/index.html": BlogListingPage.page
+            "packages/p256k/index.html": P256KPage.page
         ]
     }
     
@@ -31,16 +30,16 @@ struct SiteRoutes {
     static func blogPostPages(from posts: [BlogPost]) -> Sitemap {
         var pages: Sitemap = [:]
         for post in posts {
-            if let postPage = BlogPostPage.page(for: post.metadata.slug) {
-                pages["blog/\(post.metadata.slug)/index.html"] = postPage
-            }
+            pages["blog/\(post.metadata.slug)/index.html"] = BlogPostPage.page(for: post)
         }
         return pages
     }
     
     /// All pages for sitemap.xml
     static func indexedPages(posts: [BlogPost]) -> Sitemap {
-        staticPages.merging(blogPostPages(from: posts)) { _, new in new }
+        var pages = staticPages
+        pages["blog/index.html"] = BlogListingPage.page(posts: posts)
+        return pages.merging(blogPostPages(from: posts)) { _, new in new }
     }
     
     // MARK: - Non-Indexed Pages (excluded from sitemap.xml)

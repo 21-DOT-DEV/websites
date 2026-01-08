@@ -46,7 +46,7 @@ public struct NotFoundContent: View {
     public var body: some View {
         Div {
             Div {
-                VStack(spacing: 32) {
+                VStack(alignment: .center, spacing: 32) {
                     // Error headline
                     H1 {
                         Text(headline)
