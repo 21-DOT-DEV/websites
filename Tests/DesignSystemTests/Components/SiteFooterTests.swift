@@ -197,4 +197,70 @@ struct SiteFooterTests {
         #expect(html.contains("max-w-6xl"))
         #expect(html.contains("mx-auto"))
     }
+    
+    // MARK: - Email Obfuscation Tests
+    
+    @Test("SiteFooter obfuscates email with RTL CSS technique")
+    func testSiteFooterEmailObfuscation() async throws {
+        let footer = SiteFooter(
+            companyName: "Obfuscation Test",
+            companyDescription: "Testing email obfuscation",
+            contactEmail: "hello@21.dev",
+            copyrightText: "2025 Test"
+        )
+        
+        let html = try TestUtils.renderHTML(footer)
+        
+        // Email should be reversed in the DOM (RTL obfuscation)
+        #expect(html.contains("ved.12@olleh"))
+        
+        // Should have the obfuscation class
+        #expect(html.contains("email-obfuscated"))
+        
+        // mailto: href should still contain the correct email
+        #expect(html.contains("mailto:hello@21.dev"))
+        
+        // Should have accessibility label (Slipstream renders as alt attribute)
+        #expect(html.contains("alt=\"Contact Us\""))
+    }
+    
+    @Test("SiteFooter StyleModifier provides email obfuscation CSS")
+    func testSiteFooterStyleModifierCSS() async throws {
+        let footer = SiteFooter(
+            companyName: "CSS Test",
+            companyDescription: "Testing StyleModifier",
+            copyrightText: "2025 Test"
+        )
+        
+        // Verify the style property contains the RTL CSS
+        #expect(footer.style.contains(".email-obfuscated"))
+        #expect(footer.style.contains("unicode-bidi: bidi-override"))
+        #expect(footer.style.contains("direction: rtl"))
+        
+        // Verify componentName
+        #expect(footer.componentName == "SiteFooter")
+    }
+    
+    @Test("SiteFooter email obfuscation handles various email formats")
+    func testSiteFooterEmailObfuscationVariousFormats() async throws {
+        let testCases: [(email: String, reversed: String)] = [
+            ("test@example.com", "moc.elpmaxe@tset"),
+            ("a@b.co", "oc.b@a"),
+            ("contact+support@company.io", "oi.ynapmoc@troppus+tcatnoc")
+        ]
+        
+        for testCase in testCases {
+            let footer = SiteFooter(
+                companyName: "Test",
+                companyDescription: "Test",
+                contactEmail: testCase.email,
+                copyrightText: "2025"
+            )
+            
+            let html = try TestUtils.renderHTML(footer)
+            
+            #expect(html.contains(testCase.reversed), "Expected reversed email '\(testCase.reversed)' for '\(testCase.email)'")
+            #expect(html.contains("mailto:\(testCase.email)"), "Expected mailto href for '\(testCase.email)'")
+        }
+    }
 }

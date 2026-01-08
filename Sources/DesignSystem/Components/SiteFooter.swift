@@ -21,7 +21,7 @@ import Slipstream
 ///         FooterLink(text: "Documentation", href: "https://docs.21.dev", isExternal: true),
 ///         FooterLink(text: "Blog", href: "/blog")
 ///     ],
-///     contactEmail: "hello@21.dev",
+///     contactEmail: "hello@21.dev",  // Automatically obfuscated with RTL CSS
 ///     licenseText: "Licensed under MIT",
 ///     socialLinks: [
 ///         SocialLink(url: "https://github.com/21-dot-dev", ariaLabel: "GitHub", platform: .github),
@@ -38,7 +38,24 @@ import Slipstream
 /// - **Accessibility-first** with proper ARIA labels and semantic HTML
 /// - **Consistent styling** with hover states and transitions
 /// - **External link handling** with automatic `target="_blank"` and `rel="noopener"`
-public struct SiteFooter: View {
+public struct SiteFooter: View, StyleModifier {
+    
+    // MARK: - StyleModifier
+    
+    public var style: String {
+        """
+        /* Email obfuscation - displays RTL to deter scrapers */
+        .email-obfuscated {
+            unicode-bidi: bidi-override;
+            direction: rtl;
+        }
+        """
+    }
+    
+    public var componentName: String { "SiteFooter" }
+    
+    // MARK: - Properties
+    
     public let companyName: String
     public let companyDescription: String
     public let resourceLinks: [FooterLink]
@@ -122,8 +139,12 @@ public struct SiteFooter: View {
                         
                         if let email = contactEmail {
                             Paragraph {
-                                Link(email, destination: URL(string: "mailto:\(email)"))
-                                    .modifier(ClassModifier(add: "text-gray-400 hover:text-white transition-colors"))
+                                Link(URL(string: "mailto:\(email)")) {
+                                    Span(String(email.reversed()))
+                                        .modifier(ClassModifier(add: "email-obfuscated"))
+                                }
+                                .modifier(ClassModifier(add: "text-gray-400 hover:text-white transition-colors"))
+                                .accessibilityLabel("Contact Us")
                             }
                             .margin(.bottom, 8)
                         }
