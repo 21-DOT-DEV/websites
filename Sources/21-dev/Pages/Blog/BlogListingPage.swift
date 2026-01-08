@@ -14,7 +14,7 @@ import DesignSystem
 
 struct BlogListingPage {
     
-    static var page: some View {
+    static func page(posts: [BlogPost]) -> some View {
         BasePage(
             title: "Bitcoin Dev + Swift Cryptography Tutorials & Updates | 21.dev Blog",
             description: "Practical Bitcoin developer notes, Swift cryptography tutorials, and the latest P256K open-source updates—21.dev.",
@@ -23,15 +23,14 @@ struct BlogListingPage {
             SiteDefaults.header
             
             // Blog posts section
-            blogPostsSection
+            blogPostsSection(posts: posts)
             
             SiteDefaults.footer
         }
     }
     
     @ViewBuilder
-    static var blogPostsSection: some View {
-        let posts = BlogService.loadAllPosts()
+    static func blogPostsSection(posts: [BlogPost]) -> some View {
         
         Div {
             Div {

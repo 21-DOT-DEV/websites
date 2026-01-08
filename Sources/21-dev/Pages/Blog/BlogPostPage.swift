@@ -19,7 +19,14 @@ struct BlogPostPage {
         self.post = post
     }
     
-    static func page(for slug: String) -> (any View)? {
+    /// Create a page view from an already-loaded blog post
+    static func page(for post: BlogPost) -> any View {
+        return BlogPostPage(post: post).body
+    }
+    
+    /// Create a page view by loading a blog post from disk by slug
+    /// Note: Prefer `page(for: BlogPost)` when posts are already loaded to avoid redundant parsing
+    static func page(forSlug slug: String) -> (any View)? {
         guard let post = BlogService.loadPost(slug: slug) else {
             return nil
         }
