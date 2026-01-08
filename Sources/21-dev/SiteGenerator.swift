@@ -89,24 +89,14 @@ struct SiteGenerator {
         let resourcesURL = projectURL.appending(path: "../Resources/21-dev")
         let outputURL = projectURL.appending(path: "../Websites/21-dev")
         
-        // Build sitemap with all pages
+        // Build page collections
         let posts = BlogService.loadAllPosts()
-        var sitemap: Sitemap = [
-            "index.html": Homepage.page,
-            "packages/p256k/index.html": P256KPage.page,
-            "blog/index.html": BlogListingPage.page
-        ]
-        
-        // Add individual blog posts to sitemap
-        for post in posts {
-            if let postPage = BlogPostPage.page(for: post.metadata.slug) {
-                sitemap["blog/\(post.metadata.slug)/index.html"] = postPage
-            }
-        }
+        let sitemap = SiteRoutes.indexedPages(posts: posts)
+        let allPages = SiteRoutes.allPages(posts: posts)
         
         // Render site with automatic CSS collection and generation
         try await renderSitemap(
-            sitemap,
+            allPages,
             to: outputURL,
             baseCSS: projectURL.appending(path: "../Resources/21-dev/static/style.base.css"),
             stylesheet: "../../Resources/21-dev/static/style.input.css"

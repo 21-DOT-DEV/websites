@@ -16,6 +16,7 @@ public struct BasePage: View {
     let description: String?
     let stylesheet: String
     let canonicalURL: URL?
+    let robotsDirective: String?
     let articleMetadata: ArticleMetadata?
     let bodyContent: any View
     
@@ -29,6 +30,7 @@ public struct BasePage: View {
         description: String? = nil,
         stylesheet: String = "/static/style.css",
         canonicalURL: URL? = nil,
+        robotsDirective: String? = nil,
         articleMetadata: ArticleMetadata? = nil,
         @ViewBuilder bodyContent: () -> Content
     ) {
@@ -36,6 +38,7 @@ public struct BasePage: View {
         self.description = description
         self.stylesheet = stylesheet
         self.canonicalURL = canonicalURL
+        self.robotsDirective = robotsDirective
         self.articleMetadata = articleMetadata
         self.bodyContent = bodyContent()
     }
@@ -50,6 +53,7 @@ public struct BasePage: View {
         description: String? = nil,
         stylesheet: String = "/static/style.css",
         canonicalURL: URL? = nil,
+        robotsDirective: String? = nil,
         articleMetadata: ArticleMetadata? = nil,
         text: String = "Initial Website"
     ) {
@@ -57,6 +61,7 @@ public struct BasePage: View {
         self.description = description
         self.stylesheet = stylesheet
         self.canonicalURL = canonicalURL
+        self.robotsDirective = robotsDirective
         self.articleMetadata = articleMetadata
         self.bodyContent = PlaceholderView(text: text)
     }
@@ -68,6 +73,9 @@ public struct BasePage: View {
                 Title(title)
                 if let description {
                     Meta(.description, content: description)
+                }
+                if let robotsDirective {
+                    Meta("robots", content: robotsDirective)
                 }
                 if let article = articleMetadata {
                     Meta("article:published_time", content: article.publishedTime)
