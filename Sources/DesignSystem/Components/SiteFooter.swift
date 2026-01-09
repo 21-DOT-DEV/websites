@@ -108,10 +108,10 @@ public struct SiteFooter: View, StyleModifier {
                             .fontSize(.large)
                             .fontWeight(.semibold)
                             .margin(.bottom, 16)
-                            .modifier(ClassModifier(add: "text-white"))
+                            .textColor(.white)
                         
                         Paragraph(companyDescription)
-                            .modifier(ClassModifier(add: "text-gray-400"))
+                            .textColor(.palette(.gray, darkness: 400))
                     }
                     
                     // Resources column
@@ -120,12 +120,16 @@ public struct SiteFooter: View, StyleModifier {
                             .fontSize(.large)
                             .fontWeight(.semibold)
                             .margin(.bottom, 16)
-                            .modifier(ClassModifier(add: "text-white"))
+                            .textColor(.white)
                         
                         // Use ForEach for type-safe resource link rendering
                         ForEach(resourceLinks, id: \.href) { (link: FooterLink) in
                             Link(link.text, destination: URL(string: link.href), openInNewTab: link.isExternal)
-                                .modifier(ClassModifier(add: Set(["text-gray-400", "hover:text-white", "transition-colors", "block", "mb-2"])))
+                                .textColor(.palette(.gray, darkness: 400))
+                                .display(.block)
+                                .margin(.bottom, 8)
+                                .transition(.colors)
+                                .modifier(ClassModifier(add: "hover:text-white"))
                         }
                     }
                     
@@ -135,7 +139,7 @@ public struct SiteFooter: View, StyleModifier {
                             .fontSize(.large)
                             .fontWeight(.semibold)
                             .margin(.bottom, 16)
-                            .modifier(ClassModifier(add: "text-white"))
+                            .textColor(.white)
                         
                         if let email = contactEmail {
                             Paragraph {
@@ -143,7 +147,9 @@ public struct SiteFooter: View, StyleModifier {
                                     Span(String(email.reversed()))
                                         .modifier(ClassModifier(add: "email-obfuscated"))
                                 }
-                                .modifier(ClassModifier(add: "text-gray-400 hover:text-white transition-colors"))
+                                .textColor(.palette(.gray, darkness: 400))
+                                .transition(.colors)
+                                .modifier(ClassModifier(add: "hover:text-white"))
                                 .accessibilityLabel("Contact Us")
                             }
                             .margin(.bottom, 8)
@@ -152,7 +158,7 @@ public struct SiteFooter: View, StyleModifier {
                         if let license = licenseText {
                             Paragraph(license)
                                 .fontSize(.small)
-                                .modifier(ClassModifier(add: "text-gray-400"))
+                                .textColor(.palette(.gray, darkness: 400))
                         }
                     }
                     
@@ -162,7 +168,7 @@ public struct SiteFooter: View, StyleModifier {
                             .fontSize(.large)
                             .fontWeight(.semibold)
                             .margin(.bottom, 16)
-                            .modifier(ClassModifier(add: "text-white"))
+                            .textColor(.white)
                         
                         // Use ForEach for type-safe social link rendering
                         ForEach(socialLinks, id: \.url) { socialLink in
@@ -177,7 +183,7 @@ public struct SiteFooter: View, StyleModifier {
                 Div {
                     Paragraph(copyrightText)
                         .textAlignment(.center)
-                        .modifier(ClassModifier(add: "text-gray-400"))
+                        .textColor(.palette(.gray, darkness: 400))
                 }
                 // TODO: Missing Slipstream API - using ClassModifier for border-t
                 .modifier(ClassModifier(add: "border-t border-gray-800 mt-8 pt-8"))
@@ -185,11 +191,11 @@ public struct SiteFooter: View, StyleModifier {
             .padding(.horizontal, 16) // px-4
             .padding(.horizontal, 24, condition: Condition(startingAt: .small)) // sm:px-6
             .padding(.horizontal, 32, condition: Condition(startingAt: .large)) // lg:px-8
-            // TODO: Missing Slipstream API - using ClassModifier for max-width
-            .modifier(ClassModifier(add: "max-w-6xl mx-auto"))
+            .frame(maxWidth: .sixXLarge)
+            .margin(.horizontal, .auto)
         }
         .padding(.vertical, 48) // py-12
-        .modifier(ClassModifier(add: "bg-gray-900"))
+        .background(.palette(.gray, darkness: 900))
     }
 }
 

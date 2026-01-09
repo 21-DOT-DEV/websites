@@ -64,7 +64,7 @@ struct BlogListingPage {
             .padding(.horizontal, 16)
             .padding(.horizontal, 24, condition: Condition(startingAt: .small))
             .padding(.horizontal, 32, condition: Condition(startingAt: .large))
-            .modifier(ClassModifier(add: "max-w-4xl"))
+            .frame(maxWidth: .fourXLarge)
             .margin(.horizontal, .auto)
         }
         .padding(.vertical, 64)
@@ -95,7 +95,7 @@ struct BlogListingPage {
         .background(Slipstream.Color.white)
         .padding(32)
         .cornerRadius(.large)
-        .modifier(ClassModifier(add: "shadow-lg"))
+        .shadow("lg")
     }
 }
 

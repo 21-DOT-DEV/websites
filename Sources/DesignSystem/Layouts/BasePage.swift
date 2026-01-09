@@ -18,12 +18,14 @@ public struct BasePage: View {
     let canonicalURL: URL?
     let robotsDirective: String?
     let articleMetadata: ArticleMetadata?
+    let schemas: [any Schema]?
     let bodyContent: any View
     
     /// Creates a base page with the specified title and custom body content.
     /// - Parameters:
     ///   - title: The page title to display in the browser tab
     ///   - stylesheet: CSS file path (defaults to "/static/style.css")
+    ///   - schemas: Array of Schema objects for JSON-LD structured data (uses @graph approach)
     ///   - bodyContent: The page body content
     public init<Content: View>(
         title: String,
@@ -32,6 +34,7 @@ public struct BasePage: View {
         canonicalURL: URL? = nil,
         robotsDirective: String? = nil,
         articleMetadata: ArticleMetadata? = nil,
+        schemas: [any Schema]? = nil,
         @ViewBuilder bodyContent: () -> Content
     ) {
         self.title = title
@@ -40,6 +43,7 @@ public struct BasePage: View {
         self.canonicalURL = canonicalURL
         self.robotsDirective = robotsDirective
         self.articleMetadata = articleMetadata
+        self.schemas = schemas
         self.bodyContent = bodyContent()
     }
     
@@ -55,6 +59,7 @@ public struct BasePage: View {
         canonicalURL: URL? = nil,
         robotsDirective: String? = nil,
         articleMetadata: ArticleMetadata? = nil,
+        schemas: [any Schema]? = nil,
         text: String = "Initial Website"
     ) {
         self.title = title
@@ -63,7 +68,15 @@ public struct BasePage: View {
         self.canonicalURL = canonicalURL
         self.robotsDirective = robotsDirective
         self.articleMetadata = articleMetadata
+        self.schemas = schemas
         self.bodyContent = PlaceholderView(text: text)
+    }
+    
+    /// Renders the JSON-LD structured data from schemas.
+    private var structuredDataJSON: String? {
+        guard let schemas, !schemas.isEmpty else { return nil }
+        let graph = SchemaGraph(schemas)
+        return try? graph.render()
     }
     
     public var body: some View {
@@ -92,6 +105,10 @@ public struct BasePage: View {
                 Viewport.mobileFriendly
                 Canonical(canonicalURL)
                 Stylesheet(URL(string: stylesheet))
+                if let json = structuredDataJSON {
+                    Script(json)
+                        .modifier(AttributeModifier("type", value: "application/ld+json"))
+                }
             }
             Body {
                 AnyView(bodyContent)
