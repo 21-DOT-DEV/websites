@@ -1,15 +1,10 @@
 name: 21-dev
 
 on:
-  pull_request:
-    types:
-      - closed
-      - opened
-      - synchronize
-      - reopened
+  push:
     branches:
       - 'main'
-    paths:
+    paths: &paths
       - '.github/workflows/build-slipstream.yml'
       - '.github/workflows/deploy-cloudflare.yml'
       - '.github/workflows/21-DEV.yml'
@@ -19,7 +14,11 @@ on:
       - 'Tests/**'
       - 'Package.swift'
 
-  # Allows you to run this workflow manually from the Actions tab
+  pull_request:
+    branches:
+      - 'main'
+    paths: *paths
+
   workflow_dispatch:
 
 jobs:
@@ -36,7 +35,7 @@ jobs:
     with:
       artifact-name: ${{ needs.build.outputs.artifact-name }}
       project-name: 21-dev
-      deploy-to-production: ${{ github.event.pull_request.merged || false }}
+      deploy-to-production: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
     secrets:
       cloudflare-api-token: ${{ secrets.CLOUDFLARE_API_TOKEN }}
       cloudflare-account-id: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}

@@ -1,23 +1,22 @@
 name: md-21-dev
 
 on:
-  pull_request:
-    types:
-      - closed
-      - opened
-      - synchronize
-      - reopened
+  push:
     branches:
       - 'main'
-    paths:
+    paths: &paths
       - '.github/workflows/generate-markdown.yml'
       - '.github/workflows/deploy-cloudflare.yml'
       - '.github/workflows/MD-21-DEV.yml'
       - 'Resources/md-21-dev/**'
       - 'Package.swift'
       - 'Package.resolved'
-  
-  # Allows you to run this workflow manually from the Actions tab
+
+  pull_request:
+    branches:
+      - 'main'
+    paths: *paths
+
   workflow_dispatch:
 
 jobs:
@@ -36,7 +35,7 @@ jobs:
     with:
       artifact-name: ${{ needs.generate.outputs.artifact-name }}
       project-name: md-21-dev
-      deploy-to-production: ${{ github.event.pull_request.merged || false }}
+      deploy-to-production: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
     secrets:
       cloudflare-api-token: ${{ secrets.CLOUDFLARE_API_TOKEN }}
       cloudflare-account-id: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
