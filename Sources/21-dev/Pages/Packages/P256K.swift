@@ -222,11 +222,19 @@ struct P256KPage {
         FAQItem(question: "What is P256K?", includeInJSONLD: true) {
             Text("P256K is a Swift library for working with the secp256k1 elliptic curve, commonly used in Bitcoin and related ecosystems. It provides idiomatic, type-safe Swift APIs built on top of the widely used libsecp256k1 library.")
         },
+        FAQItem(question: "How do I install P256K with Swift Package Manager?") {
+            Div {
+                Span("Add P256K to your project using Swift Package Manager. See the ")
+                Link("Install via SPM", destination: URL(string: "#installation")!)
+                    .textColor(.palette(.orange, darkness: 500))
+                Span(" section above for step-by-step instructions.")
+            }
+        },
         FAQItem(question: "What makes P256K different from other secp256k1 libraries?", includeInJSONLD: true) {
             Text("P256K is designed specifically for Swift developers. It focuses on modern Swift language features, type safety, comprehensive test coverage, and seamless integration with Swift Package Manager. The API follows Swift conventions rather than exposing low-level C interfaces directly.")
         },
         FAQItem(question: "Is P256K safe for production use?", includeInJSONLD: true) {
-            Text("P256K is built on libsecp256k1, a widely used and battle-tested cryptographic library in the Bitcoin ecosystem. The Swift wrapper is actively maintained and extensively tested, and it is already used in real production applications. As with all cryptographic software, users should review the code and pin versions appropriately.")
+            Text("P256K is built on libsecp256k1, a widely used cryptographic library in the Bitcoin ecosystem. The Swift wrapper is actively maintained and extensively tested. As with all cryptographic software, review the code for your threat model and pin versions for production deployments.")
         },
         FAQItem(question: "Has P256K been security audited?") {
             Text("The underlying libsecp256k1 has been heavily reviewed and tested in the Bitcoin ecosystem over many years. P256K (the Swift wrapper) has not yet undergone a dedicated third-party security audit.")
@@ -241,11 +249,14 @@ struct P256KPage {
             Text("Yes. P256K is suitable anywhere you need secp256k1 cryptography in Swift, including Bitcoin apps and related ecosystems like Lightning, Nostr, Ecash, and Liquid.")
         },
         FAQItem(question: "Is the API stable?", includeInJSONLD: true) {
-            Text("P256K is pre-1.0.0, so APIs may change between releases. For production use, pin an exact version in Swift Package Manager (e.g., from: → exact tag) to avoid unexpected breaking changes.")
+            Text("P256K is pre-1.0.0, so APIs may change between releases. For production use, pin an exact version in Swift Package Manager to avoid unexpected breaking changes.")
         },
         FAQItem(question: "Where can I find documentation and examples?") {
             Div {
-                Span("Comprehensive documentation, tutorials, and API references are available on the official ")
+                Span("To get started, ")
+                Link("Install via SPM", destination: URL(string: "#installation")!)
+                    .textColor(.palette(.orange, darkness: 500))
+                Span(". Comprehensive documentation, tutorials, and API references are available on the official ")
                 Link("documentation site", destination: URL(string: "https://docs.21.dev/documentation/p256k/")!)
                     .textColor(.palette(.orange, darkness: 500))
                 Span(". Example projects and additional usage patterns can be found in the ")
@@ -261,7 +272,7 @@ struct P256KPage {
     static var page: some View {
         BasePage(
             title: "P256K: Swift secp256k1 (ECDSA + Schnorr) + SPM | 21.dev",
-            description: "P256K is a Swift libsecp256k1 wrapper (ECDSA + Schnorr) with type-safe APIs and SPM support for Bitcoin and Nostr apps—21.dev.",
+            description: "P256K is a Swift wrapper for libsecp256k1 with ECDSA + Schnorr, type-safe APIs, and Swift Package Manager support for Bitcoin and Nostr apps.",
             canonicalURL: URL(string: "https://21.dev/packages/p256k/"),
             schemas: [faq.schema]
         ) {
@@ -283,7 +294,7 @@ struct P256KPage {
                 FeaturesGrid(features: [
                     ContentItem(
                         title: "Easy Integration",
-                        description: "Unlock simplicity and efficiency with just a few lines from P256K1 APIs. Leave the heavy lifting of project mutations to libsecp256k1 while you focus on what truly matters.",
+                        description: "Unlock simplicity and efficiency with just a few lines from P256K APIs. Leave the heavy lifting of project mutations to libsecp256k1 while you focus on what truly matters.",
                         icon: LightningIcon()
                     ),
                     ContentItem(
@@ -292,8 +303,8 @@ struct P256KPage {
                         icon: SwiftPackagesIcon()
                     ),
                     ContentItem(
-                        title: "Flexibility",
-                        description: "Schnorr and ECDSA Signatures functionality with ease. Exposed C bindings to take full control of the implementation.",
+                        title: "Advanced Control",
+                        description: "Schnorr and ECDSA Signatures functionality with ease. Optional low-level C bindings are available for advanced use cases.",
                         icon: CodeBracketsIcon()
                     )
                 ])
