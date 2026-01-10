@@ -16,6 +16,38 @@ import TestUtils
 
 struct FAQTests {
     
+    // MARK: - Composition Tests (FAQ uses Accordion internally)
+    
+    @Test("FAQ renders same structure as Accordion")
+    func testFAQUsesAccordionInternally() throws {
+        // Create equivalent items for both components
+        let faqItem = FAQItem(question: "Test question?") {
+            Text("Test answer content")
+        }
+        let accordionItem = AccordionItem(
+            question: "Test question?",
+            answer: Text("Test answer content")
+        )
+        
+        let faq = FAQ(items: [faqItem])
+        let accordion = Accordion(items: [accordionItem])
+        
+        let faqHTML = try TestUtils.renderHTML(faq)
+        let accordionHTML = try TestUtils.renderHTML(accordion)
+        
+        // Both should use details/summary structure
+        #expect(faqHTML.contains("<details"))
+        #expect(accordionHTML.contains("<details"))
+        #expect(faqHTML.contains("<summary"))
+        #expect(accordionHTML.contains("<summary"))
+        
+        // Both should contain the question and answer
+        #expect(faqHTML.contains("Test question?"))
+        #expect(accordionHTML.contains("Test question?"))
+        #expect(faqHTML.contains("Test answer content"))
+        #expect(accordionHTML.contains("Test answer content"))
+    }
+    
     // MARK: - Basic Structure Tests
     
     @Test("FAQ renders visual accordion with details/summary")
