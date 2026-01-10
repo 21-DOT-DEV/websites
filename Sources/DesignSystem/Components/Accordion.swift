@@ -9,67 +9,40 @@ import Foundation
 import Slipstream
 
 /// An accordion component for displaying expandable question-and-answer pairs.
-/// Uses CSS-only interactions with smooth transitions and supports multiple open items.
+/// Uses native HTML5 details/summary elements for accessibility and progressive enhancement.
+/// Supports multiple open items simultaneously.
 public struct Accordion: View, StyleModifier {
-    public let items: [AccordionItem]
-    public let accordionId: String
     
-    /// Creates an accordion with an array of accordion items.
-    /// - Parameters:
-    ///   - items: Array of AccordionItem items to display
-    ///   - id: Optional unique identifier for the accordion (auto-generated if not provided)
-    public init(items: [AccordionItem], id: String? = nil) {
-        self.items = items
-        self.accordionId = id ?? "accordion-\(UUID().uuidString.prefix(8))"
-    }
-    
-    public var componentName: String {
-        return "Accordion"
-    }
+    // MARK: - StyleModifier
     
     public var style: String {
-        return """
-        /* Accordion CSS-only interactions */
-        .accordion-toggle {
-            display: none;
-        }
-        
-        .accordion-content {
-            max-height: 0;
-            overflow: hidden;
-            transition: max-height 0.3s ease-in-out, padding 0.3s ease-in-out;
-            padding: 0 1.5rem;
-        }
-        
-        .accordion-toggle:checked + .accordion-label + .accordion-content {
-            max-height: 500px;
-            padding: 1.25rem 1.5rem;
-        }
-        
-        .accordion-icon {
-            transition: transform 0.3s ease-in-out;
-        }
-        
-        .accordion-toggle:checked + .accordion-label .accordion-icon {
+        """
+        /* Accordion icon rotation when open */
+        details[open] .accordion-icon {
             transform: rotate(90deg);
         }
-        
-        .accordion-item:hover {
-            background-color: rgb(249 250 251);
+        .accordion-icon {
+            transition: transform 0.3s ease-in-out;
         }
         """
     }
     
-    private func accordionItem(_ item: AccordionItem, index: Int) -> some View {
-        let toggleId = "\(accordionId)-toggle-\(index)"
-        
-        return Div {
-            // Hidden checkbox for CSS-only toggle
-            Checkbox(id: toggleId, checked: item.isDefaultOpen)
-                .modifier(ClassModifier(add: "accordion-toggle"))
-            
-            // Clickable label (question)
-            Label(for: toggleId) {
+    public var componentName: String { "Accordion" }
+    
+    // MARK: - Properties
+    
+    public let items: [AccordionItem]
+    
+    /// Creates an accordion with an array of accordion items.
+    /// - Parameters:
+    ///   - items: Array of AccordionItem items to display
+    public init(items: [AccordionItem]) {
+        self.items = items
+    }
+    
+    private func accordionItem(_ item: AccordionItem) -> some View {
+        Details {
+            Summary {
                 Div {
                     Span {
                         Text(item.question)
@@ -79,31 +52,42 @@ public struct Accordion: View, StyleModifier {
                     .textColor(.palette(.gray, darkness: 700))
                     .modifier(ClassModifier(add: "flex-1"))
                     
-                    // Chevron icon that rotates
                     ChevronIcon()
-                        .modifier(ClassModifier(add: "accordion-icon text-orange-500"))
+                        .textColor(.palette(.orange, darkness: 500))
+                        .modifier(ClassModifier(add: "accordion-icon"))
                 }
                 .display(.flex)
                 .alignItems(.center)
                 .justifyContent(.between)
                 .padding(.all, 24)
             }
-            .modifier(ClassModifier(add: "accordion-label cursor-pointer block w-full transition-colors duration-200"))
+            .pointerStyle(.pointer)
+            .listStyle(.none)
+            .transition(.colors)
+            .modifier(ClassModifier(add: "duration-200"))
             
-            // Answer content (expandable)
             Div {
                 item.answer
             }
-            .modifier(ClassModifier(add: "accordion-content text-gray-600 text-sm"))
+            .padding(.horizontal, 24)
+            .padding(.bottom, 20)
+            .textColor(.palette(.gray, darkness: 600))
+            .fontSize(.small)
         }
+        .modifier(ConditionalAttributeModifier("open", condition: item.isDefaultOpen))
         .background(.palette(.gray, darkness: 50))
-        .modifier(ClassModifier(add: "accordion-item rounded-xl border border-gray-200 mb-4 transition-colors duration-200"))
+        .cornerRadius(.extraLarge)
+        .border(.palette(.gray, darkness: 200))
+        .margin(.bottom, 16)
+        .transition(.colors)
+        .modifier(ClassModifier(add: "duration-200"))
+        .background(.palette(.gray, darkness: 100), condition: .hover)
     }
     
     public var body: some View {
         Div {
-            ForEach(Array(items.enumerated()), id: \.element.id) { index, item in
-                accordionItem(item, index: index)
+            ForEach(items, id: \.id) { item in
+                accordionItem(item)
             }
         }
     }

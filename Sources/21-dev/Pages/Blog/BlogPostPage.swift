@@ -89,7 +89,7 @@ struct BlogPostPage {
                 .padding(.horizontal, 16)
                 .padding(.horizontal, 24, condition: Condition(startingAt: .small))
                 .padding(.horizontal, 32, condition: Condition(startingAt: .large))
-                .modifier(ClassModifier(add: "max-w-3xl"))
+                .frame(maxWidth: .extraExtraExtraLarge)
                 .margin(.horizontal, .auto)
             }
             .padding(.vertical, 64)

@@ -216,35 +216,65 @@ struct P256KPage {
         ])
     }
     
-    // Accordion component for FAQ section
-    static let faqAccordion = Accordion(items: [
-        AccordionItem(
-            question: "What makes P256K different from other SECP256K1 libraries?",
-            answer: Text("P256K is built specifically for Swift developers with modern language features, comprehensive test coverage, and seamless integration with Swift Package Manager. It provides type-safe APIs and follows Swift conventions.")
-        ),
-        AccordionItem(
-            question: "What Swift versions are supported?",
-            answer: Text("p256k supports Swift 5.9+ and is tested on macOS, iOS, watchOS, tvOS, and Linux. It requires no external packages and works with both UIKit and SwiftUI applications.")
-        ),
-        AccordionItem(
-            question: "Where can I find code examples and tutorials?",
-            answer: Div {
-                Span("Visit our comprehensive ")
+    // FAQ component with JSON-LD structured data
+    // Answer text is automatically derived from content - no duplication needed
+    static let faqItems: [FAQItem] = [
+        FAQItem(question: "What is P256K?", includeInJSONLD: true) {
+            Text("P256K is a Swift library for working with the secp256k1 elliptic curve, commonly used in Bitcoin and related ecosystems. It provides idiomatic, type-safe Swift APIs built on top of the widely used libsecp256k1 library.")
+        },
+        FAQItem(question: "How do I install P256K with Swift Package Manager?") {
+            Div {
+                Span("Add P256K to your project using Swift Package Manager. See the ")
+                Link("Install via SPM", destination: URL(string: "#installation")!)
+                    .textColor(.palette(.orange, darkness: 500))
+                Span(" section above for step-by-step instructions.")
+            }
+        },
+        FAQItem(question: "What makes P256K different from other secp256k1 libraries?", includeInJSONLD: true) {
+            Text("P256K is designed specifically for Swift developers. It focuses on modern Swift language features, type safety, comprehensive test coverage, and seamless integration with Swift Package Manager. The API follows Swift conventions rather than exposing low-level C interfaces directly.")
+        },
+        FAQItem(question: "Is P256K safe for production use?", includeInJSONLD: true) {
+            Text("P256K is built on libsecp256k1, a widely used cryptographic library in the Bitcoin ecosystem. The Swift wrapper is actively maintained and extensively tested. As with all cryptographic software, review the code for your threat model and pin versions for production deployments.")
+        },
+        FAQItem(question: "Has P256K been security audited?") {
+            Text("The underlying libsecp256k1 has been heavily reviewed and tested in the Bitcoin ecosystem over many years. P256K (the Swift wrapper) has not yet undergone a dedicated third-party security audit.")
+        },
+        FAQItem(question: "What Swift versions and platforms are supported?", includeInJSONLD: true) {
+            Text("P256K supports Swift 5.9 and newer and is tested on iOS, macOS, watchOS, tvOS, and Linux. It works with UIKit, SwiftUI, and server-side Swift environments.")
+        },
+        FAQItem(question: "What cryptographic operations does P256K support?", includeInJSONLD: true) {
+            Text("P256K supports common secp256k1 operations including ECDSA signing and verification, Schnorr signatures, public key recovery, key agreement, key tweaking, and MuSig-related primitives commonly used in Bitcoin-adjacent protocols.")
+        },
+        FAQItem(question: "Is P256K suitable for Bitcoin, Lightning, Nostr, Ecash, or Liquid applications?", includeInJSONLD: true) {
+            Text("Yes. P256K is suitable anywhere you need secp256k1 cryptography in Swift, including Bitcoin apps and related ecosystems like Lightning, Nostr, Ecash, and Liquid.")
+        },
+        FAQItem(question: "Is the API stable?", includeInJSONLD: true) {
+            Text("P256K is pre-1.0.0, so APIs may change between releases. For production use, pin an exact version in Swift Package Manager to avoid unexpected breaking changes.")
+        },
+        FAQItem(question: "Where can I find documentation and examples?") {
+            Div {
+                Span("To get started, ")
+                Link("Install via SPM", destination: URL(string: "#installation")!)
+                    .textColor(.palette(.orange, darkness: 500))
+                Span(". Comprehensive documentation, tutorials, and API references are available on the official ")
                 Link("documentation site", destination: URL(string: "https://docs.21.dev/documentation/p256k/")!)
                     .textColor(.palette(.orange, darkness: 500))
-                Span(" for tutorials, API reference, and real-world examples. You can also explore the ")
-                Link("example projects", destination: URL(string: "https://github.com/21-DOT-DEV/swift-secp256k1")!)
+                Span(". Example projects and additional usage patterns can be found in the ")
+                Link("GitHub repository", destination: URL(string: "https://github.com/21-DOT-DEV/swift-secp256k1")!)
                     .textColor(.palette(.orange, darkness: 500))
-                Span(" repository on GitHub.")
+                Span(".")
             }
-        )
-    ])
+        }
+    ]
+    
+    static let faq = FAQ(items: faqItems)
     
     static var page: some View {
         BasePage(
             title: "P256K: Swift secp256k1 (ECDSA + Schnorr) + SPM | 21.dev",
-            description: "P256K is a Swift libsecp256k1 wrapper (ECDSA + Schnorr) with type-safe APIs and SPM support for Bitcoin and Nostr apps—21.dev.",
-            canonicalURL: URL(string: "https://21.dev/packages/p256k/")
+            description: "P256K is a Swift wrapper for libsecp256k1 with ECDSA + Schnorr, type-safe APIs, and Swift Package Manager support for Bitcoin and Nostr apps.",
+            canonicalURL: URL(string: "https://21.dev/packages/p256k/"),
+            schemas: [faq.schema]
         ) {
             SiteDefaults.header
             
@@ -264,7 +294,7 @@ struct P256KPage {
                 FeaturesGrid(features: [
                     ContentItem(
                         title: "Easy Integration",
-                        description: "Unlock simplicity and efficiency with just a few lines from P256K1 APIs. Leave the heavy lifting of project mutations to libsecp256k1 while you focus on what truly matters.",
+                        description: "Unlock simplicity and efficiency with just a few lines using the P256K APIs. Leave the heavy lifting of project mutations to libsecp256k1 while you focus on what truly matters.",
                         icon: LightningIcon()
                     ),
                     ContentItem(
@@ -273,8 +303,8 @@ struct P256KPage {
                         icon: SwiftPackagesIcon()
                     ),
                     ContentItem(
-                        title: "Flexibility",
-                        description: "Schnorr and ECDSA Signatures functionality with ease. Exposed C bindings to take full control of the implementation.",
+                        title: "Advanced Control",
+                        description: "Schnorr and ECDSA Signatures functionality with ease. Optional low-level C bindings are available for advanced use cases.",
                         icon: CodeBracketsIcon()
                     )
                 ])
@@ -287,7 +317,8 @@ struct P256KPage {
             SectionIntro(
                 badge: "Installation",
                 title: "Get Started",
-                description: "Add P256K using your preferred package manager."
+                description: "Add P256K using your preferred package manager.",
+                id: "installation"
             ) {
                 installationSection
             }
@@ -320,13 +351,13 @@ struct P256KPage {
                 ])
             }
             
-            // FAQ section using SectionIntro + Accordion
+            // FAQ section with JSON-LD structured data
             SectionIntro(
                 badge: "FAQ",
                 title: "Frequently Asked Questions",
                 description: "Common questions about using P256K for Swift integration."
             ) {
-                faqAccordion
+                faq
             }
             
             // Get Help section using existing components

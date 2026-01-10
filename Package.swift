@@ -37,6 +37,7 @@ let package = Package(
             dependencies: [
                 .product(name: "Slipstream", package: "slipstream"),
                 .product(name: "Subprocess", package: "swift-subprocess"),
+                .product(name: "SwiftSoup", package: "SwiftSoup"),
                 .target(name: "UtilLib")
             ]
         ),

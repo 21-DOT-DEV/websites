@@ -65,7 +65,11 @@ public struct InstallationSection: View {
                     .padding(.all, 8)
                     .background(.palette(.gray, darkness: 100))
                     .textColor(.palette(.gray, darkness: 500))
-                    .modifier(ClassModifier(add: "hover:bg-gray-200 hover:text-gray-700 transition-colors rounded-md flex-shrink-0"))
+                    .background(.palette(.gray, darkness: 200), condition: .hover)
+                    .textColor(.palette(.gray, darkness: 700), condition: .hover)
+                    .transition(.colors)
+                    .cornerRadius(.medium)
+                    .modifier(ClassModifier(add: "flex-shrink-0"))
                 }
                 .display(.flex)
                 .alignItems(.center)

@@ -16,6 +16,7 @@ public struct SectionIntro<Content: View>: View {
     public let title: String
     private let descriptionView: AnyView
     public let maxWidth: MaxWidth
+    public let sectionId: String?
     public let content: Content
     
     /// Creates a section intro with badge, title, plain text description, and content.
@@ -30,12 +31,14 @@ public struct SectionIntro<Content: View>: View {
         title: String,
         description: String,
         maxWidth: MaxWidth = .xL,
+        id: String? = nil,
         @ViewBuilder content: () -> Content
     ) {
         self.badge = badge
         self.title = title
         self.descriptionView = AnyView(Paragraph(description))
         self.maxWidth = maxWidth
+        self.sectionId = id
         self.content = content()
     }
     
@@ -51,6 +54,7 @@ public struct SectionIntro<Content: View>: View {
         title: String,
         @ViewBuilder description: () -> some View,
         maxWidth: MaxWidth = .xL,
+        id: String? = nil,
         @ViewBuilder content: () -> Content
     ) {
         self.badge = badge
@@ -58,6 +62,7 @@ public struct SectionIntro<Content: View>: View {
         let descriptionContent = description()
         self.descriptionView = AnyView(Paragraph { descriptionContent })
         self.maxWidth = maxWidth
+        self.sectionId = id
         self.content = content()
     }
     
@@ -99,5 +104,6 @@ public struct SectionIntro<Content: View>: View {
             .padding(.horizontal, 24, condition: .startingAt(.small))
         }
         .padding(.vertical, 64)
+        .id(sectionId ?? "")
     }
 }

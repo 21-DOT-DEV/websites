@@ -41,11 +41,9 @@ import Slipstream
 /// 
 /// ## Missing Slipstream APIs
 /// The following CSS features require `ClassModifier` until Slipstream adds native support:
-/// - `z-50` - Z-index positioning
-/// - `cursor-pointer` - Cursor styling
-/// - `hover:text-orange-500` - Hover state colors
-/// - `transition-colors` - Color transitions
 /// - `flex-grow` - Flex grow properties
+/// - `menu-button`, `menu-items` - Custom classes for CSS toggle functionality
+/// - `aria-current-page` - Conditional accessibility attribute
 public struct SiteHeader: View, StyleModifier {
     /// The text to display as the site logo/title
     public let logoText: String
@@ -127,9 +125,7 @@ public struct SiteHeader: View, StyleModifier {
         .position(.sticky)                          // sticky
         .placement(top: 0)                          // top-0
         .background(.ultraThin)                     // backdrop-blur-sm
-        // TODO: Missing Slipstream APIs - using ClassModifier for:
-        // - z-50 (z-index)
-        .modifier(ClassModifier(add: ["z-50"]))
+        .zIndex(50)
     }
 }
 
@@ -171,12 +167,10 @@ private struct SiteHeaderMobileToggle: View {
         Checkbox(name: "menu-toggle", id: "menu-toggle")
             .hidden()                               // hidden
         Label("☰", for: "menu-toggle")
-            // TODO: Missing Slipstream APIs - using ClassModifier for:
-            // - cursor-pointer (cursor style) 
-            // - exact max-width: 767px responsive breakpoint (matches working example)
-            .modifier(ClassModifier(add: "menu-button cursor-pointer md:hidden"))
+            .pointerStyle(.pointer)
+            .modifier(ClassModifier(add: "menu-button"))
             .fontSize(.extraExtraExtraLarge)                // text-3xl
-            .modifier(ClassModifier(add: "md:hidden"))
+            .hidden(condition: .startingAt(.medium))
     }
 }
 
@@ -271,10 +265,8 @@ private struct HeaderNavigationLink: View {
             .fontSize(.small)                       // text-sm
             .textColor(.palette(.gray, darkness: 700))  // text-gray-700
             .fontWeight(.medium)                        // font-medium
-            // TODO: Missing Slipstream APIs - using ClassModifier for:
-            // - hover:text-orange-500 (hover text color)
-            // - transition-colors (transitions)
-            // - aria-current-page (conditional active state)
-            .modifier(ClassModifier(add: Set(["hover:text-orange-500", "transition-colors"] + (isActive ? ["aria-current-page"] : []))))
+            .textColor(.palette(.orange, darkness: 500), condition: .hover)
+            .transition(.colors)
+            .modifier(ClassModifier(add: isActive ? ["aria-current-page"] : []))
     }
 }

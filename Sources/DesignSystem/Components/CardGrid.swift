@@ -25,7 +25,7 @@ public struct CardGrid: View {
             Link(URL(string: link)) {
                 cardContent(item: item)
             }
-            .modifier(ClassModifier(add: "block"))
+            .display(.block)
         } else {
             cardContent(item: item)
         }

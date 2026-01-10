@@ -35,7 +35,8 @@ public struct BlogPostFooter: View {
                             .textColor(.palette(.orange, darkness: 600))
                             .fontWeight(.medium)
                             .textDecoration(.none)
-                            .modifier(ClassModifier(add: "hover:text-orange-700 transition-colors"))
+                            .textColor(.palette(.orange, darkness: 700), condition: .hover)
+                            .transition(.colors)
                         } else {
                             Span {
                                 Slipstream.Text(action.title)
