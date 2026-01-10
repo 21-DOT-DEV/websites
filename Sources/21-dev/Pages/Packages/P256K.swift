@@ -317,7 +317,8 @@ struct P256KPage {
             SectionIntro(
                 badge: "Installation",
                 title: "Get Started",
-                description: "Add P256K using your preferred package manager."
+                description: "Add P256K using your preferred package manager.",
+                id: "installation"
             ) {
                 installationSection
             }
