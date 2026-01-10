@@ -294,7 +294,7 @@ struct P256KPage {
                 FeaturesGrid(features: [
                     ContentItem(
                         title: "Easy Integration",
-                        description: "Unlock simplicity and efficiency with just a few lines from P256K APIs. Leave the heavy lifting of project mutations to libsecp256k1 while you focus on what truly matters.",
+                        description: "Unlock simplicity and efficiency with just a few lines using the P256K APIs. Leave the heavy lifting of project mutations to libsecp256k1 while you focus on what truly matters.",
                         icon: LightningIcon()
                     ),
                     ContentItem(
