@@ -180,4 +180,19 @@ struct AccordionTests {
         // Should have styling classes for visual appearance
         #expect(html.contains("class="))
     }
+    
+    // MARK: - StyleModifier Tests
+    
+    @Test("Accordion StyleModifier provides icon rotation CSS")
+    func testAccordionStyleModifierCSS() {
+        let accordion = Accordion(items: [
+            AccordionItem(question: "Test?", answer: Text("Answer"))
+        ])
+        
+        // Should implement StyleModifier protocol
+        #expect(accordion.componentName == "Accordion")
+        #expect(accordion.style.contains("details[open] .accordion-icon"))
+        #expect(accordion.style.contains("rotate(90deg)"))
+        #expect(accordion.style.contains("transition"))
+    }
 }

@@ -129,7 +129,7 @@ public struct SiteFooter: View, StyleModifier {
                                 .display(.block)
                                 .margin(.bottom, 8)
                                 .transition(.colors)
-                                .modifier(ClassModifier(add: "hover:text-white"))
+                                .textColor(.white, condition: .hover)
                         }
                     }
                     
@@ -149,7 +149,7 @@ public struct SiteFooter: View, StyleModifier {
                                 }
                                 .textColor(.palette(.gray, darkness: 400))
                                 .transition(.colors)
-                                .modifier(ClassModifier(add: "hover:text-white"))
+                                .textColor(.white, condition: .hover)
                                 .accessibilityLabel("Contact Us")
                             }
                             .margin(.bottom, 8)

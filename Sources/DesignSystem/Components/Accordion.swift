@@ -11,7 +11,26 @@ import Slipstream
 /// An accordion component for displaying expandable question-and-answer pairs.
 /// Uses native HTML5 details/summary elements for accessibility and progressive enhancement.
 /// Supports multiple open items simultaneously.
-public struct Accordion: View {
+public struct Accordion: View, StyleModifier {
+    
+    // MARK: - StyleModifier
+    
+    public var style: String {
+        """
+        /* Accordion icon rotation when open */
+        details[open] .accordion-icon {
+            transform: rotate(90deg);
+        }
+        .accordion-icon {
+            transition: transform 0.3s ease-in-out;
+        }
+        """
+    }
+    
+    public var componentName: String { "Accordion" }
+    
+    // MARK: - Properties
+    
     public let items: [AccordionItem]
     
     /// Creates an accordion with an array of accordion items.
@@ -34,25 +53,35 @@ public struct Accordion: View {
                     .modifier(ClassModifier(add: "flex-1"))
                     
                     ChevronIcon()
-                        .modifier(ClassModifier(add: "accordion-icon text-orange-500"))
+                        .textColor(.palette(.orange, darkness: 500))
+                        .modifier(ClassModifier(add: "accordion-icon"))
                 }
                 .display(.flex)
                 .alignItems(.center)
                 .justifyContent(.between)
                 .padding(.all, 24)
             }
-            .modifier(ClassModifier(add: "cursor-pointer list-none transition-colors duration-200"))
+            .pointerStyle(.pointer)
+            .listStyle(.none)
+            .transition(.colors)
+            .modifier(ClassModifier(add: "duration-200"))
             
             Div {
                 item.answer
             }
             .padding(.horizontal, 24)
             .padding(.bottom, 20)
-            .modifier(ClassModifier(add: "text-gray-600 text-sm"))
+            .textColor(.palette(.gray, darkness: 600))
+            .fontSize(.small)
         }
         .modifier(ConditionalAttributeModifier("open", condition: item.isDefaultOpen))
         .background(.palette(.gray, darkness: 50))
-        .modifier(ClassModifier(add: "rounded-xl border border-gray-200 mb-4 transition-colors duration-200 hover:bg-gray-100"))
+        .cornerRadius(.extraLarge)
+        .border(.palette(.gray, darkness: 200))
+        .margin(.bottom, 16)
+        .transition(.colors)
+        .modifier(ClassModifier(add: "duration-200"))
+        .background(.palette(.gray, darkness: 100), condition: .hover)
     }
     
     public var body: some View {
