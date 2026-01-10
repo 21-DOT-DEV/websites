@@ -217,61 +217,33 @@ struct P256KPage {
     }
     
     // FAQ component with JSON-LD structured data
+    // Answer text is automatically derived from content - no duplication needed
     static let faqItems: [FAQItem] = [
-        FAQItem(
-            question: "What is P256K?",
-            answer: "P256K is a Swift library for working with the secp256k1 elliptic curve, commonly used in Bitcoin and related ecosystems. It provides idiomatic, type-safe Swift APIs built on top of the widely used libsecp256k1 library."
-        ) {
+        FAQItem(question: "What is P256K?", includeInJSONLD: true) {
             Text("P256K is a Swift library for working with the secp256k1 elliptic curve, commonly used in Bitcoin and related ecosystems. It provides idiomatic, type-safe Swift APIs built on top of the widely used libsecp256k1 library.")
         },
-        FAQItem(
-            question: "What makes P256K different from other secp256k1 libraries?",
-            answer: "P256K is designed specifically for Swift developers. It focuses on modern Swift language features, type safety, comprehensive test coverage, and seamless integration with Swift Package Manager. The API follows Swift conventions rather than exposing low-level C interfaces directly."
-        ) {
+        FAQItem(question: "What makes P256K different from other secp256k1 libraries?", includeInJSONLD: true) {
             Text("P256K is designed specifically for Swift developers. It focuses on modern Swift language features, type safety, comprehensive test coverage, and seamless integration with Swift Package Manager. The API follows Swift conventions rather than exposing low-level C interfaces directly.")
         },
-        FAQItem(
-            question: "Is P256K safe for production use?",
-            answer: "P256K is built on libsecp256k1, a widely used and battle-tested cryptographic library in the Bitcoin ecosystem. The Swift wrapper is actively maintained and extensively tested, and it is already used in real production applications. As with all cryptographic software, users should review the code and pin versions appropriately."
-        ) {
+        FAQItem(question: "Is P256K safe for production use?", includeInJSONLD: true) {
             Text("P256K is built on libsecp256k1, a widely used and battle-tested cryptographic library in the Bitcoin ecosystem. The Swift wrapper is actively maintained and extensively tested, and it is already used in real production applications. As with all cryptographic software, users should review the code and pin versions appropriately.")
         },
-        FAQItem(
-            question: "Has P256K been security audited?",
-            answer: "The underlying libsecp256k1 library has received extensive review and scrutiny from the Bitcoin community over many years. The Swift wrapper itself has not yet undergone a separate third-party security audit. P256K aims to provide safe, minimal bindings while relying on the proven upstream implementation.",
-            includeInJSONLD: false
-        ) {
-            Text("The underlying libsecp256k1 library has received extensive review and scrutiny from the Bitcoin community over many years. The Swift wrapper itself has not yet undergone a separate third-party security audit. P256K aims to provide safe, minimal bindings while relying on the proven upstream implementation.")
+        FAQItem(question: "Has P256K been security audited?") {
+            Text("The underlying libsecp256k1 has been heavily reviewed and tested in the Bitcoin ecosystem over many years. P256K (the Swift wrapper) has not yet undergone a dedicated third-party security audit.")
         },
-        FAQItem(
-            question: "What Swift versions and platforms are supported?",
-            answer: "P256K supports Swift 5.9 and newer and is tested on iOS, macOS, watchOS, tvOS, and Linux. It works with UIKit, SwiftUI, and server-side Swift environments."
-        ) {
+        FAQItem(question: "What Swift versions and platforms are supported?", includeInJSONLD: true) {
             Text("P256K supports Swift 5.9 and newer and is tested on iOS, macOS, watchOS, tvOS, and Linux. It works with UIKit, SwiftUI, and server-side Swift environments.")
         },
-        FAQItem(
-            question: "What cryptographic operations does P256K support?",
-            answer: "P256K supports common secp256k1 operations including ECDSA signing and verification, Schnorr signatures, public key recovery, key agreement, key tweaking, and MuSig-related primitives commonly used in Bitcoin-adjacent protocols."
-        ) {
+        FAQItem(question: "What cryptographic operations does P256K support?", includeInJSONLD: true) {
             Text("P256K supports common secp256k1 operations including ECDSA signing and verification, Schnorr signatures, public key recovery, key agreement, key tweaking, and MuSig-related primitives commonly used in Bitcoin-adjacent protocols.")
         },
-        FAQItem(
-            question: "Is P256K suitable for Bitcoin, Lightning, Nostr, Ecash, or Liquid applications?",
-            answer: "Yes. P256K is commonly used in Bitcoin-related applications and is suitable for protocols and applications built on Bitcoin primitives, including Lightning, Nostr, Ecash, and Liquid, where secp256k1 cryptography is required."
-        ) {
-            Text("Yes. P256K is commonly used in Bitcoin-related applications and is suitable for protocols and applications built on Bitcoin primitives, including Lightning, Nostr, Ecash, and Liquid, where secp256k1 cryptography is required.")
+        FAQItem(question: "Is P256K suitable for Bitcoin, Lightning, Nostr, Ecash, or Liquid applications?", includeInJSONLD: true) {
+            Text("Yes. P256K is suitable anywhere you need secp256k1 cryptography in Swift, including Bitcoin apps and related ecosystems like Lightning, Nostr, Ecash, and Liquid.")
         },
-        FAQItem(
-            question: "Is the API stable?",
-            answer: "P256K is currently in a pre-1.0.0 stage. This means APIs may change between releases. For production use, it is strongly recommended to pin an exact version in Swift Package Manager to avoid unexpected breaking changes."
-        ) {
-            Text("P256K is currently in a pre-1.0.0 stage. This means APIs may change between releases. For production use, it is strongly recommended to pin an exact version in Swift Package Manager to avoid unexpected breaking changes.")
+        FAQItem(question: "Is the API stable?", includeInJSONLD: true) {
+            Text("P256K is pre-1.0.0, so APIs may change between releases. For production use, pin an exact version in Swift Package Manager (e.g., from: → exact tag) to avoid unexpected breaking changes.")
         },
-        FAQItem(
-            question: "Where can I find documentation and examples?",
-            answer: "Comprehensive documentation, tutorials, and API references are available on the official documentation site. Example projects and additional usage patterns can be found in the GitHub repository.",
-            includeInJSONLD: false
-        ) {
+        FAQItem(question: "Where can I find documentation and examples?") {
             Div {
                 Span("Comprehensive documentation, tutorials, and API references are available on the official ")
                 Link("documentation site", destination: URL(string: "https://docs.21.dev/documentation/p256k/")!)

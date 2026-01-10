@@ -21,11 +21,9 @@ struct FAQTests {
     @Test("FAQ renders visual accordion with details/summary")
     func testFAQRendersAccordion() throws {
         let faq = FAQ(items: [
-            FAQItem(
-                question: "What is P256K?",
-                answer: "P256K is a Swift library for secp256k1.",
-                content: { Text("P256K is a Swift library for secp256k1.") }
-            )
+            FAQItem(question: "What is P256K?") {
+                Text("P256K is a Swift library for secp256k1.")
+            }
         ])
         
         let html = try TestUtils.renderHTML(faq)
@@ -40,11 +38,9 @@ struct FAQTests {
     @Test("FAQ provides schema for BasePage integration")
     func testFAQProvidesSchema() throws {
         let faq = FAQ(items: [
-            FAQItem(
-                question: "Test question?",
-                answer: "Test answer.",
-                content: { Text("Test answer.") }
-            )
+            FAQItem(question: "Test question?", includeInJSONLD: true) {
+                Text("Test answer.")
+            }
         ])
         
         // FAQ should provide a schema for use with BasePage
@@ -60,11 +56,9 @@ struct FAQTests {
     @Test("FAQ schema contains FAQPage type")
     func testFAQSchemaType() throws {
         let faq = FAQ(items: [
-            FAQItem(
-                question: "What is this?",
-                answer: "This is a test.",
-                content: { Text("This is a test.") }
-            )
+            FAQItem(question: "What is this?", includeInJSONLD: true) {
+                Text("This is a test.")
+            }
         ])
         
         let graph = SchemaGraph(faq.schema)
@@ -79,11 +73,9 @@ struct FAQTests {
     @Test("FAQ schema contains Question and Answer types")
     func testFAQSchemaQuestionAnswer() throws {
         let faq = FAQ(items: [
-            FAQItem(
-                question: "How does it work?",
-                answer: "It works great!",
-                content: { Text("It works great!") }
-            )
+            FAQItem(question: "How does it work?", includeInJSONLD: true) {
+                Text("It works great!")
+            }
         ])
         
         let graph = SchemaGraph(faq.schema)
@@ -99,11 +91,9 @@ struct FAQTests {
     @Test("FAQ schema includes question text")
     func testFAQSchemaQuestionText() throws {
         let faq = FAQ(items: [
-            FAQItem(
-                question: "What makes P256K different?",
-                answer: "Modern Swift APIs.",
-                content: { Text("Modern Swift APIs.") }
-            )
+            FAQItem(question: "What makes P256K different?", includeInJSONLD: true) {
+                Text("Modern Swift APIs.")
+            }
         ])
         
         let graph = SchemaGraph(faq.schema)
@@ -115,11 +105,9 @@ struct FAQTests {
     @Test("FAQ schema includes answer text")
     func testFAQSchemaAnswerText() throws {
         let faq = FAQ(items: [
-            FAQItem(
-                question: "Question?",
-                answer: "The answer with specific text.",
-                content: { Text("The answer with specific text.") }
-            )
+            FAQItem(question: "Question?", includeInJSONLD: true) {
+                Text("The answer with specific text.")
+            }
         ])
         
         let graph = SchemaGraph(faq.schema)
@@ -128,27 +116,25 @@ struct FAQTests {
         #expect(jsonLD.contains("The answer with specific text."))
     }
     
-    @Test("FAQ schema supports HTML in answer text")
-    func testFAQSchemaHTMLAnswer() throws {
+    @Test("FAQ schema extracts plain text from rich content")
+    func testFAQSchemaPlainTextFromRichContent() throws {
         let faq = FAQ(items: [
-            FAQItem(
-                question: "Where can I learn more?",
-                answer: "Visit our <a href=\"https://docs.example.com\">documentation</a> for details.",
-                content: {
-                    Div {
-                        Text("Visit our ")
-                        Link("documentation", destination: URL(string: "https://docs.example.com")!)
-                        Text(" for details.")
-                    }
+            FAQItem(question: "Where can I learn more?", includeInJSONLD: true) {
+                Div {
+                    Text("Visit our ")
+                    Link("documentation", destination: URL(string: "https://docs.example.com")!)
+                    Text(" for details.")
                 }
-            )
+            }
         ])
         
         let graph = SchemaGraph(faq.schema)
         let jsonLD = try graph.render()
         
-        // JSONEncoder escapes forward slashes
-        #expect(jsonLD.contains("docs.example.com"))
+        // Plain text is extracted from content - URLs are not included, only link text
+        #expect(jsonLD.contains("Visit our"))
+        #expect(jsonLD.contains("documentation"))
+        #expect(jsonLD.contains("for details"))
     }
     
     // MARK: - Multiple Items Tests
@@ -156,21 +142,15 @@ struct FAQTests {
     @Test("FAQ schema includes all items in mainEntity array")
     func testFAQSchemaMultipleItems() throws {
         let faq = FAQ(items: [
-            FAQItem(
-                question: "First question?",
-                answer: "First answer.",
-                content: { Text("First answer.") }
-            ),
-            FAQItem(
-                question: "Second question?",
-                answer: "Second answer.",
-                content: { Text("Second answer.") }
-            ),
-            FAQItem(
-                question: "Third question?",
-                answer: "Third answer.",
-                content: { Text("Third answer.") }
-            )
+            FAQItem(question: "First question?", includeInJSONLD: true) {
+                Text("First answer.")
+            },
+            FAQItem(question: "Second question?", includeInJSONLD: true) {
+                Text("Second answer.")
+            },
+            FAQItem(question: "Third question?", includeInJSONLD: true) {
+                Text("Third answer.")
+            }
         ])
         
         let graph = SchemaGraph(faq.schema)
@@ -186,58 +166,33 @@ struct FAQTests {
     
     @Test("FAQItem stores question correctly")
     func testFAQItemQuestion() {
-        let item = FAQItem(
-            question: "Test question?",
-            answer: "Test answer.",
-            content: { Text("Test answer.") }
-        )
+        let item = FAQItem(question: "Test question?") {
+            Text("Test answer.")
+        }
         
         #expect(item.question == "Test question?")
     }
     
-    @Test("FAQItem stores answer HTML correctly")
+    @Test("FAQItem derives answer from content")
     func testFAQItemAnswer() {
-        let item = FAQItem(
-            question: "Question?",
-            answer: "HTML <b>answer</b> text.",
-            content: { Text("Answer text.") }
-        )
+        let item = FAQItem(question: "Question?") {
+            Text("Answer text.")
+        }
         
-        #expect(item.answer == "HTML <b>answer</b> text.")
+        #expect(item.answer.contains("Answer text"))
     }
     
-    @Test("FAQItem generates valid JSON-LD object")
-    func testFAQItemJSONLD() {
-        let item = FAQItem(
-            question: "What is this?",
-            answer: "This is the answer.",
-            content: { Text("This is the answer.") }
-        )
-        
-        let jsonLD = item.jsonLD
-        
-        #expect(jsonLD.contains("\"@type\": \"Question\""))
-        #expect(jsonLD.contains("\"name\": \"What is this?\""))
-        #expect(jsonLD.contains("\"acceptedAnswer\""))
-        #expect(jsonLD.contains("\"@type\": \"Answer\""))
-        #expect(jsonLD.contains("\"text\": \"This is the answer.\""))
-    }
-    
-    // MARK: - FAQ jsonLD Property Tests
+    // MARK: - FAQ Schema Tests
     
     @Test("FAQ generates schema with correct structure")
     func testFAQSchemaStructure() throws {
         let items = [
-            FAQItem(
-                question: "Q1?",
-                answer: "A1.",
-                content: { Text("A1.") }
-            ),
-            FAQItem(
-                question: "Q2?",
-                answer: "A2.",
-                content: { Text("A2.") }
-            )
+            FAQItem(question: "Q1?", includeInJSONLD: true) {
+                Text("A1.")
+            },
+            FAQItem(question: "Q2?", includeInJSONLD: true) {
+                Text("A2.")
+            }
         ]
         
         let faq = FAQ(items: items)
@@ -268,11 +223,9 @@ struct FAQTests {
     @Test("FAQ handles special characters in question/answer")
     func testFAQSpecialCharacters() throws {
         let faq = FAQ(items: [
-            FAQItem(
-                question: "What about \"quotes\" & ampersands?",
-                answer: "They're handled correctly.",
-                content: { Text("They're handled correctly.") }
-            )
+            FAQItem(question: "What about \"quotes\" & ampersands?") {
+                Text("They're handled correctly.")
+            }
         ])
         
         let html = try TestUtils.renderHTML(faq)
@@ -287,18 +240,12 @@ struct FAQTests {
     @Test("FAQ excludes items with includeInJSONLD=false from JSON-LD")
     func testFAQExcludesItemsFromJSONLD() throws {
         let faq = FAQ(items: [
-            FAQItem(
-                question: "Included question?",
-                answer: "Included answer.",
-                includeInJSONLD: true,
-                content: { Text("Included answer.") }
-            ),
-            FAQItem(
-                question: "Excluded question?",
-                answer: "Excluded answer.",
-                includeInJSONLD: false,
-                content: { Text("Excluded answer.") }
-            )
+            FAQItem(question: "Included question?", includeInJSONLD: true) {
+                Text("Included answer.")
+            },
+            FAQItem(question: "Excluded question?") {
+                Text("Excluded answer.")
+            }
         ])
         
         let graph = SchemaGraph(faq.schema)
@@ -311,18 +258,12 @@ struct FAQTests {
     @Test("FAQ shows all items visually regardless of includeInJSONLD")
     func testFAQShowsAllItemsVisually() throws {
         let faq = FAQ(items: [
-            FAQItem(
-                question: "Visible question 1?",
-                answer: "Answer 1.",
-                includeInJSONLD: true,
-                content: { Text("Answer 1.") }
-            ),
-            FAQItem(
-                question: "Visible question 2?",
-                answer: "Answer 2.",
-                includeInJSONLD: false,
-                content: { Text("Answer 2.") }
-            )
+            FAQItem(question: "Visible question 1?", includeInJSONLD: true) {
+                Text("Answer 1.")
+            },
+            FAQItem(question: "Visible question 2?") {
+                Text("Answer 2.")
+            }
         ])
         
         let html = try TestUtils.renderHTML(faq)
@@ -332,26 +273,21 @@ struct FAQTests {
         #expect(html.contains("Visible question 2?"))
     }
     
-    @Test("FAQItem includeInJSONLD defaults to true")
+    @Test("FAQItem includeInJSONLD defaults to false for SEO safety")
     func testFAQItemIncludeInJSONLDDefault() {
-        let item = FAQItem(
-            question: "Default test?",
-            answer: "Default answer.",
-            content: { Text("Default answer.") }
-        )
-        
-        #expect(item.includeInJSONLD == true)
-    }
-    
-    @Test("FAQItem includeInJSONLD can be set to false")
-    func testFAQItemIncludeInJSONLDFalse() {
-        let item = FAQItem(
-            question: "Test?",
-            answer: "Answer.",
-            includeInJSONLD: false,
-            content: { Text("Answer.") }
-        )
+        let item = FAQItem(question: "Default test?") {
+            Text("Default answer.")
+        }
         
         #expect(item.includeInJSONLD == false)
+    }
+    
+    @Test("FAQItem includeInJSONLD can be set to true")
+    func testFAQItemIncludeInJSONLDTrue() {
+        let item = FAQItem(question: "Test?", includeInJSONLD: true) {
+            Text("Answer.")
+        }
+        
+        #expect(item.includeInJSONLD == true)
     }
 }

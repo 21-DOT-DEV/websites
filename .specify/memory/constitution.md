@@ -317,6 +317,7 @@ Current sites may skip until needed.
 - DocC4LLM
 - swift-subprocess
 - swift-argument-parser (build-time CLI tooling only)
+- SwiftSoup (HTML parsing, build-time only)
 
 **File Structure**:
 - Sites: `Sources/<SiteName>/` (executable targets)
@@ -373,11 +374,12 @@ This constitution supersedes all other development practices. Deviations MUST be
 
 ## Version History
 
-**Version**: 1.1.1  
+**Version**: 1.1.2  
 **Ratified**: 2025-11-13  
-**Last Amended**: 2025-12-15
+**Last Amended**: 2026-01-09
 
 **Changelog**:
+- **1.1.2** (2026-01-09): Added SwiftSoup to approved dependencies for HTML parsing (build-time only).
 - **1.1.1** (2025-12-15): Added swift-argument-parser to approved dependencies for build-time CLI tooling (Feature 004).
 - **1.1.0** (2025-11-13): Enhanced Principle II with detailed specification requirements. Added 10 specific MUST/MUST NOT rules for small, independent specs. Split practices into "Specification Requirements" and "Test-Driven Development" subsections for clarity.
 - **1.0.0** (2025-11-13): Initial constitution with 7 core principles, technology-agnostic structure, three-tier enforcement, event-driven compliance review.

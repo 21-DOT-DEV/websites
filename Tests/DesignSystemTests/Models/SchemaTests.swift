@@ -167,8 +167,8 @@ struct SchemaTests {
     @Test("FAQPageSchema filters by includeInJSONLD")
     func testFAQPageSchemaFiltering() throws {
         let items = [
-            FAQItem(question: "Included?", answer: "Yes.", includeInJSONLD: true) { Text("Yes.") },
-            FAQItem(question: "Excluded?", answer: "No.", includeInJSONLD: false) { Text("No.") }
+            FAQItem(question: "Included?", includeInJSONLD: true) { Text("Yes.") },
+            FAQItem(question: "Excluded?") { Text("No.") }
         ]
         
         let schema = FAQPageSchema(items: items)
