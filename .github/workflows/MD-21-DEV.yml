@@ -39,3 +39,4 @@ jobs:
     secrets:
       cloudflare-api-token: ${{ secrets.CLOUDFLARE_API_TOKEN }}
       cloudflare-account-id: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      google-service-account-json: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}
