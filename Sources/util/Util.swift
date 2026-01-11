@@ -27,6 +27,7 @@ struct Util: AsyncParsableCommand {
             StateCommand.self,
             CanonicalCommand.self,
             CommentCommand.self,
+            SearchConsoleCommand.self,
         ]
     )
 }
