@@ -98,7 +98,7 @@ public enum GoogleAuthService {
         }
         
         // 3. GOOGLE_APPLICATION_CREDENTIALS env var (file path)
-        if let envFilePath = ProcessInfo.processInfo.environment["GOOGLE_APPLICATION_CREDENTIALS"] {
+        if let envFilePath = ProcessInfo.processInfo.environment["GOOGLE_APPLICATION_CREDENTIALS"], !envFilePath.isEmpty {
             guard FileManager.default.fileExists(atPath: envFilePath) else {
                 throw GoogleAuthError.credentialsFileNotFound(envFilePath)
             }
@@ -107,7 +107,7 @@ public enum GoogleAuthService {
         }
         
         // 4. GOOGLE_SERVICE_ACCOUNT_JSON env var (raw JSON)
-        if let envJSON = ProcessInfo.processInfo.environment["GOOGLE_SERVICE_ACCOUNT_JSON"] {
+        if let envJSON = ProcessInfo.processInfo.environment["GOOGLE_SERVICE_ACCOUNT_JSON"], !envJSON.isEmpty {
             return try parseServiceAccountJSON(envJSON)
         }
         
