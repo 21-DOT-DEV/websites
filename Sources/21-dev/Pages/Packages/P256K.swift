@@ -269,12 +269,59 @@ struct P256KPage {
     
     static let faq = FAQ(items: faqItems)
     
+    static let organization = OrganizationSchema(
+        id: "https://21.dev/#organization",
+        name: "21.dev",
+        url: "https://21.dev/",
+        sameAs: [
+            "https://github.com/21-DOT-DEV",
+            "https://x.com/21_DOT_DEV",
+            "https://primal.net/21"
+        ]
+    )
+    
+    static let softwareSourceCode = SoftwareSourceCodeSchema(
+        id: "https://21.dev/packages/p256k/#software",
+        name: "P256K",
+        description: "Swift wrapper for libsecp256k1 with ECDSA and Schnorr signatures, type-safe APIs, and Swift Package Manager support for Bitcoin and Nostr apps.",
+        url: "https://21.dev/packages/p256k/",
+        mainEntityOfPage: WebPageSchema(id: "https://21.dev/packages/p256k/"),
+        codeRepository: "https://github.com/21-DOT-DEV/swift-secp256k1",
+        programmingLanguage: ComputerLanguageSchema(name: "Swift"),
+        license: "https://opensource.org/licenses/MIT",
+        author: SchemaReference(id: "https://21.dev/#organization"),
+        creator: SchemaReference(id: "https://21.dev/#organization"),
+        runtimePlatform: ["iOS", "macOS", "watchOS", "tvOS", "Linux"],
+        sameAs: [
+            "https://github.com/21-DOT-DEV/swift-secp256k1",
+            "https://docs.21.dev/documentation/p256k/",
+            "https://swiftpackageindex.com/21-DOT-DEV/swift-secp256k1"
+        ],
+        softwareVersion: "0.21.1",
+        keywords: [
+            "secp256k1",
+            "Swift",
+            "Swift Package Manager",
+            "cryptography",
+            "ECDSA",
+            "Schnorr",
+            "Bitcoin",
+            "Nostr"
+        ],
+        isBasedOn: "https://github.com/bitcoin-core/secp256k1",
+        potentialAction: [
+            PotentialActionSchema(type: .read, target: "https://docs.21.dev/documentation/p256k/"),
+            PotentialActionSchema(type: .view, target: "https://github.com/21-DOT-DEV/swift-secp256k1")
+        ],
+        applicationCategory: ["DeveloperApplication", "Cryptography Library"]
+    )
+    
     static var page: some View {
         BasePage(
             title: "P256K: Swift secp256k1 (ECDSA + Schnorr) + SPM | 21.dev",
             description: "P256K is a Swift wrapper for libsecp256k1 with ECDSA + Schnorr, type-safe APIs, and Swift Package Manager support for Bitcoin and Nostr apps.",
             canonicalURL: URL(string: "https://21.dev/packages/p256k/"),
-            schemas: [faq.schema]
+            schemas: [faq.schema, softwareSourceCode, organization]
         ) {
             SiteDefaults.header
             

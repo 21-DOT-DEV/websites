@@ -205,4 +205,211 @@ struct SchemaTests {
         #expect(json.contains("\"@type\" : \"Answer\""))
         #expect(json.contains("The detailed answer."))
     }
+    
+    // MARK: - SoftwareSourceCodeSchema Tests
+    
+    @Test("SoftwareSourceCodeSchema encodes required fields")
+    func testSoftwareSourceCodeSchemaRequired() throws {
+        let schema = SoftwareSourceCodeSchema(
+            name: "P256K",
+            codeRepository: "https://github.com/21-DOT-DEV/swift-secp256k1"
+        )
+        let graph = SchemaGraph(schema)
+        let json = try graph.render()
+        
+        #expect(json.contains("SoftwareSourceCode"))
+        #expect(json.contains("P256K"))
+        #expect(json.contains("codeRepository"))
+        #expect(json.contains("github.com"))
+    }
+    
+    @Test("SoftwareSourceCodeSchema encodes all fields")
+    func testSoftwareSourceCodeSchemaFull() throws {
+        let schema = SoftwareSourceCodeSchema(
+            id: "https://21.dev/packages/p256k/#software",
+            name: "P256K",
+            description: "Swift secp256k1 library",
+            url: "https://21.dev/packages/p256k/",
+            mainEntityOfPage: WebPageSchema(id: "https://21.dev/packages/p256k/"),
+            codeRepository: "https://github.com/21-DOT-DEV/swift-secp256k1",
+            programmingLanguage: ComputerLanguageSchema(name: "Swift"),
+            license: "https://opensource.org/licenses/MIT",
+            author: SchemaReference(id: "https://21.dev/#organization"),
+            runtimePlatform: ["iOS", "macOS", "Linux"]
+        )
+        let graph = SchemaGraph(schema)
+        let json = try graph.render()
+        
+        #expect(json.contains("SoftwareSourceCode"))
+        #expect(json.contains("P256K"))
+        #expect(json.contains("Swift secp256k1 library"))
+        #expect(json.contains("programmingLanguage"))
+        #expect(json.contains("ComputerLanguage"))
+        #expect(json.contains("license"))
+        #expect(json.contains("runtimePlatform"))
+        #expect(json.contains("iOS"))
+        #expect(json.contains("@id"))
+        #expect(json.contains("#software"))
+        #expect(json.contains("\"url\""))
+        #expect(json.contains("mainEntityOfPage"))
+        #expect(json.contains("WebPage"))
+    }
+    
+    @Test("SoftwareSourceCodeSchema encodes @id and mainEntityOfPage")
+    func testSoftwareSourceCodeSchemaIdentifiers() throws {
+        let schema = SoftwareSourceCodeSchema(
+            id: "https://example.com/#software",
+            name: "Test",
+            url: "https://example.com/",
+            mainEntityOfPage: WebPageSchema(id: "https://example.com/"),
+            codeRepository: "https://github.com/test/repo"
+        )
+        let graph = SchemaGraph(schema)
+        let json = try graph.render()
+        
+        #expect(json.contains("\"@id\""))
+        #expect(json.contains("#software"))
+        #expect(json.contains("\"url\""))
+        #expect(json.contains("\"mainEntityOfPage\""))
+        #expect(json.contains("\"@type\" : \"WebPage\""))
+    }
+    
+    // MARK: - Author Reference Tests
+    
+    @Test("Author encodes as SchemaReference")
+    func testAuthorAsReference() throws {
+        let schema = SoftwareSourceCodeSchema(
+            name: "Test",
+            codeRepository: "https://github.com/test/repo",
+            author: SchemaReference(id: "https://21.dev/#organization")
+        )
+        let graph = SchemaGraph(schema)
+        let json = try graph.render()
+        
+        #expect(json.contains("author"))
+        #expect(json.contains("#organization"))
+    }
+    
+    @Test("SoftwareSourceCodeSchema encodes sameAs when provided")
+    func testSoftwareSourceCodeSchemaWithSameAs() throws {
+        let schema = SoftwareSourceCodeSchema(
+            name: "P256K",
+            codeRepository: "https://github.com/21-DOT-DEV/swift-secp256k1",
+            sameAs: [
+                "https://github.com/21-DOT-DEV/swift-secp256k1",
+                "https://docs.21.dev/documentation/p256k/"
+            ]
+        )
+        let graph = SchemaGraph(schema)
+        let json = try graph.render()
+        
+        #expect(json.contains("sameAs"))
+        #expect(json.contains("docs.21.dev"))
+    }
+    
+    // MARK: - WebPageSchema Tests
+    
+    @Test("WebPageSchema encodes WebPage type with @id")
+    func testWebPageSchema() throws {
+        let schema = SoftwareSourceCodeSchema(
+            name: "Test",
+            mainEntityOfPage: WebPageSchema(id: "https://example.com/page/"),
+            codeRepository: "https://github.com/test/repo"
+        )
+        let graph = SchemaGraph(schema)
+        let json = try graph.render()
+        
+        #expect(json.contains("\"@type\" : \"WebPage\""))
+        #expect(json.contains("\"@id\""))
+        #expect(json.contains("example.com"))
+    }
+    
+    // MARK: - ComputerLanguageSchema Tests
+    
+    @Test("ComputerLanguageSchema encodes ComputerLanguage type")
+    func testComputerLanguageSchema() throws {
+        let schema = SoftwareSourceCodeSchema(
+            name: "Test",
+            codeRepository: "https://github.com/test/repo",
+            programmingLanguage: ComputerLanguageSchema(name: "Swift")
+        )
+        let graph = SchemaGraph(schema)
+        let json = try graph.render()
+        
+        #expect(json.contains("\"@type\" : \"ComputerLanguage\""))
+        #expect(json.contains("\"name\" : \"Swift\""))
+    }
+    
+    // MARK: - PotentialActionSchema Tests
+    
+    @Test("PotentialActionSchema encodes actions")
+    func testPotentialActionSchema() throws {
+        let schema = SoftwareSourceCodeSchema(
+            name: "Test",
+            codeRepository: "https://github.com/test/repo",
+            potentialAction: [
+                PotentialActionSchema(type: .read, target: "https://docs.example.com/"),
+                PotentialActionSchema(type: .view, target: "https://github.com/example/repo")
+            ]
+        )
+        let graph = SchemaGraph(schema)
+        let json = try graph.render()
+        
+        #expect(json.contains("potentialAction"))
+        #expect(json.contains("ReadAction"))
+        #expect(json.contains("ViewAction"))
+        #expect(json.contains("target"))
+    }
+    
+    // MARK: - Extended SoftwareSourceCode Properties Tests
+    
+    @Test("SoftwareSourceCodeSchema encodes softwareVersion and keywords")
+    func testSoftwareSourceCodeSchemaExtended() throws {
+        let schema = SoftwareSourceCodeSchema(
+            name: "Test",
+            codeRepository: "https://github.com/test/repo",
+            softwareVersion: "1.0.0",
+            keywords: ["swift", "crypto", "bitcoin"]
+        )
+        let graph = SchemaGraph(schema)
+        let json = try graph.render()
+        
+        #expect(json.contains("softwareVersion"))
+        #expect(json.contains("1.0.0"))
+        #expect(json.contains("keywords"))
+        #expect(json.contains("swift"))
+        #expect(json.contains("bitcoin"))
+    }
+    
+    @Test("SoftwareSourceCodeSchema encodes applicationCategory")
+    func testSoftwareSourceCodeSchemaApplicationCategory() throws {
+        let schema = SoftwareSourceCodeSchema(
+            name: "Test",
+            codeRepository: "https://github.com/test/repo",
+            applicationCategory: ["DeveloperApplication", "Cryptography Library"]
+        )
+        let graph = SchemaGraph(schema)
+        let json = try graph.render()
+        
+        #expect(json.contains("applicationCategory"))
+        #expect(json.contains("DeveloperApplication"))
+        #expect(json.contains("Cryptography Library"))
+    }
+    
+    @Test("SoftwareSourceCodeSchema encodes creator and isBasedOn")
+    func testSoftwareSourceCodeSchemaCreatorAndIsBasedOn() throws {
+        let schema = SoftwareSourceCodeSchema(
+            name: "Test",
+            codeRepository: "https://github.com/test/repo",
+            creator: SchemaReference(id: "https://example.com/#org"),
+            isBasedOn: "https://github.com/bitcoin-core/secp256k1"
+        )
+        let graph = SchemaGraph(schema)
+        let json = try graph.render()
+        
+        #expect(json.contains("creator"))
+        #expect(json.contains("#org"))
+        #expect(json.contains("isBasedOn"))
+        #expect(json.contains("bitcoin-core"))
+    }
 }
