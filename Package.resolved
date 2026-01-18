@@ -1,5 +1,5 @@
 {
-  "originHash" : "2f8e52b3ce22f7a056fb4a8cf3262445479cbc4d9096cbad365d8b2ec80cd5cb",
+  "originHash" : "dfc1cf76f4db44bc04c3b56e60f163e89fcf5bbbcb754c1d693515be546fbaa8",
   "pins" : [
     {
       "identity" : "docc4llm",
@@ -33,8 +33,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/21-DOT-DEV/slipstream",
       "state" : {
-        "branch" : "HasComponentCSS",
-        "revision" : "4c5ca420f20b43ac5615cdc0761bd958457e1717"
+        "branch" : "develop",
+        "revision" : "752bf91d83ad8113beb52c5a387d3da17329e7ee"
       }
     },
     {

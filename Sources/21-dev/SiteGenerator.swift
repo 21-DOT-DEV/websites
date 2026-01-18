@@ -15,30 +15,18 @@ import UtilLib
 
 @main
 struct SiteGenerator {
-    /// Copy static resource files from Resources/ to Websites/ output directory
-    private static func copyStaticResources(from resourcesURL: URL, to outputURL: URL) throws {
-        let fileManager = FileManager.default
-        
-        // Define static files to copy (root-level files only)
-        // Note: sitemap.xml is generated dynamically, not copied
-        let staticFiles = ["llms.txt", "robots.txt", "_headers", "_redirects"]
-        
-        for filename in staticFiles {
-            let sourceURL = resourcesURL.appendingPathComponent(filename)
-            let destinationURL = outputURL.appendingPathComponent(filename)
-            
-            // Only copy if source exists
-            if fileManager.fileExists(atPath: sourceURL.path) {
-                // Remove destination if it exists (for idempotency)
-                if fileManager.fileExists(atPath: destinationURL.path) {
-                    try fileManager.removeItem(at: destinationURL)
-                }
-                
-                try fileManager.copyItem(at: sourceURL, to: destinationURL)
-                print("✅ Copied \(filename)")
-            }
-        }
-    }
+    /// Patterns for files/directories to exclude from copying (build-time artifacts)
+    private static let excludedPatterns: [String] = [
+        ".DS_Store",           // macOS metadata
+        ".input.css",          // Tailwind CSS input files
+        ".base.css",           // Base CSS files
+        ".cjs",                // CommonJS config files (tailwind.config.cjs)
+        "_headers.dev",        // Dev-only headers
+        "_headers.prod",       // Prod headers (renamed to _headers during copy)
+        "blog",                // Blog content (processed separately by BlogService)
+        "packages",            // Package content (processed separately)
+        "static"               // CSS build artifacts (Tailwind input/output)
+    ]
     
     /// Generate sitemap XML file from the sitemap dictionary
     /// - Parameters:
@@ -46,7 +34,7 @@ struct SiteGenerator {
     ///   - outputURL: The output directory URL
     ///   - filename: The sitemap filename (default: "sitemap.xml")
     ///   - baseURL: The base URL for the site (default: "https://21.dev/")
-    private static func generateSitemapXML(from sitemap: Sitemap, to outputURL: URL, filename: String = "sitemap.xml", baseURL: String = "https://21.dev/") async throws {
+    private static func generateSitemapXML(from sitemap: Sitemap, to outputURL: URL, filename: String = "sitemap.xml", baseURL: String = SiteIdentity.url) async throws {
         // Get lastmod date from git history of the site generator file
         // This represents "when was the site code last updated"
         let lastModDate = await SitemapGenerator.getGitLastmod(for: "Sources/21-dev/SiteGenerator.swift")
@@ -106,6 +94,12 @@ struct SiteGenerator {
         try await generateSitemapXML(from: sitemap, to: outputURL)
         
         // Copy static resources after site generation
-        try copyStaticResources(from: resourcesURL, to: outputURL)
+        try ResourceCopier.copyResources(
+            from: resourcesURL,
+            to: outputURL,
+            excludePatterns: excludedPatterns
+        ) { path in
+            print("✅ Copied \(path)")
+        }
     }
 }

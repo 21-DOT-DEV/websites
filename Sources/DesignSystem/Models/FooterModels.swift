@@ -34,3 +34,16 @@ public struct SocialLink: Sendable {
         self.icon = AnyView(icon)
     }
 }
+
+/// Represents a "Built with" attribution logo with link.
+public struct BuiltWithLogo: Sendable {
+    public let imagePath: String
+    public let linkURL: String
+    public let altText: String
+    
+    public init(imagePath: String, linkURL: String, altText: String = "Built with") {
+        self.imagePath = imagePath
+        self.linkURL = linkURL
+        self.altText = altText
+    }
+}

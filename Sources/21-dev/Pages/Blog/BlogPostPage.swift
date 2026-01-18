@@ -60,7 +60,7 @@ struct BlogPostPage {
         BasePage(
             title: post.metadata.seoTitle ?? "\(post.metadata.title) | 21.dev Blog",
             description: generateDescription(),
-            canonicalURL: URL(string: "https://21.dev/blog/\(post.metadata.slug)/"),
+            canonicalURL: URL(string: "\(SiteIdentity.url)blog/\(post.metadata.slug)/"),
             articleMetadata: post.metadata.toArticleMetadata()
         ) {
             SiteDefaults.header

@@ -63,6 +63,7 @@ public struct SiteFooter: View, StyleModifier {
     public let licenseText: String?
     public let socialLinks: [SocialLink]
     public let copyrightText: String
+    public let builtWithLogo: BuiltWithLogo?
     public let backgroundColor: Slipstream.Color
     
     /// Creates a footer with configurable sections and content.
@@ -83,6 +84,7 @@ public struct SiteFooter: View, StyleModifier {
         licenseText: String? = nil,
         socialLinks: [SocialLink] = [],
         copyrightText: String,
+        builtWithLogo: BuiltWithLogo? = nil,
         backgroundColor: Slipstream.Color = .palette(.gray, darkness: 900)
     ) {
         self.companyName = companyName
@@ -92,6 +94,7 @@ public struct SiteFooter: View, StyleModifier {
         self.licenseText = licenseText
         self.socialLinks = socialLinks
         self.copyrightText = copyrightText
+        self.builtWithLogo = builtWithLogo
         self.backgroundColor = backgroundColor
     }
     
@@ -154,12 +157,6 @@ public struct SiteFooter: View, StyleModifier {
                             }
                             .margin(.bottom, 8)
                         }
-                        
-                        if let license = licenseText {
-                            Paragraph(license)
-                                .fontSize(.small)
-                                .textColor(.palette(.gray, darkness: 400))
-                        }
                     }
                     
                     // Social links column
@@ -170,21 +167,36 @@ public struct SiteFooter: View, StyleModifier {
                             .margin(.bottom, 16)
                             .textColor(.white)
                         
-                        // Use ForEach for type-safe social link rendering
-                        ForEach(socialLinks, id: \.url) { socialLink in
-                            SocialLinkView(socialLink: socialLink)
+                        // Horizontal social links layout
+                        Div {
+                            ForEach(socialLinks, id: \.url) { socialLink in
+                                SocialLinkView(socialLink: socialLink)
+                            }
                         }
+                        .display(.flex)
+                        .flexGap(.x, width: 16)
                     }
                 }
                 // TODO: Missing Slipstream API - using ClassModifier for grid layout
                 .modifier(ClassModifier(add: "grid grid-cols-1 md:grid-cols-4 gap-8"))
                 
-                // Copyright section
+                // Copyright section with optional Built with Slipstream badge
                 Div {
-                    Paragraph(copyrightText)
-                        .textAlignment(.center)
+                    Paragraph(copyrightText + (licenseText.map { " | \($0)" } ?? ""))
                         .textColor(.palette(.gray, darkness: 400))
+                    
+                    if let logo = builtWithLogo {
+                        Link(URL(string: logo.linkURL), openInNewTab: true) {
+                            Image(URL(string: logo.imagePath))
+                                .accessibilityLabel(logo.altText)
+                                .modifier(ClassModifier(add: "h-8"))
+                                .modifier(AttributeModifier("loading", value: "lazy"))
+                        }
+                    }
                 }
+                .display(.flex)
+                .justifyContent(.between)
+                .alignItems(.center)
                 // TODO: Missing Slipstream API - using ClassModifier for border-t
                 .modifier(ClassModifier(add: "border-t border-gray-800 mt-8 pt-8"))
             }

@@ -23,7 +23,7 @@ struct P256KPage {
         sponsorLogos: [.geyser, .openSats],
         ctaButton: CTAButton(
             text: "Get Started",
-            href: "https://github.com/21-DOT-DEV/swift-secp256k1",
+            href: SiteIdentity.p256kRepoURL,
             style: .primary,
             isExternal: true
         ),
@@ -115,13 +115,13 @@ struct P256KPage {
         options: [
             InstallationOption(
                 title: "Xcode",
-                codeSnippet: "https://github.com/21-DOT-DEV/swift-secp256k1",
+                codeSnippet: SiteIdentity.p256kRepoURL,
                 language: "text",
                 instructions: "In Xcode, go to File → Add Package Dependencies, paste the URL above, select version 0.21.1, and add to your target."
             ),
             InstallationOption(
                 title: "Swift Package Manager",
-                codeSnippet: ".package(url: \"https://github.com/21-DOT-DEV/swift-secp256k1\", exact: \"0.21.1\")",
+                codeSnippet: ".package(url: \"\(SiteIdentity.p256kRepoURL)\", exact: \"0.21.1\")",
                 language: "swift",
                 instructions: "Add this line to your Package.swift dependencies array, then run `swift build` to integrate P256K into your project."
             ),
@@ -257,10 +257,10 @@ struct P256KPage {
                 Link("Install via SPM", destination: URL(string: "#installation")!)
                     .textColor(.palette(.orange, darkness: 500))
                 Span(". Comprehensive documentation, tutorials, and API references are available on the official ")
-                Link("documentation site", destination: URL(string: "https://docs.21.dev/documentation/p256k/")!)
+                Link("documentation site", destination: URL(string: SiteIdentity.p256kDocsURL)!)
                     .textColor(.palette(.orange, darkness: 500))
                 Span(". Example projects and additional usage patterns can be found in the ")
-                Link("GitHub repository", destination: URL(string: "https://github.com/21-DOT-DEV/swift-secp256k1")!)
+                Link("GitHub repository", destination: URL(string: SiteIdentity.p256kRepoURL)!)
                     .textColor(.palette(.orange, darkness: 500))
                 Span(".")
             }
@@ -269,32 +269,21 @@ struct P256KPage {
     
     static let faq = FAQ(items: faqItems)
     
-    static let organization = OrganizationSchema(
-        id: "https://21.dev/#organization",
-        name: "21.dev",
-        url: "https://21.dev/",
-        sameAs: [
-            "https://github.com/21-DOT-DEV",
-            "https://x.com/21_DOT_DEV",
-            "https://primal.net/21"
-        ]
-    )
-    
     static let softwareSourceCode = SoftwareSourceCodeSchema(
-        id: "https://21.dev/packages/p256k/#software",
+        id: "\(SiteIdentity.url)packages/p256k/#software",
         name: "P256K",
         description: "Swift wrapper for libsecp256k1 with ECDSA and Schnorr signatures, type-safe APIs, and Swift Package Manager support for Bitcoin and Nostr apps.",
-        url: "https://21.dev/packages/p256k/",
-        mainEntityOfPage: WebPageSchema(id: "https://21.dev/packages/p256k/"),
-        codeRepository: "https://github.com/21-DOT-DEV/swift-secp256k1",
+        url: "\(SiteIdentity.url)packages/p256k/",
+        mainEntityOfPage: WebPageSchema(id: "\(SiteIdentity.url)packages/p256k/"),
+        codeRepository: SiteIdentity.p256kRepoURL,
         programmingLanguage: ComputerLanguageSchema(name: "Swift"),
         license: "https://opensource.org/licenses/MIT",
-        author: SchemaReference(id: "https://21.dev/#organization"),
-        creator: SchemaReference(id: "https://21.dev/#organization"),
+        author: SchemaReference(id: SiteIdentity.schemaID),
+        creator: SchemaReference(id: SiteIdentity.schemaID),
         runtimePlatform: ["iOS", "macOS", "watchOS", "tvOS", "Linux"],
         sameAs: [
-            "https://github.com/21-DOT-DEV/swift-secp256k1",
-            "https://docs.21.dev/documentation/p256k/",
+            SiteIdentity.p256kRepoURL,
+            SiteIdentity.p256kDocsURL,
             "https://swiftpackageindex.com/21-DOT-DEV/swift-secp256k1"
         ],
         softwareVersion: "0.21.1",
@@ -310,8 +299,8 @@ struct P256KPage {
         ],
         isBasedOn: "https://github.com/bitcoin-core/secp256k1",
         potentialAction: [
-            PotentialActionSchema(type: .read, target: "https://docs.21.dev/documentation/p256k/"),
-            PotentialActionSchema(type: .view, target: "https://github.com/21-DOT-DEV/swift-secp256k1")
+            PotentialActionSchema(type: .read, target: SiteIdentity.p256kDocsURL),
+            PotentialActionSchema(type: .view, target: SiteIdentity.p256kRepoURL)
         ],
         applicationCategory: ["DeveloperApplication", "Cryptography Library"]
     )
@@ -320,8 +309,8 @@ struct P256KPage {
         BasePage(
             title: "P256K: Swift secp256k1 (ECDSA + Schnorr) + SPM | 21.dev",
             description: "P256K is a Swift wrapper for libsecp256k1 with ECDSA + Schnorr, type-safe APIs, and Swift Package Manager support for Bitcoin and Nostr apps.",
-            canonicalURL: URL(string: "https://21.dev/packages/p256k/"),
-            schemas: [faq.schema, softwareSourceCode, organization]
+            canonicalURL: URL(string: "\(SiteIdentity.url)packages/p256k/"),
+            schemas: [faq.schema, softwareSourceCode, SiteIdentity.organizationSchema]
         ) {
             SiteDefaults.header
             

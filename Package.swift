@@ -11,7 +11,7 @@ let package = Package(
     dependencies: [
         // Local Dev
         // .package(path: "../slipstream"),
-        .package(url: "https://github.com/21-DOT-DEV/slipstream", branch: "HasComponentCSS"),
+        .package(url: "https://github.com/21-DOT-DEV/slipstream", branch: "develop"),
         .package(url: "https://github.com/21-DOT-DEV/swift-plugin-tailwindcss", exact: "3.4.17"),
         .package(url: "https://github.com/21-DOT-DEV/swift-secp256k1", exact: "0.21.1"),
         .package(url: "https://github.com/swiftlang/swift-docc-plugin", exact: "1.4.5"),

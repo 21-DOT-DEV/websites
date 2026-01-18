@@ -1,7 +1,7 @@
 <!--
 Sync Impact Report:
-- Version: 1.0.0 → 1.1.0 (MINOR - Expanded specification guidance)
-- Change Type: Enhanced Principle II with detailed specification requirements
+- Version: 1.1.2 → 1.1.3 (PATCH - Added UtilLib to documented file structure)
+- Change Type: Documentation update for existing library target
 - Scope: Websites monorepo only (/Users/csjones/Developer/websites)
 - Structure: Two-tier (7 core principles + implementation practices in nested format)
 - Core Principles:
@@ -322,7 +322,8 @@ Current sites may skip until needed.
 **File Structure**:
 - Sites: `Sources/<SiteName>/` (executable targets)
 - DesignSystem: `Sources/DesignSystem/` (components, layouts, tokens, utilities)
-- Tests: `Tests/DesignSystemTests/`, `Tests/IntegrationTests/`, `Tests/TestUtils/`
+- UtilLib: `Sources/UtilLib/` (shared pure utilities for CLI tools and site generators)
+- Tests: `Tests/DesignSystemTests/`, `Tests/IntegrationTests/`, `Tests/UtilLibTests/`, `Tests/TestUtils/`
 - Content: `Resources/<SiteName>/` (Markdown, assets, config)
 - Output: `Websites/<SiteName>/` (git-ignored)
 
@@ -374,11 +375,12 @@ This constitution supersedes all other development practices. Deviations MUST be
 
 ## Version History
 
-**Version**: 1.1.2  
+**Version**: 1.1.3  
 **Ratified**: 2025-11-13  
-**Last Amended**: 2026-01-09
+**Last Amended**: 2026-01-17
 
 **Changelog**:
+- **1.1.3** (2026-01-17): Added UtilLib (`Sources/UtilLib/`) and UtilLibTests to documented file structure for shared pure utilities.
 - **1.1.2** (2026-01-09): Added SwiftSoup to approved dependencies for HTML parsing (build-time only).
 - **1.1.1** (2025-12-15): Added swift-argument-parser to approved dependencies for build-time CLI tooling (Feature 004).
 - **1.1.0** (2025-11-13): Enhanced Principle II with detailed specification requirements. Added 10 specific MUST/MUST NOT rules for small, independent specs. Split practices into "Specification Requirements" and "Test-Driven Development" subsections for clarity.

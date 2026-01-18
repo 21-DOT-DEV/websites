@@ -32,6 +32,6 @@ public struct SocialLinkView: View {
     }
     
     private var commonStyling: Set<String> {
-        ["text-gray-400", "hover:text-white", "transition-colors", "mb-3", "block"]
+        ["text-gray-400", "hover:text-white", "transition-colors"]
     }
 }
