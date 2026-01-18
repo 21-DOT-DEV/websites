@@ -18,7 +18,7 @@ struct Homepage {
         BasePage(
             title: "Build Bitcoin Apps in Swift with Open-Source Tools | 21.dev",
             description: "Build Bitcoin apps in Swift with 21.dev—open-source libsecp256k1 wrapper, SPM tools, and docs to ship faster.",
-            canonicalURL: URL(string: "https://21.dev/")
+            canonicalURL: URL(string: SiteIdentity.url)
         ) {
             SiteDefaults.header
 
@@ -26,13 +26,13 @@ struct Homepage {
                 headline: "Equipping developers with the tools they need today to build the Bitcoin apps of tomorrow. 📱",
                 primaryButton: CTAButton(
                     text: "Get Started",
-                    href: "https://docs.21.dev/documentation/p256k/",
+                    href: SiteIdentity.p256kDocsURL,
                     style: .primary,
                     isExternal: true
                 ),
                 secondaryButton: CTAButton(
                     text: "View on GitHub",
-                    href: "https://github.com/21-DOT-DEV",
+                    href: SiteIdentity.githubURL,
                     style: .secondary,
                     isExternal: true
                 )
@@ -50,7 +50,7 @@ struct Homepage {
                 description: "Enhance your Swift development for Bitcoin apps with seamless secp256k1 integration. P256K provides a clean, efficient Swift interface to Bitcoin's elliptic curve cryptography.",
                 ctaButton: CTAButton(
                     text: "Build with P256K →",
-                    href: "https://github.com/21-DOT-DEV/swift-secp256k1",
+                    href: SiteIdentity.p256kRepoURL,
                     style: .primary,
                     isExternal: true
                 )

@@ -14,30 +14,36 @@ public struct SiteDefaults {
     
     /// Default site header with logo and navigation links
     public static let header = SiteHeader(
-        logoText: "21.dev",
+        logoText: SiteIdentity.name,
         navigationLinks: [
             NavigationLink(title: "Blog", href: "/blog/"),
             NavigationLink(title: "P256K", href: "/packages/p256k/"),
-            NavigationLink(title: "Docs", href: "https://docs.21.dev/documentation/p256k/", isExternal: true)
+            NavigationLink(title: "Docs", href: SiteIdentity.p256kDocsURL, isExternal: true)
         ]
     )
     
     /// Default site footer with company info, links, and social media
     public static let footer = SiteFooter(
-        companyName: "21.dev",
+        companyName: SiteIdentity.name,
         companyDescription: "Equipping developers with the tools they need today to build the Bitcoin apps of tomorrow.",
         resourceLinks: [
-            FooterLink(text: "Documentation", href: "https://docs.21.dev/documentation/", isExternal: true),
+            FooterLink(text: "Documentation", href: SiteIdentity.docsBaseURL + "documentation/", isExternal: true),
             FooterLink(text: "Blog", href: "/blog/"),
-            FooterLink(text: "P256K", href: "/packages/p256k/")
+            FooterLink(text: "P256K", href: "/packages/p256k/"),
+            FooterLink(text: "Swift Package Index", href: SiteIdentity.spiURL, isExternal: true)
         ],
-        contactEmail: "hello@21.dev",
+        contactEmail: SiteIdentity.contactEmail,
         licenseText: "Licensed under MIT",
         socialLinks: [
-            SocialLink(url: "https://github.com/21-DOT-DEV", ariaLabel: "GitHub", icon: GitHubIcon()),
-            SocialLink(url: "https://x.com/21_DOT_DEV", ariaLabel: "X (Twitter)", icon: TwitterIcon()),
-            SocialLink(url: "https://primal.net/21", ariaLabel: "Nostr", icon: NostrIcon())
+            SocialLink(url: SiteIdentity.githubURL, ariaLabel: "GitHub", icon: GitHubIcon()),
+            SocialLink(url: SiteIdentity.twitterURL, ariaLabel: "X (Twitter)", icon: TwitterIcon()),
+            SocialLink(url: SiteIdentity.nostrURL, ariaLabel: "Nostr", icon: NostrIcon())
         ],
-        copyrightText: "© 2025 21.dev. All rights reserved."
+        copyrightText: "© 2026 \(SiteIdentity.name). All rights reserved.",
+        builtWithLogo: BuiltWithLogo(
+            imagePath: "/svg/built-with-slipstream.svg",
+            linkURL: SiteIdentity.slipstreamRepoURL,
+            altText: "Built with Slipstream"
+        )
     )
 }
