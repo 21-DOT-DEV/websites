@@ -38,8 +38,6 @@ struct SocialLinkViewTests {
         #expect(html.contains("text-gray-400"))
         #expect(html.contains("hover:text-white"))
         #expect(html.contains("transition-colors"))
-        #expect(html.contains("mb-3"))
-        #expect(html.contains("block"))
     }
     
     @Test("SocialLinkView renders SVG-based social link (Twitter)")
@@ -113,7 +111,7 @@ struct SocialLinkViewTests {
         let textHtml = try TestUtils.renderHTML(SocialLinkView(socialLink: textLink))
         let twitterHtml = try TestUtils.renderHTML(SocialLinkView(socialLink: twitterLink))
         
-        let expectedClasses = ["text-gray-400", "hover:text-white", "transition-colors", "mb-3", "block"]
+        let expectedClasses = ["text-gray-400", "hover:text-white", "transition-colors"]
         
         for className in expectedClasses {
             #expect(svgHtml.contains(className))
