@@ -40,10 +40,14 @@ public struct BuiltWithLogo: Sendable {
     public let imagePath: String
     public let linkURL: String
     public let altText: String
+    public let width: Int
+    public let height: Int
     
-    public init(imagePath: String, linkURL: String, altText: String = "Built with") {
+    public init(imagePath: String, linkURL: String, altText: String = "Built with", width: Int, height: Int) {
         self.imagePath = imagePath
         self.linkURL = linkURL
         self.altText = altText
+        self.width = width
+        self.height = height
     }
 }

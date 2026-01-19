@@ -43,7 +43,9 @@ public struct SiteDefaults {
         builtWithLogo: BuiltWithLogo(
             imagePath: "/svg/built-with-slipstream.svg",
             linkURL: SiteIdentity.slipstreamRepoURL,
-            altText: "Built with Slipstream"
+            altText: "Built with Slipstream",
+            width: 350,
+            height: 100
         )
     )
 }
