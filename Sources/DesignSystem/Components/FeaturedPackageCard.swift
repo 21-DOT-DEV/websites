@@ -47,7 +47,7 @@ public struct FeaturedPackageCard: View {
         Div {
             Div {
                 Div {
-                    VStack(spacing: 24) {
+                    VStack(spacing: 32) {
                         H2 {
                             Text(title)
                         }
@@ -58,13 +58,15 @@ public struct FeaturedPackageCard: View {
                         Div {
                             Text(description)
                         }
+                        .fontSize(.large)
                         .textColor(.palette(.gray, darkness: 700))
                         
                         CTAButtonView(button: ctaButton)
                     }
                     .alignItems(.start) // Left-align content within the card
                 }
-                .padding(.all, 32) // p-8 equivalent (8 * 4 = 32pt)
+                .padding(.vertical, 48) // py-12 equivalent
+                .padding(.horizontal, 32) // px-8 equivalent
                 // TODO: Missing Slipstream APIs - using ClassModifier for:
                 // - rounded corners (rounded-lg)
                 // - card borders and backgrounds
@@ -77,7 +79,7 @@ public struct FeaturedPackageCard: View {
             .modifier(ClassModifier(add: maxWidth.cssClass))
             .margin(.horizontal, .auto)
         }
-        .padding(.vertical, 64) // py-16 equivalent (16 * 4 = 64pt)
+        .padding(.vertical, 128) // py-32 equivalent for more section spacing
         .background(backgroundColor)
     }
     

@@ -85,7 +85,7 @@ public struct AboutSection: View {
             .modifier(ClassModifier(add: maxWidth.cssClass))
             .margin(.horizontal, .auto)
         }
-        .padding(.vertical, 64)
+        .padding(.vertical, 128) // py-32 for consistent section spacing
         .background(backgroundColor)
     }
     

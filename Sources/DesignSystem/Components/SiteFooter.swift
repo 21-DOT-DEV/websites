@@ -189,7 +189,9 @@ public struct SiteFooter: View, StyleModifier {
                         Link(URL(string: logo.linkURL), openInNewTab: true) {
                             Image(URL(string: logo.imagePath))
                                 .accessibilityLabel(logo.altText)
-                                .modifier(ClassModifier(add: "h-8"))
+                                .modifier(AttributeModifier("width", value: "\(logo.width)"))
+                                .modifier(AttributeModifier("height", value: "\(logo.height)"))
+                                .modifier(ClassModifier(add: "h-8 w-28"))
                                 .modifier(AttributeModifier("loading", value: "lazy"))
                         }
                     }
