@@ -79,7 +79,7 @@ public struct FeaturedPackageCard: View {
             .modifier(ClassModifier(add: maxWidth.cssClass))
             .margin(.horizontal, .auto)
         }
-        .padding(.vertical, 64) // py-16 equivalent (16 * 4 = 64pt)
+        .padding(.vertical, 128) // py-32 equivalent for more section spacing
         .background(backgroundColor)
     }
     

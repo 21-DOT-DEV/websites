@@ -191,7 +191,7 @@ public struct SiteFooter: View, StyleModifier {
                                 .accessibilityLabel(logo.altText)
                                 .modifier(AttributeModifier("width", value: "\(logo.width)"))
                                 .modifier(AttributeModifier("height", value: "\(logo.height)"))
-                                .modifier(ClassModifier(add: "h-8"))
+                                .modifier(ClassModifier(add: "h-8 w-28"))
                                 .modifier(AttributeModifier("loading", value: "lazy"))
                         }
                     }
