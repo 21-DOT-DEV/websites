@@ -1,3 +1,10 @@
+//
+//  Copyright (c) 2026 Timechain Software Initiative, Inc.
+//  Distributed under the MIT software license
+//
+//  See the accompanying file LICENSE for information
+//
+
 import Testing
 import Foundation
 @testable import DesignSystem

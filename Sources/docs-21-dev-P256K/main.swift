@@ -1,3 +1,10 @@
+//
+//  Copyright (c) 2026 Timechain Software Initiative, Inc.
+//  Distributed under the MIT software license
+//
+//  See the accompanying file LICENSE for information
+//
+
 // Documentation-only executable target for swift-secp256k1
 // This target exists solely to allow swift-docc-plugin to generate
 // combined documentation for the swift-secp256k1 package products.

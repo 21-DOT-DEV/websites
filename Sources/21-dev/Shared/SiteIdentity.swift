@@ -1,5 +1,5 @@
 //
-//  Copyright (c) 2025 21.dev
+//  Copyright (c) 2026 Timechain Software Initiative, Inc.
 //  Distributed under the MIT software license
 //
 //  See the accompanying file LICENSE for information
@@ -12,6 +12,7 @@ import DesignSystem
 public struct SiteIdentity {
     // Organization identity
     public static let name = "21.dev"
+    public static let legalName = "Timechain Software Initiative, Inc."
     public static let url = "https://21.dev/"
     public static let schemaID = "https://21.dev/#organization"
     

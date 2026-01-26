@@ -1,14 +1,18 @@
 //
-//  FAQItemAutoAnswerTests.swift
-//  DesignSystemTests
+//  Copyright (c) 2026 Timechain Software Initiative, Inc.
+//  Distributed under the MIT software license
 //
-//  TDD tests for FAQItem auto-derived answer feature
+//  See the accompanying file LICENSE for information
 //
 
 import Testing
 import Foundation
 import Slipstream
 @testable import DesignSystem
+
+//
+//  TDD tests for FAQItem auto-derived answer feature
+//
 
 @Suite("FAQItem Auto-Derived Answer Tests")
 struct FAQItemAutoAnswerTests {
