@@ -1,5 +1,5 @@
 //
-//  Copyright (c) 2025 21.dev
+//  Copyright (c) 2026 Timechain Software Initiative, Inc.
 //  Distributed under the MIT software license
 //
 //  See the accompanying file LICENSE for information
@@ -39,7 +39,7 @@ public struct SiteDefaults {
             SocialLink(url: SiteIdentity.twitterURL, ariaLabel: "X (Twitter)", icon: TwitterIcon()),
             SocialLink(url: SiteIdentity.nostrURL, ariaLabel: "Nostr", icon: NostrIcon())
         ],
-        copyrightText: "© 2026 \(SiteIdentity.name). All rights reserved.",
+        copyrightText: "© 2026 \(SiteIdentity.legalName). All rights reserved.",
         builtWithLogo: BuiltWithLogo(
             imagePath: "/svg/built-with-slipstream.svg",
             linkURL: SiteIdentity.slipstreamRepoURL,

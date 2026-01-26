@@ -2,7 +2,7 @@
 //  GoogleAuthService.swift
 //  UtilLib
 //
-//  Copyright (c) 2025 21.dev
+//  Copyright (c) 2026 Timechain Software Initiative, Inc.
 //  Distributed under the MIT software license
 //
 //  See the accompanying file LICENSE for information

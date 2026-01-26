@@ -2,7 +2,7 @@
 //  CopyIcon.swift
 //  21-DOT-DEV/DesignSystem
 //
-//  Copyright (c) 2025 21.dev
+//  Copyright (c) 2026 Timechain Software Initiative, Inc.
 //  Distributed under the MIT software license
 //
 
