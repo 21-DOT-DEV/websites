@@ -10,6 +10,9 @@
 # Note: Canonical domain redirect (www.21.dev → 21.dev) remains in
 # Cloudflare Rules due to requiring dynamic expressions.
 
+# Cloudflare Pages doesn't serve dot-directories; rewrite to non-dot path
+/.well-known/* /well-known/:splat 200
+
 # Common aliases for documentation
 /docs https://docs.21.dev/documentation/ 301
 /api https://docs.21.dev/documentation/ 301
