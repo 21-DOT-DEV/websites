@@ -31,7 +31,7 @@ jobs:
     
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           ref: ${{ inputs.ref }}
       
@@ -338,7 +338,7 @@ jobs:
           ls -lh ${{ inputs.project-name }}.zip
       
       - name: Upload artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: ${{ inputs.project-name }}
           path: Websites/${{ inputs.project-name }}.zip

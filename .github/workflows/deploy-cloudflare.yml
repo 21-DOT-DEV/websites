@@ -48,7 +48,7 @@ jobs:
     
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
       
       - name: Determine deployment branch
         run: |
@@ -61,7 +61,7 @@ jobs:
           fi
       
       - name: Download build artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v5
         with:
           name: ${{ inputs.artifact-name }}
           path: ${{ inputs.artifact-path }}/${{ inputs.project-name }}
