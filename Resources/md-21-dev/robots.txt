@@ -28,3 +28,6 @@ Allow: /
 
 # Tell crawlers where to find sitemap
 Sitemap: https://md.21.dev/sitemap.xml
+
+# LLM discovery
+LLMs: https://md.21.dev/llms.txt

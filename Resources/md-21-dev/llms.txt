@@ -1,0 +1,34 @@
+# md.21.dev
+
+> LLM-optimized markdown API documentation for the swift-secp256k1 Swift package — 2,500+ symbol files in plain CommonMark with no JavaScript, covering the P256K and ZKP modules.
+
+This subdomain serves a markdown export of the swift-secp256k1 DocC archive, optimized for LLM consumption. The content originates from the same source as docs.21.dev but is exported as plain CommonMark files. Every file has a stable URL and consistent structure.
+
+Things to know about this documentation:
+
+- All files are plain .md CommonMark — no HTML, no JavaScript, no dynamic content
+- Symbol files follow the pattern /{module}/{symbol-name}.md (e.g., /p256k/sharedsecret.md)
+- Each symbol file contains: type information, Swift declaration, abstract, overview, and related topics
+- P256K and ZKP are sibling modules wrapping different C libraries (libsecp256k1 and libsecp256k1-zkp respectively) — pick one, do not import both
+- Start with the module overview files (p256k.md, zkp.md) to understand the API surface before diving into individual symbols
+
+## Modules
+
+- [P256K Module Overview](https://md.21.dev/p256k.md): Elliptic curve cryptography — key generation, ECDSA signing, ECDH key agreement, public key recovery
+- [ZKP Module Overview](https://md.21.dev/zkp.md): Zero-knowledge proofs — Pedersen commitments, range proofs, Schnorr signatures
+
+## Navigation
+
+- [Root Index](https://md.21.dev/): Documentation structure overview and file organization
+- [All P256K Symbols](https://md.21.dev/p256k/): ~1,285 symbol files for the P256K module
+- [All ZKP Symbols](https://md.21.dev/zkp/): ~1,285 symbol files for the ZKP module
+
+## Related
+
+- [21.dev llms.txt](https://21.dev/llms.txt): Hub llms.txt with full project context and cross-subdomain links
+- [docs.21.dev llms.txt](https://docs.21.dev/llms.txt): Interactive DocC HTML version of the documentation (rendered from the same DocC archive)
+- [GitHub Repository](https://github.com/21-DOT-DEV/swift-secp256k1): Swift package source, issues, and releases
+
+## Optional
+
+- [Example Symbol](https://md.21.dev/p256k/sharedsecret.md): Sample documentation format used across all symbol files

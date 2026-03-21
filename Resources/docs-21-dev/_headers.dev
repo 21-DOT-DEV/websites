@@ -38,6 +38,11 @@
   Vary: Accept-Encoding
   X-Robots-Tag: noindex
 
+# Serve plain text files with correct content-type
+/*.txt
+  Content-Type: text/plain; charset=utf-8
+  X-Content-Type-Options: nosniff
+
 # Preview HTML (DocC) — security headers without HSTS, noindex to prevent search indexing
 # NOTE: Extend CSP allowlists by appending origins (e.g., extra script host) instead of removing defaults to keep minimum protections intact.
 /*
