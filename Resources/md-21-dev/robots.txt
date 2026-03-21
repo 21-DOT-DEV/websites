@@ -24,7 +24,7 @@
 
 User-Agent: *
 Content-Signal: search=no, ai-input=yes, ai-train=yes
-Disallow: /
+Allow: /
 
-# Tell crawlers where to find sitemap (even though indexing is disallowed)
+# Tell crawlers where to find sitemap
 Sitemap: https://md.21.dev/sitemap.xml
