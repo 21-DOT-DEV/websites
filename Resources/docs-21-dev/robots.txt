@@ -30,3 +30,6 @@ Allow: /documentation/
 
 # Tell crawlers where to find your sitemap
 Sitemap: https://docs.21.dev/sitemap.xml
+
+# LLM discovery
+LLMs: https://docs.21.dev/llms.txt
