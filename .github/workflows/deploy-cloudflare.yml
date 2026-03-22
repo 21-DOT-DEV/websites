@@ -38,17 +38,15 @@ jobs:
     runs-on: ubuntu-latest
     env:
       DEPLOYMENT_BRANCH: preview
-      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     permissions:
       contents: read
-      deployments: write
       pull-requests: write
     outputs:
-      url: ${{ steps.cloudflare.outputs.url }}
+      url: ${{ steps.cloudflare.outputs.deployment-url }}
     
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v5
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       
       - name: Determine deployment branch
         run: |
@@ -61,7 +59,7 @@ jobs:
           fi
       
       - name: Download build artifacts
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
         with:
           name: ${{ inputs.artifact-name }}
           path: ${{ inputs.artifact-path }}/${{ inputs.project-name }}
@@ -78,25 +76,39 @@ jobs:
             echo "✅ Documentation extracted and ready for deployment"
           fi
       
+      - name: Install wrangler
+        run: npm install -g wrangler@3
+      
       - name: Deploy to Cloudflare Pages
         id: cloudflare
-        uses: cloudflare/pages-action@v1
-        with:
-          apiToken: ${{ secrets.cloudflare-api-token }}
-          accountId: ${{ secrets.cloudflare-account-id }}
-          projectName: ${{ inputs.project-name }}
-          directory: ${{ inputs.artifact-path }}/${{ inputs.project-name }}
-          branch: ${{ env.DEPLOYMENT_BRANCH }}
-          wranglerVersion: '3'
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.cloudflare-api-token }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.cloudflare-account-id }}
+        run: |
+          deploy_output=$(wrangler pages deploy \
+            "${{ inputs.artifact-path }}/${{ inputs.project-name }}" \
+            --project-name="${{ inputs.project-name }}" \
+            --branch="${{ env.DEPLOYMENT_BRANCH }}" \
+            2>&1)
+          echo "$deploy_output"
+          
+          deployment_url=$(echo "$deploy_output" | grep -oE 'https://[a-zA-Z0-9._-]+\.pages\.dev' | tail -1)
+          if [ -z "$deployment_url" ]; then
+            echo "::error::Failed to extract deployment URL from wrangler output"
+            exit 1
+          fi
+          echo "deployment-url=$deployment_url" >> "$GITHUB_OUTPUT"
       
       - name: Update deployment comment on PR
         if: github.event_name == 'pull_request'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           swift run util comment \
             --pr ${{ github.event.pull_request.number }} \
             --project ${{ inputs.project-name }} \
             --status ${{ steps.cloudflare.outcome == 'success' && 'success' || 'failure' }} \
-            --preview-url "${{ steps.cloudflare.outputs.url }}" \
+            --preview-url "${{ steps.cloudflare.outputs.deployment-url }}" \
             --alias-url "https://preview.${{ inputs.project-name }}.pages.dev" \
             --commit "${{ github.event.pull_request.head.sha }}" \
             --run-url "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
@@ -104,13 +116,13 @@ jobs:
       - name: Deployment complete
         run: |
           echo "✅ Deployment successful!"
-          echo "📍 Deployment URL: ${{ steps.cloudflare.outputs.url }}"
+          echo "📍 Deployment URL: ${{ steps.cloudflare.outputs.deployment-url }}"
           echo "🌿 Branch: ${{ env.DEPLOYMENT_BRANCH }}"
       
       - name: Verify redirects (docs.21.dev)
         if: inputs.deploy-to-production == false && inputs.project-name == 'docs-21-dev'
         run: |
-          PREVIEW_URL="${{ steps.cloudflare.outputs.url }}"
+          PREVIEW_URL="${{ steps.cloudflare.outputs.deployment-url }}"
           echo "🔍 Verifying redirects on preview: $PREVIEW_URL"
           
           # Test root redirect
@@ -134,7 +146,7 @@ jobs:
       - name: Verify redirects (md.21.dev)
         if: inputs.deploy-to-production == false && inputs.project-name == 'md-21-dev'
         run: |
-          PREVIEW_URL="${{ steps.cloudflare.outputs.url }}"
+          PREVIEW_URL="${{ steps.cloudflare.outputs.deployment-url }}"
           echo "🔍 Verifying redirects on preview: $PREVIEW_URL"
           
           # Test root redirect
@@ -150,7 +162,7 @@ jobs:
       - name: Verify redirects (21.dev)
         if: inputs.deploy-to-production == false && inputs.project-name == '21-dev'
         run: |
-          PREVIEW_URL="${{ steps.cloudflare.outputs.url }}"
+          PREVIEW_URL="${{ steps.cloudflare.outputs.deployment-url }}"
           echo "🔍 Verifying redirects on preview: $PREVIEW_URL"
           
           # Test /docs redirect

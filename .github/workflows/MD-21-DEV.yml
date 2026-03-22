@@ -19,9 +19,13 @@ on:
 
   workflow_dispatch:
 
+permissions: {}
+
 jobs:
   generate:
     name: Generate Markdown Documentation
+    permissions:
+      contents: read
     uses: ./.github/workflows/generate-markdown.yml
     with:
       project-name: md-21-dev
@@ -31,6 +35,9 @@ jobs:
   deploy:
     name: Deploy Markdown Documentation
     needs: generate
+    permissions:
+      contents: read
+      pull-requests: write
     uses: ./.github/workflows/deploy-cloudflare.yml
     with:
       artifact-name: ${{ needs.generate.outputs.artifact-name }}

@@ -21,9 +21,13 @@ on:
 
   workflow_dispatch:
 
+permissions: {}
+
 jobs:
   build:
     name: Build Site
+    permissions:
+      contents: read
     uses: ./.github/workflows/build-slipstream.yml
     with:
       website: 21-dev
@@ -31,6 +35,9 @@ jobs:
   deploy:
     name: Deploy Site
     needs: build
+    permissions:
+      contents: read
+      pull-requests: write
     uses: ./.github/workflows/deploy-cloudflare.yml
     with:
       artifact-name: ${{ needs.build.outputs.artifact-name }}
