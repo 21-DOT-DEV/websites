@@ -16,6 +16,8 @@ jobs:
   build:
     name: Build ${{ inputs.website }}
     runs-on: macos-15
+    permissions:
+      contents: read
     env:
       DEVELOPER_DIR: "/Applications/Xcode_16.4.app/Contents/Developer"
     outputs:
@@ -23,10 +25,10 @@ jobs:
     
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       
       - name: Cache Swift Package Manager
-        uses: actions/cache@v5
+        uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5.0.4
         with:
           path: |
             .build
@@ -109,7 +111,7 @@ jobs:
           echo "✅ Build output verified successfully"
       
       - name: Upload build artifacts
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
         with:
           name: ${{ inputs.website }}-build
           path: Websites/${{ inputs.website }}/

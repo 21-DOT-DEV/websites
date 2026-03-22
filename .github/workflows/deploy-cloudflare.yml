@@ -38,17 +38,15 @@ jobs:
     runs-on: ubuntu-latest
     env:
       DEPLOYMENT_BRANCH: preview
-      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     permissions:
       contents: read
-      deployments: write
       pull-requests: write
     outputs:
       url: ${{ steps.cloudflare.outputs.deployment-url }}
     
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       
       - name: Determine deployment branch
         run: |
@@ -61,7 +59,7 @@ jobs:
           fi
       
       - name: Download build artifacts
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
         with:
           name: ${{ inputs.artifact-name }}
           path: ${{ inputs.artifact-path }}/${{ inputs.project-name }}
@@ -78,17 +76,33 @@ jobs:
             echo "✅ Documentation extracted and ready for deployment"
           fi
       
+      - name: Install wrangler
+        run: npm install -g wrangler@3
+      
       - name: Deploy to Cloudflare Pages
         id: cloudflare
-        uses: cloudflare/wrangler-action@v3
-        with:
-          apiToken: ${{ secrets.cloudflare-api-token }}
-          accountId: ${{ secrets.cloudflare-account-id }}
-          command: pages deploy ${{ inputs.artifact-path }}/${{ inputs.project-name }} --project-name=${{ inputs.project-name }} --branch=${{ env.DEPLOYMENT_BRANCH }}
-          gitHubToken: ${{ secrets.GITHUB_TOKEN }}
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.cloudflare-api-token }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.cloudflare-account-id }}
+        run: |
+          deploy_output=$(wrangler pages deploy \
+            "${{ inputs.artifact-path }}/${{ inputs.project-name }}" \
+            --project-name="${{ inputs.project-name }}" \
+            --branch="${{ env.DEPLOYMENT_BRANCH }}" \
+            2>&1)
+          echo "$deploy_output"
+          
+          deployment_url=$(echo "$deploy_output" | grep -oE 'https://[a-zA-Z0-9._-]+\.pages\.dev' | tail -1)
+          if [ -z "$deployment_url" ]; then
+            echo "::error::Failed to extract deployment URL from wrangler output"
+            exit 1
+          fi
+          echo "deployment-url=$deployment_url" >> "$GITHUB_OUTPUT"
       
       - name: Update deployment comment on PR
         if: github.event_name == 'pull_request'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           swift run util comment \
             --pr ${{ github.event.pull_request.number }} \
