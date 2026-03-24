@@ -36,6 +36,7 @@ jobs:
     name: Deploy Markdown Documentation
     needs: generate
     permissions:
+      actions: read
       contents: read
       pull-requests: write
     uses: ./.github/workflows/deploy-cloudflare.yml
