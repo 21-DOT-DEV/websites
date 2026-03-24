@@ -36,6 +36,7 @@ jobs:
     name: Deploy Site
     needs: build
     permissions:
+      actions: read
       contents: read
       pull-requests: write
     uses: ./.github/workflows/deploy-cloudflare.yml

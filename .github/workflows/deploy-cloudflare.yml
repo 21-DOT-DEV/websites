@@ -39,6 +39,7 @@ jobs:
     env:
       DEPLOYMENT_BRANCH: preview
     permissions:
+      actions: read
       contents: read
       pull-requests: write
     outputs:

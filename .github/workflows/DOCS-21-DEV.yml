@@ -39,6 +39,7 @@ jobs:
     name: Deploy Documentation
     needs: generate
     permissions:
+      actions: read
       contents: read
       pull-requests: write
     uses: ./.github/workflows/deploy-cloudflare.yml
