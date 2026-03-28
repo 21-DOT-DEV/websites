@@ -35,9 +35,10 @@ on:
 jobs:
   deploy:
     name: Deploy to Cloudflare Pages
-    runs-on: ubuntu-latest
+    runs-on: macos-26
     env:
       DEPLOYMENT_BRANCH: preview
+      DEVELOPER_DIR: "/Applications/Xcode_26.4.app/Contents/Developer"
     permissions:
       actions: read
       contents: read

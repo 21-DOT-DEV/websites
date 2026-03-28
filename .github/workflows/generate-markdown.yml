@@ -23,9 +23,11 @@ on:
 jobs:
   generate:
     name: Generate markdown docs
-    runs-on: macos-15
+    runs-on: macos-26
     permissions:
       contents: read
+    env:
+      DEVELOPER_DIR: "/Applications/Xcode_26.4.app/Contents/Developer"
     outputs:
       artifact-name: ${{ inputs.project-name }}
     
