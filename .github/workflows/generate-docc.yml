@@ -110,6 +110,7 @@ jobs:
             ${{ steps.build-targets.outputs.target-args }} \
             --enable-experimental-combined-documentation \
             --transform-for-static-hosting \
+            --experimental-transform-for-static-hosting-with-content \
             --source-service github \
             --source-service-base-url https://github.com/21-DOT-DEV/swift-secp256k1/blob/${{ env.SECP256K1_VERSION }} \
             --checkout-path .build/checkouts/swift-secp256k1 \
@@ -143,6 +144,27 @@ jobs:
           
           echo "✅ Documentation output verified successfully"
           echo "📊 Documentation size: $(du -sh Websites/${project} | cut -f1)"
+          
+      - name: Verify noscript content
+        run: |
+          project="${{ inputs.project-name }}"
+          # Spot-check a documentation page for <noscript> content
+          sample_page=$(find "Websites/${project}/documentation" \
+            -name "index.html" -not -path "*/documentation/index.html" | head -1)
+
+          if [ -z "$sample_page" ]; then
+            echo "⚠️  No documentation pages found to verify"
+            exit 0
+          fi
+
+          if grep -q '<noscript>' "$sample_page"; then
+            echo "✅ <noscript> content present in: $sample_page"
+            # Show a preview of what crawlers will see
+            sed -n '/<noscript>/,/<\/noscript>/p' "$sample_page" | head -20
+          else
+            echo "❌ <noscript> content missing from: $sample_page"
+            exit 1
+          fi
       
       - name: Generate sitemap
         run: |
