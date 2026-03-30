@@ -26,6 +26,13 @@
   Vary: Accept-Encoding
   X-Robots-Tag: noindex
 
+# DocC markdown output (LLM-optimized symbol docs)
+/data/documentation/**/*.md
+  Content-Type: text/markdown; charset=utf-8
+  Cache-Control: public, max-age=300, must-revalidate
+  Vary: Accept-Encoding
+  X-Content-Type-Options: nosniff
+
 # DocC data directory (symbol JSON)
 /data/*
   Cache-Control: public, max-age=300, must-revalidate

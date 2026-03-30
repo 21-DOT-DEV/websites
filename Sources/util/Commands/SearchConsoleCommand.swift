@@ -30,7 +30,7 @@ extension SearchConsoleCommand {
             abstract: "Submit a sitemap to Google Search Console"
         )
         
-        @Option(name: .long, help: "Target site identifier (21-dev, docs-21-dev, md-21-dev)")
+        @Option(name: .long, help: "Target site identifier (21-dev, docs-21-dev)")
         var site: String?
         
         @Option(name: .long, help: "Explicit sitemap URL (overrides --site)")
@@ -58,7 +58,7 @@ extension SearchConsoleCommand {
             
             // Validate site name if provided
             if let siteName = site, SiteName(rawValue: siteName) == nil {
-                throw ValidationError("Invalid site name: \(siteName). Valid values: 21-dev, docs-21-dev, md-21-dev")
+                throw ValidationError("Invalid site name: \(siteName). Valid values: 21-dev, docs-21-dev")
             }
         }
         

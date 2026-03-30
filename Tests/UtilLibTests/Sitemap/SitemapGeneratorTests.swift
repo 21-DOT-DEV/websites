@@ -120,12 +120,12 @@ struct PathToURLTests {
     @Test("pathToURL handles markdown files")
     func markdownFile() {
         let url = SitemapGenerator.pathToURL(
-            filePath: "Websites/md-21-dev/api/overview.md",
-            baseURL: "https://md.21.dev",
-            outputDirectory: "Websites/md-21-dev"
+            filePath: "Websites/docs-21-dev/data/documentation/p256k.md",
+            baseURL: "https://docs.21.dev",
+            outputDirectory: "Websites/docs-21-dev"
         )
         
-        #expect(url == "https://md.21.dev/api/overview.md")
+        #expect(url == "https://docs.21.dev/data/documentation/p256k.md")
     }
 }
 

@@ -14,14 +14,12 @@ import Foundation
 public enum SiteName: String, CaseIterable, Codable, Sendable {
     case dev21 = "21-dev"
     case docs21dev = "docs-21-dev"
-    case md21dev = "md-21-dev"
     
     /// The base URL for this site.
     public var baseURL: String {
         switch self {
         case .dev21: return "https://21.dev"
         case .docs21dev: return "https://docs.21.dev"
-        case .md21dev: return "https://md.21.dev"
         }
     }
     
@@ -100,14 +98,6 @@ public struct SiteConfiguration: Sendable {
                 baseURL: SiteName.docs21dev.baseURL,
                 outputDirectory: SiteName.docs21dev.outputDirectory,
                 urlDiscoveryStrategy: .htmlFiles(directory: "\(SiteName.docs21dev.outputDirectory)/documentation"),
-                lastmodStrategy: .packageVersionState
-            )
-        case .md21dev:
-            return SiteConfiguration(
-                name: .md21dev,
-                baseURL: SiteName.md21dev.baseURL,
-                outputDirectory: SiteName.md21dev.outputDirectory,
-                urlDiscoveryStrategy: .markdownFiles(directory: SiteName.md21dev.outputDirectory),
                 lastmodStrategy: .packageVersionState
             )
         }

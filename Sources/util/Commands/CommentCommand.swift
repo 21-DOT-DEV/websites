@@ -16,7 +16,7 @@ import UtilLib
 /// CLI command for posting unified PR deployment comments.
 ///
 /// Posts or updates a single unified comment on a GitHub PR that aggregates
-/// deployment information from multiple subdomains (21-dev, docs-21-dev, md-21-dev).
+/// deployment information from multiple subdomains (21-dev, docs-21-dev).
 ///
 /// **Usage:**
 /// ```
@@ -56,7 +56,7 @@ struct CommentCommand: AsyncParsableCommand {
     @Option(name: .long, help: "Pull request number")
     var pr: Int
     
-    @Option(name: .long, help: "Project name (21-dev, docs-21-dev, md-21-dev)")
+    @Option(name: .long, help: "Project name (21-dev, docs-21-dev)")
     var project: String
     
     @Option(name: .long, help: "Deployment status (success, failure, pending)")

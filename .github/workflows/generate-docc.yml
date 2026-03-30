@@ -111,6 +111,7 @@ jobs:
             generate-documentation \
             ${{ steps.build-targets.outputs.target-args }} \
             --enable-experimental-combined-documentation \
+            --enable-experimental-markdown-output \
             --transform-for-static-hosting \
             --experimental-transform-for-static-hosting-with-content \
             --source-service github \
@@ -146,6 +147,19 @@ jobs:
           
           echo "✅ Documentation output verified successfully"
           echo "📊 Documentation size: $(du -sh Websites/${project} | cut -f1)"
+      
+      - name: Verify markdown output
+        run: |
+          project="${{ inputs.project-name }}"
+          md_count=$(find "Websites/${project}" -name "*.md" | wc -l | tr -d ' ')
+          echo "📊 Markdown files found: ${md_count}"
+          
+          if [ "$md_count" -eq 0 ]; then
+            echo "❌ Error: No markdown files found — --enable-experimental-markdown-output may not be working"
+            exit 1
+          fi
+          
+          echo "✅ Markdown output verified (${md_count} files)"
           
       - name: Verify noscript content
         run: |
@@ -173,7 +187,7 @@ jobs:
           project="${{ inputs.project-name }}"
           echo "🗺️  Generating sitemap for ${project}..."
           
-          # Use util CLI to generate sitemap
+          # Use util CLI to generate sitemap (HTML documentation pages)
           swift run util sitemap generate --site "${project}" --verbose
           
           # Validate sitemap was generated and is not empty
@@ -185,11 +199,20 @@ jobs:
           
           url_count=$(grep -c "<loc>" "$sitemap_file" || echo "0")
           echo "📄 Sitemap location: ${sitemap_file}"
-          echo "📊 Total URLs: ${url_count}"
+          echo "📊 HTML URLs in sitemap: ${url_count}"
           
           if [ "$url_count" -eq 0 ]; then
             echo "❌ Error: Sitemap contains no URLs"
             exit 1
+          fi
+          
+          # Verify co-located markdown output (AI-discoverable via llms.txt, noindex for search)
+          md_count=$(find "Websites/${project}/data/documentation" -name "*.md" 2>/dev/null | wc -l | tr -d ' ')
+          echo "📊 Markdown files (AI-optimized): ${md_count}"
+          
+          if [ "$md_count" -eq 0 ]; then
+            echo "⚠️  Warning: No markdown files found under data/documentation/"
+            echo "   The --enable-experimental-markdown-output flag may not have produced output"
           fi
       
       - name: Copy static resources

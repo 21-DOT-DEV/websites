@@ -30,7 +30,7 @@ extension HeadersCommand {
             abstract: "Validate a Cloudflare _headers file"
         )
         
-        @Option(name: .long, help: "Target site identifier (21-dev, docs-21-dev, md-21-dev)")
+        @Option(name: .long, help: "Target site identifier (21-dev, docs-21-dev)")
         var site: String
         
         @Option(name: .long, help: "Environment (prod, dev)")
@@ -45,7 +45,7 @@ extension HeadersCommand {
         mutating func run() throws {
             // Parse site name
             guard let siteName = SiteName(rawValue: site) else {
-                throw ValidationError("Invalid site name: \(site). Valid values: 21-dev, docs-21-dev, md-21-dev")
+                throw ValidationError("Invalid site name: \(site). Valid values: 21-dev, docs-21-dev")
             }
             
             // Parse environment

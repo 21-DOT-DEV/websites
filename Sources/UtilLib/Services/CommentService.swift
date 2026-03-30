@@ -105,8 +105,6 @@ public enum CommentService {
             return "21.dev"
         case "docs-21-dev":
             return "docs.21.dev"
-        case "md-21-dev":
-            return "md.21.dev"
         default:
             // Generic conversion: replace hyphens with dots
             return project.replacingOccurrences(of: "-", with: ".")

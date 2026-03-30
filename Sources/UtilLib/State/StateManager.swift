@@ -96,8 +96,7 @@ public enum StateManager {
                 packageVersion: packageVersion,
                 generatedDate: now,
                 subdomains: [
-                    "docs-21-dev": SubdomainState(lastmod: now),
-                    "md-21-dev": SubdomainState(lastmod: now)
+                    "docs-21-dev": SubdomainState(lastmod: now)
                 ]
             )
             try write(state, to: path)

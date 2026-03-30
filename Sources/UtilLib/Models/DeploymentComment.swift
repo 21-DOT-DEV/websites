@@ -28,7 +28,7 @@ public enum DeploymentStatus: String, Codable, Equatable, Sendable {
 
 /// Represents a single subdomain deployment within a PR comment.
 public struct DeploymentEntry: Codable, Equatable, Sendable {
-    /// Project identifier (e.g., "21-dev", "docs-21-dev", "md-21-dev").
+    /// Project identifier (e.g., "21-dev", "docs-21-dev").
     public let project: String
     
     /// Deployment outcome status.

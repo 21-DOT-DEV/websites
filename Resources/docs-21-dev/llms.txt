@@ -1,30 +1,35 @@
 # docs.21.dev
 
-> Interactive API documentation for the swift-secp256k1 Swift package — DocC-generated reference with search, type hierarchies, and source links for the P256K and ZKP modules.
+> API documentation for the swift-secp256k1 Swift package — DocC-generated HTML reference with search and source links, plus LLM-optimized markdown files for the P256K and ZKP modules.
 
-This subdomain serves DocC-generated HTML documentation for the swift-secp256k1 package. The content is interactive and searchable, designed for human browsing in a web browser.
+This subdomain serves DocC-generated documentation for the swift-secp256k1 package. It includes both interactive HTML pages and co-located markdown files for LLM consumption.
 
 Things to know about this documentation:
 
-- Pages are rendered client-side by Swift-DocC-Render, a Vue.js single-page application that reads JSON data produced by Swift-DocC — there is no backend server
+- HTML pages are rendered client-side by Swift-DocC-Render, a Vue.js single-page application that reads JSON data produced by Swift-DocC — there is no backend server
 - Navigation uses DocC's standard sidebar with type hierarchies and symbol search
 - Source links in the DocC HTML point to exact line numbers in the GitHub repository
-- For LLM consumption, prefer md.21.dev which serves a markdown export of the same DocC archive without HTML/JS overhead
+- Markdown files are co-located at /data/documentation/*.md — plain CommonMark with no JavaScript, ideal for LLM consumption
+- Each markdown symbol file contains: type information, Swift declaration, abstract, overview, and related topics
 
-## Documentation
+## Documentation (HTML)
 
 - [Getting Started](https://docs.21.dev/documentation/p256k/gettingstarted): How to generate keys, create ECDSA and Schnorr signatures, and perform ECDH key agreement with swift-secp256k1
 - [P256K Module](https://docs.21.dev/documentation/p256k/): Elliptic curve cryptography — key generation, ECDSA signing, ECDH key agreement, public key recovery
 - [Context](https://docs.21.dev/documentation/p256k/p256k/context): secp256k1 context management and side-channel protection via base point blinding
 - [ZKP Module](https://docs.21.dev/documentation/zkp/): Zero-knowledge proofs — Pedersen commitments, range proofs, Schnorr signatures
 
+## Documentation (Markdown — LLM-optimized)
+
+- [P256K Module Overview](https://docs.21.dev/data/documentation/p256k.md): Elliptic curve cryptography — key generation, ECDSA signing, ECDH key agreement, public key recovery
+- [ZKP Module Overview](https://docs.21.dev/data/documentation/zkp.md): Zero-knowledge proofs — Pedersen commitments, range proofs, Schnorr signatures
+
 ## Example
 
-- [SharedSecret — this site](https://docs.21.dev/documentation/p256k/sharedsecret): Interactive DocC page (Vue.js SPA, requires JavaScript to render)
-- [SharedSecret — md.21.dev](https://md.21.dev/p256k/sharedsecret.md): Same symbol as plain markdown (LLM-readable without JavaScript)
+- [SharedSecret — HTML](https://docs.21.dev/documentation/p256k/sharedsecret): Interactive DocC page (Vue.js SPA, requires JavaScript to render)
+- [SharedSecret — Markdown](https://docs.21.dev/data/documentation/p256k/p256k/signing/sharedsecret.md): Same symbol as plain markdown (LLM-readable without JavaScript)
 
 ## Related
 
-- [md.21.dev llms.txt](https://md.21.dev/llms.txt): LLM-optimized markdown version of this documentation
 - [21.dev llms.txt](https://21.dev/llms.txt): Hub llms.txt with full project context and cross-subdomain links
 - [GitHub Repository](https://github.com/21-DOT-DEV/swift-secp256k1): Swift package source, issues, and releases

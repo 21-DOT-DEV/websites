@@ -30,7 +30,7 @@ extension SitemapCommand {
             abstract: "Generate sitemap.xml for a site"
         )
         
-        @Option(name: .long, help: "Target site identifier (21-dev, docs-21-dev, md-21-dev)")
+        @Option(name: .long, help: "Target site identifier (21-dev, docs-21-dev)")
         var site: String
         
         @Option(name: .long, help: "Input directory containing built site files (overrides default)")
@@ -48,7 +48,7 @@ extension SitemapCommand {
         mutating func run() async throws {
             // Parse site name
             guard let siteName = SiteName(rawValue: site) else {
-                throw ValidationError("Invalid site name: \(site). Valid values: 21-dev, docs-21-dev, md-21-dev")
+                throw ValidationError("Invalid site name: \(site). Valid values: 21-dev, docs-21-dev")
             }
             
             // Get configuration
@@ -56,13 +56,7 @@ extension SitemapCommand {
             
             // Override input directory if specified
             if let inputDir = input {
-                let strategy: URLDiscoveryStrategy
-                switch siteName {
-                case .dev21, .docs21dev:
-                    strategy = .htmlFiles(directory: inputDir)
-                case .md21dev:
-                    strategy = .markdownFiles(directory: inputDir)
-                }
+                let strategy: URLDiscoveryStrategy = .htmlFiles(directory: inputDir)
                 
                 config = SiteConfiguration(
                     name: siteName,
@@ -104,7 +98,7 @@ extension SitemapCommand {
             abstract: "Validate a sitemap.xml file"
         )
         
-        @Option(name: .long, help: "Target site identifier (21-dev, docs-21-dev, md-21-dev)")
+        @Option(name: .long, help: "Target site identifier (21-dev, docs-21-dev)")
         var site: String?
         
         @Option(name: .long, help: "Sitemap file path (overrides default)")
