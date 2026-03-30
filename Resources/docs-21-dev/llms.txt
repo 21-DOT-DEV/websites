@@ -13,7 +13,9 @@ Things to know about this documentation:
 
 ## Documentation
 
+- [Getting Started](https://docs.21.dev/documentation/p256k/gettingstarted): How to generate keys, create ECDSA and Schnorr signatures, and perform ECDH key agreement with swift-secp256k1
 - [P256K Module](https://docs.21.dev/documentation/p256k/): Elliptic curve cryptography — key generation, ECDSA signing, ECDH key agreement, public key recovery
+- [Context](https://docs.21.dev/documentation/p256k/p256k/context): secp256k1 context management and side-channel protection via base point blinding
 - [ZKP Module](https://docs.21.dev/documentation/zkp/): Zero-knowledge proofs — Pedersen commitments, range proofs, Schnorr signatures
 
 ## Example
