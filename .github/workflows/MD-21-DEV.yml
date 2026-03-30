@@ -29,7 +29,6 @@ jobs:
     uses: ./.github/workflows/generate-markdown.yml
     with:
       project-name: md-21-dev
-      ref: ${{ github.event.pull_request.head.sha || github.sha }}
       targets: "P256K ZKP"
   
   deploy:

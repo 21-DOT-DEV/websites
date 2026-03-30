@@ -16,7 +16,6 @@ let package = Package(
         .package(url: "https://github.com/21-DOT-DEV/swift-plugin-tailwindcss", exact: "3.4.17"),
         .package(url: "https://github.com/21-DOT-DEV/swift-secp256k1", exact: "0.23.0"),
         .package(url: "https://github.com/swiftlang/swift-docc-plugin", exact: "1.4.6"),
-        .package(url: "https://github.com/P24L/DocC4LLM.git", exact: "1.0.0"),
         .package(url: "https://github.com/swiftlang/swift-subprocess.git", exact: "0.2.1"),
         .package(url: "https://github.com/csjones/lefthook-plugin", exact: "2.0.4"),
         .package(url: "https://github.com/apple/swift-argument-parser", from: "1.5.0"),

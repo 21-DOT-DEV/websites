@@ -7,10 +7,6 @@ on:
         description: 'Documentation project name (e.g., md-21-dev)'
         required: true
         type: string
-      ref:
-        description: 'Git ref to checkout (branch, tag, or SHA)'
-        required: true
-        type: string
       targets:
         description: 'Space-separated list of targets to document (e.g., "P256K ZKP")'
         required: true
@@ -19,10 +15,13 @@ on:
       artifact-name:
         description: 'Name of the uploaded artifact containing markdown documentation'
         value: ${{ jobs.generate.outputs.artifact-name }}
+      version:
+        description: 'Extracted package version from Package.resolved'
+        value: ${{ jobs.generate.outputs.version }}
 
 jobs:
   generate:
-    name: Generate markdown docs
+    name: Generate Markdown Documentation
     runs-on: macos-26
     permissions:
       contents: read
@@ -30,12 +29,11 @@ jobs:
       DEVELOPER_DIR: "/Applications/Xcode_26.4.app/Contents/Developer"
     outputs:
       artifact-name: ${{ inputs.project-name }}
+      version: ${{ steps.extract-version.outputs.version }}
     
     steps:
       - name: Checkout repository
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-        with:
-          ref: ${{ inputs.ref }}
       
       - name: Resolve dependencies
         run: swift package resolve
@@ -84,7 +82,7 @@ jobs:
           
           echo "✅ Version match confirmed: $STATE_VERSION"
       
-      - name: Build target arguments for documentation generation
+      - name: Build target array for documentation generation
         id: build-targets
         run: |
           targets="${{ inputs.targets }}"
@@ -98,151 +96,43 @@ jobs:
           echo "📚 Target arguments: $target_args"
           echo "📚 Generating documentation for targets: ${{ inputs.targets }}"
       
-      - name: Create Archives directory
-        run: mkdir -p Archives
-      
-      - name: Generate DocC archive
+      - name: Generate documentation
         run: |
-          echo "🔨 Generating DocC archive..."
+          set -e
+          echo "� Generating markdown documentation for targets: ${{ inputs.targets }}"
+          echo "📦 Package version: ${{ env.SECP256K1_VERSION }}"
+          echo "📂 Output path: ./Websites/${{ inputs.project-name }}"
+          
+          # Ensure output directory exists
+          mkdir -p ./Websites/${{ inputs.project-name }}
+          
           swift package \
-            --allow-writing-to-package-directory \
-            --allow-writing-to-directory ./Archives \
+            --allow-writing-to-directory ./Websites/${{ inputs.project-name }} \
             generate-documentation \
             ${{ steps.build-targets.outputs.target-args }} \
-            --output-path ./Archives/${{ inputs.project-name }}.doccarchive \
-            --enable-experimental-combined-documentation
-          if [ $? -ne 0 ]; then
-            echo "❌ DocC generation failed"
-            exit 1
-          fi
+            --enable-experimental-combined-documentation \
+            --enable-experimental-markdown-output \
+            --output-path ./Websites/${{ inputs.project-name }}
           
-          # Verify archive was created
-          if [ ! -d "./Archives/${{ inputs.project-name }}.doccarchive" ]; then
-            echo "❌ Archive not found after generation"
-            ls -la Archives/ || echo "Archives directory is empty"
-            exit 1
-          fi
-          
-          echo "✅ DocC archive generated successfully"
-          ls -lh Archives/
+          echo "✅ Documentation generation complete"
       
-      - name: Export to markdown
+      - name: Verify markdown output
         run: |
-          echo "📝 Exporting DocC archive to markdown..."
+          project="${{ inputs.project-name }}"
+          echo "Checking markdown documentation output..."
+          ls -la Websites/${project}/
           
-          if ! swift run docc4llm export \
-            Archives/${{ inputs.project-name }}.doccarchive \
-            --format markdown \
-            --output ${{ inputs.project-name }}-concatenated.md; then
-            echo "❌ Markdown export failed"
+          # Verify markdown files exist
+          md_count=$(find "Websites/${project}" -name "*.md" | wc -l | tr -d ' ')
+          echo "📊 Markdown files found: ${md_count}"
+          
+          if [ "$md_count" -eq 0 ]; then
+            echo "❌ Error: No markdown files found in documentation output"
             exit 1
           fi
           
-          # Verify export output was created
-          if [ ! -f "${{ inputs.project-name }}-concatenated.md" ]; then
-            echo "❌ Exported markdown file not found"
-            ls -la
-            exit 1
-          fi
-          
-          echo "✅ Markdown export completed"
-          ls -lh ${{ inputs.project-name }}-concatenated.md
-      
-      - name: Validate delimiter format
-        run: |
-          START_COUNT=$(grep -c "^=== START FILE:" ${{ inputs.project-name }}-concatenated.md || true)
-          END_COUNT=$(grep -c "^=== END FILE ===$" ${{ inputs.project-name }}-concatenated.md || true)
-          
-          if [ "$START_COUNT" -eq 0 ] || [ "$END_COUNT" -eq 0 ]; then
-            echo "❌ Format validation failed"
-            echo "START markers: $START_COUNT"
-            echo "END markers: $END_COUNT"
-            echo "Expected: >0 for both"
-            exit 1
-          fi
-          
-          if [ "$START_COUNT" -ne "$END_COUNT" ]; then
-            echo "❌ Delimiter mismatch"
-            echo "START markers: $START_COUNT"
-            echo "END markers: $END_COUNT"
-            exit 1
-          fi
-          
-          echo "✓ Format validation passed (delimiters: $START_COUNT)"
-      
-      - name: Split markdown into individual files
-        run: |
-          mkdir -p Websites/${{ inputs.project-name }}
-          
-          awk '/=== START FILE: /{
-            gsub(/ ===$/, "", $4);
-            path=$4;
-            sub(/^data\/documentation\//, "", path);
-            sub(/\.[^.]+$/, ".md", path);
-            
-            # Filter logic - skip unwanted files
-            filename = path; sub(/.*\//, "", filename);
-            
-            # Skip protocol implementations and standard operators
-            if (filename ~ /-implementations\.md$|^(!=|==|~)\(|^hash\(into:|^hashvalue\.md$/) next;
-            
-            # Skip comparison and range operators
-            if (filename ~ /^_\(|^_=\(|^\x27\.\.\.|^compare\(_:_:\)\.md$/) next;
-            
-            # Skip standard initializers
-            if (filename ~ /^init\(\)\.md$|^init\(arrayliteral:|^init\(rawvalue:|^init\(from:/) next;
-            
-            # Skip collection/sequence methods
-            if (filename ~ /^(allsatisfy|compactmap|contains\(|count\(where|drop|elementsequal|enumerated|filter\(|first\(where|flatmap|foreach|formatted|lazy|lexicographically|makeiterator|map\(|max\(|min\(|prefix|publisher|reduce|reversed|sequence-|shuffled|sorted|split|starts|suffix|underestimated|withcontiguous)/) next;
-            
-            # Skip numeric utility methods
-            if (filename ~ /^(advanced|distance|stride|negate|signum|add|subtract|multiply|divide|remainder|quotient|leading|trailing|nonzero|bitwidth|byteswapped|magnitude\.md$|words\.md$|zero-|issigned|ismultiple)/) next;
-            
-            # Skip entire utility directories
-            if (path ~ /^(p256k|zkp)\/(foundation|swift\/simd|swift\/string|simdwrapper|simdwordsinteger|int128\/|int256\/|uint128\/|uint256\/)/) next;
-            
-            # Keep crypto-specific files
-            if (path ~ /sign|verify|signature|ecdsa|schnorr|recover|musig|keyagreement|sharedsecret|privatekey|publickey|xonlykey|nonce|sha256/) {
-              outpath="Websites/${{ inputs.project-name }}/"path;
-              system("mkdir -p \"$(dirname \""outpath"\")\"");
-              next;
-            }
-            
-            # Keep shallow files (main types)
-            depth = gsub(/\//, "/", path);
-            if (depth <= 2) {
-              outpath="Websites/${{ inputs.project-name }}/"path;
-              system("mkdir -p \"$(dirname \""outpath"\")\"");
-            }
-            next;
-          }
-          /=== END FILE ===/{
-            close(outpath);
-            outpath="";
-            next
-          }
-          outpath{
-            print > outpath
-          }' ${{ inputs.project-name }}-concatenated.md
-          
-          FILE_COUNT=$(find Websites/${{ inputs.project-name }} -type f -name "*.md" | wc -l)
-          echo "✓ File splitting complete (files: $FILE_COUNT)"
-      
-      - name: Monitor deployment size
-        run: |
-          FILE_COUNT=$(find Websites/${{ inputs.project-name }} -type f | wc -l)
-          SIZE_MB=$(du -sm Websites/${{ inputs.project-name }} | cut -f1)
-          
-          echo "Files: $FILE_COUNT"
-          echo "Size: ${SIZE_MB}MB"
-          
-          if [ "$FILE_COUNT" -gt 15000 ]; then
-            echo "::warning::Approaching file limit: $FILE_COUNT files (limit: 20,000)"
-          fi
-          
-          if [ "$SIZE_MB" -gt 20 ]; then
-            echo "::warning::Approaching size limit: ${SIZE_MB}MB (limit: 25MB)"
-          fi
+          echo "✅ Markdown output verified successfully"
+          echo "📊 Documentation size: $(du -sh Websites/${project} | cut -f1)"
       
       - name: Generate sitemap
         run: |

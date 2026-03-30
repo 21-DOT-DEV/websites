@@ -1,15 +1,6 @@
 {
-  "originHash" : "1981e32920b49a26dd3a49dc1507e68669d781a2d759dce2b347874bd9b4d825",
+  "originHash" : "bf64da8b9980bb16d93ddb77b2c15f04ffaac1f220b57b8d70c3c87bf8de57a3",
   "pins" : [
-    {
-      "identity" : "docc4llm",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/P24L/DocC4LLM.git",
-      "state" : {
-        "revision" : "7a50a1790055e8bbe56cd54cdb1d3be16f6d819e",
-        "version" : "1.0.0"
-      }
-    },
     {
       "identity" : "lefthook-plugin",
       "kind" : "remoteSourceControl",
