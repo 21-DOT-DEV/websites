@@ -34,5 +34,6 @@ Allow: /data/documentation/
 # Tell crawlers where to find your sitemap
 Sitemap: https://docs.21.dev/sitemap.xml
 
-# LLM discovery
+# LLM discovery (not standardized directives — discovery is by URL convention /llms.txt)
 LLMs: https://docs.21.dev/llms.txt
+LLMs-full: https://docs.21.dev/llms-full.txt

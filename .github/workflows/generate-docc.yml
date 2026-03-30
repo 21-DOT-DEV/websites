@@ -270,6 +270,101 @@ jobs:
             exit 1
           fi
       
+      - name: Stamp version in llms.txt
+        run: |
+          project="${{ inputs.project-name }}"
+          llms_file="Websites/${project}/llms.txt"
+          
+          # Only proceed if llms.txt exists (project-specific resource)
+          if [ ! -f "$llms_file" ]; then
+            echo "ℹ️  No llms.txt found for ${project}, skipping version stamp"
+            exit 0
+          fi
+          
+          # NOTE: sed -i '' is macOS-specific (macos-15 runner).
+          # GNU sed on Linux treats '' as a filename — use sed -i instead if migrating.
+          sed -i '' "s/{{VERSION}}/${{ env.SECP256K1_VERSION }}/g" "$llms_file"
+          
+          # Guard: fail if placeholder wasn't substituted (empty SECP256K1_VERSION)
+          if grep -q '{{VERSION}}' "$llms_file"; then
+            echo "❌ Version placeholder was not substituted in llms.txt"
+            exit 1
+          fi
+          
+          echo "✅ Version stamped: v${{ env.SECP256K1_VERSION }}"
+      
+      - name: Generate llms-full.txt
+        run: |
+          project="${{ inputs.project-name }}"
+          sitemap="Websites/${project}/sitemap.xml"
+          output="Websites/${project}/llms-full.txt"
+          
+          # Only proceed if sitemap exists
+          if [ ! -f "$sitemap" ]; then
+            echo "❌ sitemap.xml not found — cannot generate llms-full.txt"
+            exit 1
+          fi
+          
+          # Write header
+          {
+            echo "# docs.21.dev — Full Documentation Index"
+            echo ""
+            echo "> Complete list of all markdown documentation files for the swift-secp256k1 package."
+            echo "> This is the comprehensive companion to llms.txt. See https://docs.21.dev/llms.txt for the curated overview."
+            echo ""
+            echo "## All Documentation (Markdown)"
+            echo ""
+          } > "$output"
+          
+          # Extract .md URLs from sitemap, format as markdown links
+          # Labels are path-derived (e.g. p256k/p256k/signing/privatekey) — verbose but machine-readable
+          grep '<loc>.*\.md</loc>' "$sitemap" \
+            | sed 's|.*<loc>\(.*\)</loc>.*|\1|' \
+            | sort \
+            | while read -r url; do
+                path="${url#https://docs.21.dev/data/documentation/}"
+                path="${path%.md}"
+                echo "- [${path}](${url})"
+              done >> "$output"
+          
+          # Guard: fail if no entries generated (sitemap format changed or grep pattern broke)
+          md_count=$(grep -c '^\- \[' "$output" || true)
+          if [ "$md_count" -eq 0 ]; then
+            echo "❌ llms-full.txt has no entries — sitemap .md extraction failed"
+            exit 1
+          fi
+          
+          echo "📄 llms-full.txt generated with ${md_count} entries"
+      
+      - name: Validate llms.txt links
+        run: |
+          project="${{ inputs.project-name }}"
+          llms_file="Websites/${project}/llms.txt"
+          
+          # Only proceed if llms.txt exists
+          if [ ! -f "$llms_file" ]; then
+            echo "ℹ️  No llms.txt found for ${project}, skipping link validation"
+            exit 0
+          fi
+          
+          echo "🔍 Validating llms.txt links against build output..."
+          failed=0
+          
+          while read -r url; do
+            path="${url#https://docs.21.dev/}"
+            if [ ! -f "Websites/${project}/${path}" ]; then
+              echo "❌ Dead link in llms.txt: ${path}"
+              failed=$((failed + 1))
+            fi
+          done < <(grep -oE 'https://docs\.21\.dev/[^)]+\.md' "$llms_file")
+          
+          if [ "$failed" -gt 0 ]; then
+            echo "❌ ${failed} dead link(s) found in llms.txt"
+            exit 1
+          fi
+          
+          echo "✅ All llms.txt links verified against build output"
+      
       - name: Fix canonical URLs
         run: |
           project="${{ inputs.project-name }}"
