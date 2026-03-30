@@ -251,12 +251,6 @@ struct CommentStateTests {
               "status": "failure",
               "previewUrl": "https://b.pages.dev",
               "aliasUrl": "https://preview.docs.21.dev"
-            },
-            "md-21-dev": {
-              "project": "md-21-dev",
-              "status": "pending",
-              "previewUrl": "https://c.pages.dev",
-              "aliasUrl": "https://preview.md.21.dev"
             }
           },
           "commit": "xyz789",
@@ -268,9 +262,8 @@ struct CommentStateTests {
         let decoder = JSONDecoder()
         let state = try decoder.decode(CommentState.self, from: data)
         
-        #expect(state.deployments.count == 3)
+        #expect(state.deployments.count == 2)
         #expect(state.deployments["21-dev"]?.status == .success)
         #expect(state.deployments["docs-21-dev"]?.status == .failure)
-        #expect(state.deployments["md-21-dev"]?.status == .pending)
     }
 }

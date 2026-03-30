@@ -14,14 +14,12 @@ import Foundation
 public enum SiteName: String, CaseIterable, Codable, Sendable {
     case dev21 = "21-dev"
     case docs21dev = "docs-21-dev"
-    case md21dev = "md-21-dev"
     
     /// The base URL for this site.
     public var baseURL: String {
         switch self {
         case .dev21: return "https://21.dev"
         case .docs21dev: return "https://docs.21.dev"
-        case .md21dev: return "https://md.21.dev"
         }
     }
     
@@ -37,6 +35,8 @@ public enum URLDiscoveryStrategy: Sendable {
     case htmlFiles(directory: String)
     /// Scan for .md files in the specified directory
     case markdownFiles(directory: String)
+    /// Scan for .html files in one directory and .md files in another
+    case htmlAndMarkdownFiles(htmlDirectory: String, markdownDirectory: String)
     /// Use Slipstream's Sitemap dictionary (build-time tracking)
     case sitemapDictionary
 }
@@ -99,15 +99,10 @@ public struct SiteConfiguration: Sendable {
                 name: .docs21dev,
                 baseURL: SiteName.docs21dev.baseURL,
                 outputDirectory: SiteName.docs21dev.outputDirectory,
-                urlDiscoveryStrategy: .htmlFiles(directory: "\(SiteName.docs21dev.outputDirectory)/documentation"),
-                lastmodStrategy: .packageVersionState
-            )
-        case .md21dev:
-            return SiteConfiguration(
-                name: .md21dev,
-                baseURL: SiteName.md21dev.baseURL,
-                outputDirectory: SiteName.md21dev.outputDirectory,
-                urlDiscoveryStrategy: .markdownFiles(directory: SiteName.md21dev.outputDirectory),
+                urlDiscoveryStrategy: .htmlAndMarkdownFiles(
+                    htmlDirectory: "\(SiteName.docs21dev.outputDirectory)/documentation",
+                    markdownDirectory: "\(SiteName.docs21dev.outputDirectory)/data/documentation"
+                ),
                 lastmodStrategy: .packageVersionState
             )
         }

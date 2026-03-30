@@ -1,15 +1,6 @@
 {
-  "originHash" : "1d143662b6024a199eac0f1fce0c6a0d708905912fa75321051a3fa2b99be4b8",
+  "originHash" : "bf64da8b9980bb16d93ddb77b2c15f04ffaac1f220b57b8d70c3c87bf8de57a3",
   "pins" : [
-    {
-      "identity" : "docc4llm",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/P24L/DocC4LLM.git",
-      "state" : {
-        "revision" : "7a50a1790055e8bbe56cd54cdb1d3be16f6d819e",
-        "version" : "1.0.0"
-      }
-    },
     {
       "identity" : "lefthook-plugin",
       "kind" : "remoteSourceControl",
@@ -114,8 +105,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/21-DOT-DEV/swift-secp256k1",
       "state" : {
-        "revision" : "8c62aba8a3011c9bcea232e5ee007fb0b34a15e2",
-        "version" : "0.21.1"
+        "revision" : "21d46dd1d11737b77d15bd23468f989b24bc7f40",
+        "version" : "0.23.0"
       }
     },
     {

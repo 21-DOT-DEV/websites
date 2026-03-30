@@ -77,8 +77,6 @@ public enum SearchConsoleService {
             return "https://21.dev/sitemap.xml"
         case .docs21dev:
             return "https://docs.21.dev/sitemap.xml"
-        case .md21dev:
-            return "https://md.21.dev/sitemap.xml"
         }
     }
     

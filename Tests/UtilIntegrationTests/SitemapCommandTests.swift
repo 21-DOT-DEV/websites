@@ -94,7 +94,7 @@ struct SitemapCommandTests {
     
     @Test("util sitemap generate accepts all valid site names")
     func allSiteNames() async throws {
-        for siteName in ["21-dev", "docs-21-dev", "md-21-dev"] {
+        for siteName in ["21-dev", "docs-21-dev"] {
             let result = try await Subprocess.run(
                 .path(FilePath(".build/debug/util")),
                 arguments: ["sitemap", "generate", "--site", siteName, "--help"],

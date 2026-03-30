@@ -120,12 +120,12 @@ struct PathToURLTests {
     @Test("pathToURL handles markdown files")
     func markdownFile() {
         let url = SitemapGenerator.pathToURL(
-            filePath: "Websites/md-21-dev/api/overview.md",
-            baseURL: "https://md.21.dev",
-            outputDirectory: "Websites/md-21-dev"
+            filePath: "Websites/docs-21-dev/data/documentation/p256k.md",
+            baseURL: "https://docs.21.dev",
+            outputDirectory: "Websites/docs-21-dev"
         )
         
-        #expect(url == "https://md.21.dev/api/overview.md")
+        #expect(url == "https://docs.21.dev/data/documentation/p256k.md")
     }
 }
 
@@ -180,5 +180,35 @@ struct GenerationTests {
         
         #expect(sitemap.contains("<loc>https://21.dev/</loc>"))
         #expect(sitemap.contains("<loc>https://21.dev/about.html</loc>"))
+    }
+    
+    @Test("generate combines HTML and markdown files with htmlAndMarkdownFiles strategy")
+    func combinedHTMLAndMarkdown() async throws {
+        let tempDir = FileManager.default.temporaryDirectory
+            .appendingPathComponent("test-combined-\(UUID().uuidString)")
+        let htmlDir = tempDir.appendingPathComponent("documentation")
+        let mdDir = tempDir.appendingPathComponent("data/documentation")
+        try FileManager.default.createDirectory(at: htmlDir, withIntermediateDirectories: true)
+        try FileManager.default.createDirectory(at: mdDir, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: tempDir) }
+        
+        try "<!DOCTYPE html>".write(to: htmlDir.appendingPathComponent("index.html"), atomically: true, encoding: .utf8)
+        try "# P256K".write(to: mdDir.appendingPathComponent("p256k.md"), atomically: true, encoding: .utf8)
+        
+        let config = SiteConfiguration(
+            name: .docs21dev,
+            baseURL: "https://docs.21.dev",
+            outputDirectory: tempDir.path,
+            urlDiscoveryStrategy: .htmlAndMarkdownFiles(
+                htmlDirectory: htmlDir.path,
+                markdownDirectory: mdDir.path
+            ),
+            lastmodStrategy: .currentDate
+        )
+        
+        let sitemap = try await SitemapGenerator.generate(for: config)
+        
+        #expect(sitemap.contains("<loc>https://docs.21.dev/data/documentation/p256k.md</loc>"))
+        #expect(sitemap.contains("<loc>https://docs.21.dev/documentation/</loc>"))
     }
 }

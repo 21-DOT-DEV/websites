@@ -435,7 +435,7 @@ struct MergeDeploymentTests {
         #expect(state.deployments["21-dev"] == newEntry)
     }
     
-    @Test("mergeDeployment handles all three subdomains")
+    @Test("mergeDeployment handles multiple subdomains")
     func allThreeSubdomains() {
         var state = CommentState(
             deployments: [:],
@@ -445,18 +445,16 @@ struct MergeDeploymentTests {
         
         let entries = [
             DeploymentEntry(project: "21-dev", status: .success, previewUrl: "https://a.pages.dev", aliasUrl: "https://a.21.dev"),
-            DeploymentEntry(project: "docs-21-dev", status: .failure, previewUrl: "https://b.pages.dev", aliasUrl: "https://b.21.dev"),
-            DeploymentEntry(project: "md-21-dev", status: .pending, previewUrl: "https://c.pages.dev", aliasUrl: "https://c.21.dev")
+            DeploymentEntry(project: "docs-21-dev", status: .failure, previewUrl: "https://b.pages.dev", aliasUrl: "https://b.21.dev")
         ]
         
         for entry in entries {
             CommentService.mergeDeployment(entry, into: &state, newCommit: "xyz789")
         }
         
-        #expect(state.deployments.count == 3)
+        #expect(state.deployments.count == 2)
         #expect(state.deployments["21-dev"]?.status == .success)
         #expect(state.deployments["docs-21-dev"]?.status == .failure)
-        #expect(state.deployments["md-21-dev"]?.status == .pending)
     }
     
     @Test("mergeDeployment resets other subdomains when commit changes")

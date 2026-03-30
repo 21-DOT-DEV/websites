@@ -20,14 +20,12 @@ struct SiteNameTests {
     func rawValues() {
         #expect(SiteName.dev21.rawValue == "21-dev")
         #expect(SiteName.docs21dev.rawValue == "docs-21-dev")
-        #expect(SiteName.md21dev.rawValue == "md-21-dev")
     }
     
     @Test("SiteName can be initialized from raw value")
     func initFromRawValue() {
         #expect(SiteName(rawValue: "21-dev") == .dev21)
         #expect(SiteName(rawValue: "docs-21-dev") == .docs21dev)
-        #expect(SiteName(rawValue: "md-21-dev") == .md21dev)
         #expect(SiteName(rawValue: "invalid") == nil)
     }
     
@@ -37,7 +35,6 @@ struct SiteNameTests {
     func baseURLs() {
         #expect(SiteName.dev21.baseURL == "https://21.dev")
         #expect(SiteName.docs21dev.baseURL == "https://docs.21.dev")
-        #expect(SiteName.md21dev.baseURL == "https://md.21.dev")
     }
     
     // MARK: - Output Directory Tests
@@ -46,17 +43,15 @@ struct SiteNameTests {
     func outputDirectories() {
         #expect(SiteName.dev21.outputDirectory == "Websites/21-dev")
         #expect(SiteName.docs21dev.outputDirectory == "Websites/docs-21-dev")
-        #expect(SiteName.md21dev.outputDirectory == "Websites/md-21-dev")
     }
     
     // MARK: - CaseIterable Tests
     
-    @Test("SiteName allCases contains all three sites")
+    @Test("SiteName allCases contains all sites")
     func allCases() {
-        #expect(SiteName.allCases.count == 3)
+        #expect(SiteName.allCases.count == 2)
         #expect(SiteName.allCases.contains(.dev21))
         #expect(SiteName.allCases.contains(.docs21dev))
-        #expect(SiteName.allCases.contains(.md21dev))
     }
 }
 
@@ -75,11 +70,25 @@ struct URLDiscoveryStrategyTests {
     
     @Test("markdownFiles strategy stores directory path")
     func markdownFilesStrategy() {
-        let strategy = URLDiscoveryStrategy.markdownFiles(directory: "Websites/md-21-dev")
+        let strategy = URLDiscoveryStrategy.markdownFiles(directory: "Websites/example")
         if case .markdownFiles(let dir) = strategy {
-            #expect(dir == "Websites/md-21-dev")
+            #expect(dir == "Websites/example")
         } else {
             Issue.record("Expected markdownFiles strategy")
+        }
+    }
+    
+    @Test("htmlAndMarkdownFiles strategy stores both directory paths")
+    func htmlAndMarkdownFilesStrategy() {
+        let strategy = URLDiscoveryStrategy.htmlAndMarkdownFiles(
+            htmlDirectory: "Websites/docs-21-dev/documentation",
+            markdownDirectory: "Websites/docs-21-dev/data/documentation"
+        )
+        if case .htmlAndMarkdownFiles(let htmlDir, let mdDir) = strategy {
+            #expect(htmlDir == "Websites/docs-21-dev/documentation")
+            #expect(mdDir == "Websites/docs-21-dev/data/documentation")
+        } else {
+            Issue.record("Expected htmlAndMarkdownFiles strategy")
         }
     }
     
@@ -140,10 +149,11 @@ struct SiteConfigurationTests {
         #expect(config.baseURL == "https://docs.21.dev")
         #expect(config.outputDirectory == "Websites/docs-21-dev")
         
-        if case .htmlFiles = config.urlDiscoveryStrategy {
-            // Pass - docs uses HTML files from DocC
+        if case .htmlAndMarkdownFiles(let htmlDir, let mdDir) = config.urlDiscoveryStrategy {
+            #expect(htmlDir == "Websites/docs-21-dev/documentation")
+            #expect(mdDir == "Websites/docs-21-dev/data/documentation")
         } else {
-            Issue.record("Expected htmlFiles strategy for docs21dev")
+            Issue.record("Expected htmlAndMarkdownFiles strategy for docs21dev")
         }
         
         if case .packageVersionState = config.lastmodStrategy {
@@ -153,24 +163,4 @@ struct SiteConfigurationTests {
         }
     }
     
-    @Test("SiteConfiguration.for returns correct config for md21dev")
-    func configForMd21dev() {
-        let config = SiteConfiguration.for(.md21dev)
-        
-        #expect(config.name == .md21dev)
-        #expect(config.baseURL == "https://md.21.dev")
-        #expect(config.outputDirectory == "Websites/md-21-dev")
-        
-        if case .markdownFiles = config.urlDiscoveryStrategy {
-            // Pass - md uses markdown files
-        } else {
-            Issue.record("Expected markdownFiles strategy for md21dev")
-        }
-        
-        if case .packageVersionState = config.lastmodStrategy {
-            // Pass - md uses package version state
-        } else {
-            Issue.record("Expected packageVersionState strategy for md21dev")
-        }
-    }
 }

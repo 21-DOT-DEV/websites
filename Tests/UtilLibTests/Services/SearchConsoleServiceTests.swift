@@ -93,12 +93,6 @@ struct SitemapURLDerivationTests {
         #expect(url == "https://docs.21.dev/sitemap.xml")
     }
     
-    @Test("deriveSitemapURL for md-21-dev site")
-    func derivesMd21DevURL() {
-        let url = SearchConsoleService.deriveSitemapURL(for: .md21dev)
-        
-        #expect(url == "https://md.21.dev/sitemap.xml")
-    }
 }
 
 // MARK: - API Request Building Tests

@@ -1,6 +1,6 @@
 # 21.dev
 
-> Swift cryptography project hub for the swift-secp256k1 package — secp256k1 elliptic curve operations, ECDSA/Schnorr signatures, and zero-knowledge proofs. Documentation spans three subdomains; each has its own llms.txt with local context.
+> Swift cryptography project hub for the swift-secp256k1 package — secp256k1 elliptic curve operations, ECDSA/Schnorr signatures, and zero-knowledge proofs. Documentation spans two subdomains; each has its own llms.txt with local context.
 
 21.dev is the main site for the swift-secp256k1 open-source Swift package (`21-DOT-DEV/swift-secp256k1` on GitHub). The package provides two public modules built on the secp256k1 elliptic curve:
 
@@ -14,24 +14,19 @@ Things to know when working with this documentation:
 - Consumers should use only the public Swift APIs in P256K or ZKP, never the underlying C bindings (libsecp256k1, libsecp256k1_zkp) directly
 - Documentation auto-updates with package releases; the DocC HTML version (docs.21.dev) includes GitHub source links to exact line numbers
 
-Three documentation subdomains serve different audiences:
+Two subdomains serve documentation:
 
-- docs.21.dev — interactive DocC-generated HTML reference with search and type hierarchies (best for human browsing)
-- md.21.dev — markdown export of the same DocC archive as plain CommonMark, 2,500+ symbol files with no JavaScript (best for LLM consumption)
+- docs.21.dev — DocC-generated HTML reference with search and type hierarchies, plus co-located LLM-optimized markdown files at /data/documentation/*.md
 - 21.dev — this hub site with project pages and blog
 
 ## Docs
 
-- [docs.21.dev llms.txt](https://docs.21.dev/llms.txt): Local llms.txt for the interactive documentation subdomain
-- [md.21.dev llms.txt](https://md.21.dev/llms.txt): Local llms.txt for the LLM-optimized markdown subdomain
-- [Root Documentation Index](https://md.21.dev/): Entry point explaining structure, file organization, and navigation patterns
+- [docs.21.dev llms.txt](https://docs.21.dev/llms.txt): Local llms.txt for the documentation subdomain (HTML + markdown)
 
-## API Reference
+## API Reference (Markdown — LLM-optimized)
 
-- [P256K Module Overview](https://md.21.dev/p256k.md): Elliptic curve cryptography — key generation, ECDSA signing, ECDH key agreement, public key recovery
-- [ZKP Module Overview](https://md.21.dev/zkp.md): Zero-knowledge proofs — Pedersen commitments, range proofs, Schnorr signatures
-- [All P256K Symbols](https://md.21.dev/p256k/): ~1,285 symbol files following the pattern /p256k/{symbol-name}.md
-- [All ZKP Symbols](https://md.21.dev/zkp/): ~1,285 symbol files following the pattern /zkp/{symbol-name}.md
+- [P256K Module Overview](https://docs.21.dev/data/documentation/p256k.md): Elliptic curve cryptography — key generation, ECDSA signing, ECDH key agreement, public key recovery
+- [ZKP Module Overview](https://docs.21.dev/data/documentation/zkp.md): Zero-knowledge proofs — Pedersen commitments, range proofs, Schnorr signatures
 
 ## Source Code
 
@@ -47,7 +42,7 @@ Three documentation subdomains serve different audiences:
 
 ## Optional
 
-- [Example Symbol — Markdown](https://md.21.dev/p256k/sharedsecret.md): Sample documentation format used across all 2,500+ symbol files (plain text, LLM-readable)
+- [Example Symbol — Markdown](https://docs.21.dev/data/documentation/p256k/p256k/signing/sharedsecret.md): Sample documentation format (plain text, LLM-readable)
 - [Example Symbol — HTML](https://docs.21.dev/documentation/p256k/sharedsecret): Same symbol as interactive DocC page (Vue.js SPA, requires JavaScript to render)
 - [P256K Interactive Docs](https://docs.21.dev/documentation/p256k/): DocC HTML reference with search and type hierarchy
 - [ZKP Interactive Docs](https://docs.21.dev/documentation/zkp/): DocC HTML reference with search and type hierarchy

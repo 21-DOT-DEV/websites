@@ -73,7 +73,7 @@ struct HeadersCommandTests {
     
     @Test("util headers validate accepts all valid site names")
     func allSiteNames() async throws {
-        for siteName in ["21-dev", "docs-21-dev", "md-21-dev"] {
+        for siteName in ["21-dev", "docs-21-dev"] {
             let result = try await Subprocess.run(
                 .path(FilePath(".build/arm64-apple-macosx/debug/util")),
                 arguments: ["headers", "validate", "--site", siteName, "--env", "prod", "--help"],

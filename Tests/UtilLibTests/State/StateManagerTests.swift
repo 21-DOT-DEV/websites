@@ -36,12 +36,11 @@ struct StateFileTests {
             packageVersion: "1.2.3",
             generatedDate: date,
             subdomains: [
-                "docs-21-dev": SubdomainState(lastmod: date),
-                "md-21-dev": SubdomainState(lastmod: date)
+                "docs-21-dev": SubdomainState(lastmod: date)
             ]
         )
         
-        #expect(state.subdomains.count == 2)
+        #expect(state.subdomains.count == 1)
         #expect(state.subdomains["docs-21-dev"]?.lastmod == date)
     }
     
