@@ -32,6 +32,7 @@
   Cache-Control: public, max-age=300, must-revalidate
   Vary: Accept-Encoding
   X-Content-Type-Options: nosniff
+  X-Robots-Tag: noindex
 
 # DocC data directory (symbol JSON)
 /data/*
