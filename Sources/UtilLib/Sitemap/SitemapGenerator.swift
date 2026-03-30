@@ -137,17 +137,22 @@ public enum SitemapGenerator {
     /// - Returns: The complete sitemap XML as a string
     /// - Throws: `SitemapError` if generation fails
     public static func generate(for config: SiteConfiguration) async throws -> String {
-        // Discover files based on strategy
-        let files: [String]
-        let directory: String
+        // Discover files based on strategy — collect full paths
+        let fullPaths: [String]
         
         switch config.urlDiscoveryStrategy {
         case .htmlFiles(let dir):
-            directory = dir
-            files = try discoverHTMLFiles(in: dir)
+            fullPaths = try discoverHTMLFiles(in: dir)
+                .map { dir.hasSuffix("/") ? dir + $0 : dir + "/" + $0 }
         case .markdownFiles(let dir):
-            directory = dir
-            files = try discoverMarkdownFiles(in: dir)
+            fullPaths = try discoverMarkdownFiles(in: dir)
+                .map { dir.hasSuffix("/") ? dir + $0 : dir + "/" + $0 }
+        case .htmlAndMarkdownFiles(let htmlDir, let mdDir):
+            let htmlPaths = try discoverHTMLFiles(in: htmlDir)
+                .map { htmlDir.hasSuffix("/") ? htmlDir + $0 : htmlDir + "/" + $0 }
+            let mdPaths = try discoverMarkdownFiles(in: mdDir)
+                .map { mdDir.hasSuffix("/") ? mdDir + $0 : mdDir + "/" + $0 }
+            fullPaths = (htmlPaths + mdPaths).sorted()
         case .sitemapDictionary:
             // This strategy is handled at the call site (Slipstream integration)
             throw SitemapError.discoveryFailed("sitemapDictionary strategy must be handled by caller")
@@ -156,8 +161,7 @@ public enum SitemapGenerator {
         // Generate entries
         var entries: [SitemapEntry] = []
         
-        for file in files {
-            let fullPath = directory.hasSuffix("/") ? directory + file : directory + "/" + file
+        for fullPath in fullPaths {
             let url = pathToURL(filePath: fullPath, baseURL: config.baseURL, outputDirectory: config.outputDirectory)
             
             let lastmod: Date

@@ -78,6 +78,20 @@ struct URLDiscoveryStrategyTests {
         }
     }
     
+    @Test("htmlAndMarkdownFiles strategy stores both directory paths")
+    func htmlAndMarkdownFilesStrategy() {
+        let strategy = URLDiscoveryStrategy.htmlAndMarkdownFiles(
+            htmlDirectory: "Websites/docs-21-dev/documentation",
+            markdownDirectory: "Websites/docs-21-dev/data/documentation"
+        )
+        if case .htmlAndMarkdownFiles(let htmlDir, let mdDir) = strategy {
+            #expect(htmlDir == "Websites/docs-21-dev/documentation")
+            #expect(mdDir == "Websites/docs-21-dev/data/documentation")
+        } else {
+            Issue.record("Expected htmlAndMarkdownFiles strategy")
+        }
+    }
+    
     @Test("sitemapDictionary strategy exists")
     func sitemapDictionaryStrategy() {
         let strategy = URLDiscoveryStrategy.sitemapDictionary
@@ -135,10 +149,11 @@ struct SiteConfigurationTests {
         #expect(config.baseURL == "https://docs.21.dev")
         #expect(config.outputDirectory == "Websites/docs-21-dev")
         
-        if case .htmlFiles = config.urlDiscoveryStrategy {
-            // Pass - docs uses HTML files from DocC
+        if case .htmlAndMarkdownFiles(let htmlDir, let mdDir) = config.urlDiscoveryStrategy {
+            #expect(htmlDir == "Websites/docs-21-dev/documentation")
+            #expect(mdDir == "Websites/docs-21-dev/data/documentation")
         } else {
-            Issue.record("Expected htmlFiles strategy for docs21dev")
+            Issue.record("Expected htmlAndMarkdownFiles strategy for docs21dev")
         }
         
         if case .packageVersionState = config.lastmodStrategy {
