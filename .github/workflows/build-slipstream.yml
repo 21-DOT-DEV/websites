@@ -92,7 +92,6 @@ jobs:
             "Websites/${website}/_headers"
             "Websites/${website}/_routes.json"
             "Websites/${website}/_redirects"
-            "Websites/${website}/functions/_middleware.js"
             "Websites/${website}/static/style.css"
             "Websites/${website}/sitemap.xml"
           )

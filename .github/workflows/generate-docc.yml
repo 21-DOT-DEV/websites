@@ -245,8 +245,8 @@ jobs:
             file_count=0
             for item in "${resources_dir}"/*; do
               name="$(basename "$item")"
-              # Skip _headers files (already handled above)
-              if [[ "$name" == _headers* ]]; then
+              # Skip _headers files (already handled above) and functions/ (deployed as sibling)
+              if [[ "$name" == _headers* ]] || [[ "$name" == "functions" ]]; then
                 continue
               fi
               if [ -d "$item" ]; then
@@ -274,7 +274,6 @@ jobs:
             "${output_dir}/_headers"
             "${output_dir}/_routes.json"
             "${output_dir}/_redirects"
-            "${output_dir}/functions/_middleware.js"
           )
           
           missing=()

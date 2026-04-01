@@ -25,7 +25,8 @@ struct SiteGenerator {
         "_headers.prod",       // Prod headers (renamed to _headers during copy)
         "blog",                // Blog content (processed separately by BlogService)
         "packages",            // Package content (processed separately)
-        "static"               // CSS build artifacts (Tailwind input/output)
+        "static",              // CSS build artifacts (Tailwind input/output)
+        "functions"            // Cloudflare Pages Functions (deployed as sibling, not inside output)
     ]
     
     /// Generate sitemap XML file from the sitemap dictionary
