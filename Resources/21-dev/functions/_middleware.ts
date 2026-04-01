@@ -2,7 +2,7 @@ export async function onRequest(context: EventContext<unknown, string, unknown>)
   const url = new URL(context.request.url);
 
   // Redirect pages.dev traffic to custom domain
-  if (url.hostname.endsWith("pages.dev")) {
+  if (url.hostname === "21-dev.pages.dev") {
     url.hostname = "21.dev";
     url.port = "";
     return new Response(null, {
