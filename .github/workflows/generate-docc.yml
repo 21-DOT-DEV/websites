@@ -274,7 +274,7 @@ jobs:
             "${output_dir}/_headers"
             "${output_dir}/_routes.json"
             "${output_dir}/_redirects"
-            "${output_dir}/functions/_middleware.ts"
+            "${output_dir}/functions/_middleware.js"
           )
           
           missing=()

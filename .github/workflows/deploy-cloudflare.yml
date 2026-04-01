@@ -94,7 +94,7 @@ jobs:
             2>&1)
           echo "$deploy_output"
           
-          deployment_url=$(echo "$deploy_output" | grep -oE 'https://[a-zA-Z0-9._-]+\.pages\.dev' | tail -1)
+          deployment_url=$(echo "$deploy_output" | grep -oE 'https://[a-zA-Z0-9._-]+\.pages\.dev' | head -1)
           if [ -z "$deployment_url" ]; then
             echo "::error::Failed to extract deployment URL from wrangler output"
             exit 1
