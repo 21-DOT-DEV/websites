@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "description": "Route config for docs.21.dev — only invoke middleware for HTML pages",
+  "description": "Route config for 21.dev — only invoke middleware for HTML pages",
   "include": ["/*"],
   "exclude": [
     "/svg/*",
