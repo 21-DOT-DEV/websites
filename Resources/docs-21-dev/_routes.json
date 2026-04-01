@@ -1,0 +1,23 @@
+{
+  "version": 1,
+  "description": "Route config for docs.21.dev — only invoke middleware for HTML pages",
+  "include": ["/*"],
+  "exclude": [
+    "/js/*",
+    "/css/*",
+    "/data/*",
+    "/index/*",
+    "/favicon.ico",
+    "/robots.txt",
+    "/sitemap.xml",
+    "/*.css",
+    "/*.js",
+    "/*.png",
+    "/*.jpg",
+    "/*.svg",
+    "/*.woff2",
+    "/*.woff",
+    "/*.ico",
+    "/*.json"
+  ]
+}
