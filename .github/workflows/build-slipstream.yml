@@ -90,6 +90,8 @@ jobs:
           declare -a required_files=(
             "Websites/${website}/index.html"
             "Websites/${website}/_headers"
+            "Websites/${website}/_routes.json"
+            "Websites/${website}/_redirects"
             "Websites/${website}/static/style.css"
             "Websites/${website}/sitemap.xml"
           )

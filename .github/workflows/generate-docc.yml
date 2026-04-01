@@ -243,14 +243,18 @@ jobs:
           # Copy other static resources (excluding _headers variants)
           if [ -d "${resources_dir}" ]; then
             file_count=0
-            for file in "${resources_dir}"/*; do
-              if [ -f "$file" ]; then
-                name="$(basename "$file")"
-                # Skip _headers files (already handled above)
-                if [[ "$name" == _headers* ]]; then
-                  continue
-                fi
-                cp "$file" "${output_dir}/"
+            for item in "${resources_dir}"/*; do
+              name="$(basename "$item")"
+              # Skip _headers files (already handled above) and functions/ (deployed as sibling)
+              if [[ "$name" == _headers* ]] || [[ "$name" == "functions" ]]; then
+                continue
+              fi
+              if [ -d "$item" ]; then
+                cp -R "$item" "${output_dir}/"
+                echo "✅ Copied $name/"
+                ((file_count++))
+              elif [ -f "$item" ]; then
+                cp "$item" "${output_dir}/"
                 echo "✅ Copied $name"
                 ((file_count++))
               fi
@@ -265,10 +269,26 @@ jobs:
             echo "⚠️  Resources directory not found: ${resources_dir}"
           fi
 
-          if [ ! -f "${output_dir}/_headers" ]; then
-            echo "❌ Error: _headers file not present in ${output_dir}"
+          # Verify Cloudflare platform files are present
+          declare -a platform_files=(
+            "${output_dir}/_headers"
+            "${output_dir}/_routes.json"
+            "${output_dir}/_redirects"
+          )
+          
+          missing=()
+          for path in "${platform_files[@]}"; do
+            if [ ! -f "$path" ]; then
+              missing+=("$path")
+            fi
+          done
+          
+          if [ ${#missing[@]} -gt 0 ]; then
+            echo "❌ Error: Missing Cloudflare platform files:"
+            printf ' - %s\n' "${missing[@]}"
             exit 1
           fi
+          echo "✅ All Cloudflare platform files present"
       
       - name: Stamp version in llms.txt
         run: |

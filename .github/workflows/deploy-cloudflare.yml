@@ -81,6 +81,25 @@ jobs:
       - name: Install wrangler
         run: npm install -g wrangler@3
       
+      - name: Copy Functions to repo root
+        run: |
+          functions_src="Resources/${{ inputs.project-name }}/functions"
+          
+          if [ ! -d "$functions_src" ]; then
+            echo "❌ Error: Functions directory not found: $functions_src"
+            exit 1
+          fi
+          
+          # Wrangler expects functions/ as a sibling of the deploy directory
+          cp -R "$functions_src" ./functions
+          echo "✅ Copied $functions_src → ./functions/"
+          
+          if [ ! -f "./functions/_middleware.ts" ]; then
+            echo "❌ Error: _middleware.ts not found in ./functions/"
+            exit 1
+          fi
+          echo "✅ _middleware.ts present"
+      
       - name: Deploy to Cloudflare Pages
         id: cloudflare
         env:
@@ -94,7 +113,7 @@ jobs:
             2>&1)
           echo "$deploy_output"
           
-          deployment_url=$(echo "$deploy_output" | grep -oE 'https://[a-zA-Z0-9._-]+\.pages\.dev' | tail -1)
+          deployment_url=$(echo "$deploy_output" | grep -oE 'https://[a-zA-Z0-9._-]+\.pages\.dev' | head -1)
           if [ -z "$deployment_url" ]; then
             echo "::error::Failed to extract deployment URL from wrangler output"
             exit 1
