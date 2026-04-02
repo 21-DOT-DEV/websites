@@ -96,13 +96,14 @@ public enum AgentDirectiveInjector {
     ) throws -> String {
         let globalLlms = baseURL.appendingPathComponent("llms.txt").absoluteString
 
-        let moduleLlms: String
+        let partOf: WebSiteSchema
         if let module {
-            moduleLlms = baseURL
+            let moduleLlms = baseURL
                 .appendingPathComponent("data/documentation/\(module)/llms.txt")
                 .absoluteString
+            partOf = WebSiteSchema(name: "\(module.uppercased()) Module", url: moduleLlms)
         } else {
-            moduleLlms = globalLlms
+            partOf = WebSiteSchema(name: baseURL.host, url: baseURL.absoluteString)
         }
 
         let encoding: MediaObjectSchema? = markdownURL.map {
@@ -113,11 +114,9 @@ public enum AgentDirectiveInjector {
             )
         }
 
-        let moduleName: String? = module.map { "\($0.uppercased()) Module" }
-
         let schema = AgentDirectiveWebPage(
             encoding: encoding,
-            isPartOf: WebSiteSchema(name: moduleName, url: moduleLlms),
+            isPartOf: partOf,
             mainEntity: WebSiteSchema(url: globalLlms)
         )
 

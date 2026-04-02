@@ -109,7 +109,7 @@ struct AgentDirectiveTests {
         #expect(directive.contains("P256K Module"))
     }
 
-    @Test("Builds JSON-LD directive without module falls back to root llms.txt")
+    @Test("Builds JSON-LD directive without module uses site as isPartOf")
     func buildDirectiveWithoutModule() throws {
         let markdownURL = URL(string: "https://docs.21.dev/data/documentation/overview.md")!
         let directive = try AgentDirectiveInjector.buildDirective(
@@ -118,10 +118,11 @@ struct AgentDirectiveTests {
             baseURL: baseURL
         )
 
-        // Both isPartOf and mainEntity should point to root llms.txt
-        let llmsCount = directive.components(separatedBy: "llms.txt").count - 1
-        #expect(llmsCount >= 2)
-        // No module name when module is nil
+        // mainEntity points to root llms.txt
+        #expect(directive.contains("llms.txt"))
+        // isPartOf points to the site itself, not llms.txt
+        #expect(directive.contains("docs.21.dev"))
+        // No "Module" label when module is nil
         #expect(!directive.contains("Module"))
     }
 
