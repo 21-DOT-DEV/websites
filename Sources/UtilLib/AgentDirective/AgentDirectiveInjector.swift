@@ -58,12 +58,17 @@ public enum AgentDirectiveInjector {
     /// Extracts the module name from a documentation-relative path.
     ///
     /// `documentation/p256k/p256k/context/index.html` → `p256k`
+    /// `documentation/index.html` → `nil` (no module)
+    ///
+    /// Requires at least three path components (`documentation/{module}/{…}`)
+    /// so that top-level pages like `documentation/index.html` correctly
+    /// return `nil` instead of treating the filename as a module name.
     ///
     /// - Parameter relativePath: File path relative to the output directory
-    /// - Returns: The module name, or `nil` if not under `documentation/`
+    /// - Returns: The module name, or `nil` if not under a module subdirectory
     public static func extractModule(from relativePath: String) -> String? {
         let components = relativePath.split(separator: "/")
-        guard components.count >= 2, components[0] == "documentation" else {
+        guard components.count >= 3, components[0] == "documentation" else {
             return nil
         }
         return String(components[1])
@@ -103,13 +108,16 @@ public enum AgentDirectiveInjector {
         let encoding: MediaObjectSchema? = markdownURL.map {
             MediaObjectSchema(
                 contentUrl: $0.absoluteString,
-                encodingFormat: "text/markdown"
+                encodingFormat: "text/markdown",
+                description: "Markdown version of this page"
             )
         }
 
+        let moduleName: String? = module.map { "\($0.uppercased()) Module" }
+
         let schema = AgentDirectiveWebPage(
             encoding: encoding,
-            isPartOf: WebSiteSchema(url: moduleLlms),
+            isPartOf: WebSiteSchema(name: moduleName, url: moduleLlms),
             mainEntity: WebSiteSchema(url: globalLlms)
         )
 

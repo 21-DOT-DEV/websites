@@ -73,6 +73,12 @@ struct AgentDirectiveTests {
         #expect(module == "zkp")
     }
 
+    @Test("Returns nil for top-level documentation page")
+    func extractModuleTopLevel() {
+        let module = AgentDirectiveInjector.extractModule(from: "documentation/index.html")
+        #expect(module == nil)
+    }
+
     @Test("Returns nil for non-documentation path")
     func extractModuleNonDoc() {
         let module = AgentDirectiveInjector.extractModule(from: "tutorials/index.html")
@@ -98,6 +104,9 @@ struct AgentDirectiveTests {
         #expect(directive.contains("llms.txt"))
         #expect(directive.contains("schema.org"))
         #expect(directive.contains("WebPage"))
+        // New descriptive fields
+        #expect(directive.contains("Markdown version of this page"))
+        #expect(directive.contains("P256K Module"))
     }
 
     @Test("Builds JSON-LD directive without module falls back to root llms.txt")
@@ -112,6 +121,8 @@ struct AgentDirectiveTests {
         // Both isPartOf and mainEntity should point to root llms.txt
         let llmsCount = directive.components(separatedBy: "llms.txt").count - 1
         #expect(llmsCount >= 2)
+        // No module name when module is nil
+        #expect(!directive.contains("Module"))
     }
 
     @Test("Builds fallback directive when markdownURL is nil")
@@ -127,10 +138,12 @@ struct AgentDirectiveTests {
         // Should NOT contain encoding/MediaObject
         #expect(!directive.contains("MediaObject"))
         #expect(!directive.contains("encodingFormat"))
-        // Should still point to llms.txt
+        #expect(!directive.contains("Markdown version"))
+        // Should still point to llms.txt with module name
         #expect(directive.contains("llms.txt"))
         #expect(directive.contains("isPartOf"))
         #expect(directive.contains("WebPage"))
+        #expect(directive.contains("P256K Module"))
     }
 
     // MARK: - inject

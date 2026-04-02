@@ -18,19 +18,23 @@ public struct MediaObjectSchema: Schema {
     private let type = "MediaObject"
     public let contentUrl: String
     public let encodingFormat: String
+    public let description: String?
     
     /// Creates a MediaObject schema.
     /// - Parameters:
     ///   - contentUrl: URL of the media content
     ///   - encodingFormat: MIME type (e.g., `text/markdown`)
-    public init(contentUrl: String, encodingFormat: String) {
+    ///   - description: Human-readable description of this media object
+    public init(contentUrl: String, encodingFormat: String, description: String? = nil) {
         self.contentUrl = contentUrl
         self.encodingFormat = encodingFormat
+        self.description = description
     }
     
     enum CodingKeys: String, CodingKey {
         case type = "@type"
         case contentUrl
+        case description
         case encodingFormat
     }
     
@@ -38,6 +42,7 @@ public struct MediaObjectSchema: Schema {
         var container = encoder.container(keyedBy: CodingKeys.self)
         try container.encode(type, forKey: .type)
         try container.encode(contentUrl, forKey: .contentUrl)
+        try container.encodeIfPresent(description, forKey: .description)
         try container.encode(encodingFormat, forKey: .encodingFormat)
     }
 }
