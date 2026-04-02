@@ -120,51 +120,24 @@ public enum CanonicalChecker {
         at directoryPath: String,
         baseURL: URL
     ) throws -> CheckReport {
-        let fileManager = FileManager.default
-        // Resolve symlinks to get consistent paths (e.g., /tmp -> /private/tmp on macOS)
-        let resolvedDirPath = URL(fileURLWithPath: directoryPath).resolvingSymlinksInPath().path
-        let directoryURL = URL(fileURLWithPath: resolvedDirPath)
-        
+        let entries = try HTMLFileWalker.findHTMLFiles(in: directoryPath)
         var results: [CanonicalResult] = []
         
-        // Get all HTML files recursively
-        guard let enumerator = fileManager.enumerator(
-            at: directoryURL,
-            includingPropertiesForKeys: [.isRegularFileKey],
-            options: [.skipsHiddenFiles]
-        ) else {
-            throw CanonicalCheckerError.cannotEnumerateDirectory(directoryPath)
-        }
-        
-        // Normalize directory path for relative path calculation
-        let normalizedDirPath = resolvedDirPath.hasSuffix("/") 
-            ? resolvedDirPath 
-            : resolvedDirPath + "/"
-        
-        for case let fileURL as URL in enumerator {
-            // Only process .html files
-            guard fileURL.pathExtension.lowercased() == "html" else {
-                continue
-            }
-            
-            let filePath = fileURL.resolvingSymlinksInPath().path
-            let relativePath = String(filePath.dropFirst(normalizedDirPath.count))
-            
+        for entry in entries {
             do {
-                let html = try String(contentsOf: fileURL, encoding: .utf8)
+                let html = try String(contentsOfFile: entry.absolutePath, encoding: .utf8)
                 let result = try checkHTML(
                     html: html,
-                    filePath: filePath,
-                    relativePath: relativePath,
+                    filePath: entry.absolutePath,
+                    relativePath: entry.relativePath,
                     baseURL: baseURL
                 )
                 results.append(result)
             } catch {
-                // File read error
-                let expectedURL = CanonicalURLDeriver.deriveURL(baseURL: baseURL, relativePath: relativePath)
+                let expectedURL = CanonicalURLDeriver.deriveURL(baseURL: baseURL, relativePath: entry.relativePath)
                 results.append(CanonicalResult(
-                    filePath: filePath,
-                    relativePath: relativePath,
+                    filePath: entry.absolutePath,
+                    relativePath: entry.relativePath,
                     status: .error,
                     existingURL: nil,
                     expectedURL: expectedURL,
@@ -178,17 +151,5 @@ public enum CanonicalChecker {
             baseURL: baseURL,
             scanDirectory: directoryPath
         )
-    }
-}
-
-/// Errors that can occur during canonical checking.
-public enum CanonicalCheckerError: Error, LocalizedError {
-    case cannotEnumerateDirectory(String)
-    
-    public var errorDescription: String? {
-        switch self {
-        case .cannotEnumerateDirectory(let path):
-            return "Cannot enumerate directory: \(path)"
-        }
     }
 }

@@ -11,6 +11,7 @@
 import Testing
 import Foundation
 @testable import DesignSystem
+import SchemaLib
 import Slipstream
 import TestUtils
 

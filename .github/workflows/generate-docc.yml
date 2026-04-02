@@ -290,34 +290,36 @@ jobs:
           fi
           echo "✅ All Cloudflare platform files present"
       
-      - name: Stamp version in llms.txt
+      - name: Stamp version in llms.txt files
         run: |
           project="${{ inputs.project-name }}"
-          llms_file="Websites/${project}/llms.txt"
           
-          # Only proceed if llms.txt exists (project-specific resource)
-          if [ ! -f "$llms_file" ]; then
-            echo "ℹ️  No llms.txt found for ${project}, skipping version stamp"
-            exit 0
+          # Find all llms.txt files (root + per-module)
+          stamped=0
+          while IFS= read -r llms_file; do
+            # NOTE: sed -i '' is macOS-specific (macos-15 runner).
+            # GNU sed on Linux treats '' as a filename — use sed -i instead if migrating.
+            sed -i '' "s/{{VERSION}}/${{ env.SECP256K1_VERSION }}/g" "$llms_file"
+            
+            # Guard: fail if placeholder wasn't substituted (empty SECP256K1_VERSION)
+            if grep -q '{{VERSION}}' "$llms_file"; then
+              echo "❌ Version placeholder was not substituted in ${llms_file}"
+              exit 1
+            fi
+            stamped=$((stamped + 1))
+            echo "  ✅ ${llms_file}"
+          done < <(find "Websites/${project}" -name "llms.txt" -type f)
+          
+          if [ "$stamped" -eq 0 ]; then
+            echo "ℹ️  No llms.txt files found for ${project}, skipping version stamp"
+          else
+            echo "✅ Version stamped in ${stamped} file(s): v${{ env.SECP256K1_VERSION }}"
           fi
-          
-          # NOTE: sed -i '' is macOS-specific (macos-15 runner).
-          # GNU sed on Linux treats '' as a filename — use sed -i instead if migrating.
-          sed -i '' "s/{{VERSION}}/${{ env.SECP256K1_VERSION }}/g" "$llms_file"
-          
-          # Guard: fail if placeholder wasn't substituted (empty SECP256K1_VERSION)
-          if grep -q '{{VERSION}}' "$llms_file"; then
-            echo "❌ Version placeholder was not substituted in llms.txt"
-            exit 1
-          fi
-          
-          echo "✅ Version stamped: v${{ env.SECP256K1_VERSION }}"
       
-      - name: Generate llms-full.txt
+      - name: Generate llms-full.txt files
         run: |
           project="${{ inputs.project-name }}"
           sitemap="Websites/${project}/sitemap.xml"
-          output="Websites/${project}/llms-full.txt"
           
           # Only proceed if sitemap exists
           if [ ! -f "$sitemap" ]; then
@@ -325,7 +327,14 @@ jobs:
             exit 1
           fi
           
-          # Write header
+          # Extract all .md URLs from sitemap into a temp file
+          md_urls=$(mktemp)
+          grep '<loc>.*\.md</loc>' "$sitemap" \
+            | sed 's|.*<loc>\(.*\)</loc>.*|\1|' \
+            | sort > "$md_urls"
+          
+          # --- Global llms-full.txt ---
+          output="Websites/${project}/llms-full.txt"
           {
             echo "# docs.21.dev — Full Documentation Index"
             echo ""
@@ -335,55 +344,80 @@ jobs:
             echo "## All Documentation (Markdown)"
             echo ""
           } > "$output"
+          while read -r url; do
+            path="${url#https://docs.21.dev/data/documentation/}"
+            path="${path%.md}"
+            echo "- [${path}](${url})"
+          done < "$md_urls" >> "$output"
+          global_count=$(grep -c '^\- \[' "$output" || true)
+          echo "📄 llms-full.txt generated with ${global_count} entries"
           
-          # Extract .md URLs from sitemap, format as markdown links
-          # Labels are path-derived (e.g. p256k/p256k/signing/privatekey) — verbose but machine-readable
-          grep '<loc>.*\.md</loc>' "$sitemap" \
-            | sed 's|.*<loc>\(.*\)</loc>.*|\1|' \
-            | sort \
-            | while read -r url; do
-                path="${url#https://docs.21.dev/data/documentation/}"
-                path="${path%.md}"
-                echo "- [${path}](${url})"
-              done >> "$output"
+          # --- Per-module llms-full.txt ---
+          for module in p256k zkp; do
+            module_output="Websites/${project}/data/documentation/${module}/llms-full.txt"
+            mkdir -p "$(dirname "$module_output")"
+            {
+              echo "# ${module} — Full Documentation Index"
+              echo ""
+              echo "> All markdown files for the ${module} module."
+              echo "> See https://docs.21.dev/data/documentation/${module}/llms.txt for the curated overview."
+              echo ""
+              echo "## Documentation (Markdown)"
+              echo ""
+            } > "$module_output"
+            grep "data/documentation/${module}/" "$md_urls" \
+              | while read -r url; do
+                  path="${url#https://docs.21.dev/data/documentation/}"
+                  path="${path%.md}"
+                  echo "- [${path}](${url})"
+                done >> "$module_output"
+            module_count=$(grep -c '^\- \[' "$module_output" || true)
+            if [ "$module_count" -eq 0 ]; then
+              echo "⚠️  ${module}/llms-full.txt has no entries"
+            else
+              echo "📄 ${module}/llms-full.txt generated with ${module_count} entries"
+            fi
+          done
           
-          # Guard: fail if no entries generated (sitemap format changed or grep pattern broke)
-          md_count=$(grep -c '^\- \[' "$output" || true)
-          if [ "$md_count" -eq 0 ]; then
+          rm -f "$md_urls"
+          
+          # Guard: fail if global has no entries
+          if [ "$global_count" -eq 0 ]; then
             echo "❌ llms-full.txt has no entries — sitemap .md extraction failed"
             exit 1
           fi
-          
-          echo "📄 llms-full.txt generated with ${md_count} entries"
       
       - name: Validate llms.txt links
         run: |
           project="${{ inputs.project-name }}"
-          llms_file="Websites/${project}/llms.txt"
-          
-          # Only proceed if llms.txt exists
-          if [ ! -f "$llms_file" ]; then
-            echo "ℹ️  No llms.txt found for ${project}, skipping link validation"
-            exit 0
-          fi
           
           echo "🔍 Validating llms.txt links against build output..."
           failed=0
+          checked=0
           
-          while read -r url; do
-            path="${url#https://docs.21.dev/}"
-            if [ ! -f "Websites/${project}/${path}" ]; then
-              echo "❌ Dead link in llms.txt: ${path}"
-              failed=$((failed + 1))
-            fi
-          done < <(grep -oE 'https://docs\.21\.dev/[^)]+\.md' "$llms_file")
+          # Validate all llms.txt files (root + per-module)
+          while IFS= read -r llms_file; do
+            while read -r url; do
+              path="${url#https://docs.21.dev/}"
+              if [ ! -f "Websites/${project}/${path}" ]; then
+                echo "❌ Dead link in ${llms_file}: ${path}"
+                failed=$((failed + 1))
+              fi
+              checked=$((checked + 1))
+            done < <(grep -oE 'https://docs\.21\.dev/[^)]+\.md' "$llms_file")
+          done < <(find "Websites/${project}" -name "llms.txt" -type f)
+          
+          if [ "$checked" -eq 0 ]; then
+            echo "ℹ️  No llms.txt files found for ${project}, skipping link validation"
+            exit 0
+          fi
           
           if [ "$failed" -gt 0 ]; then
-            echo "❌ ${failed} dead link(s) found in llms.txt"
+            echo "❌ ${failed} dead link(s) found across llms.txt files"
             exit 1
           fi
           
-          echo "✅ All llms.txt links verified against build output"
+          echo "✅ All ${checked} links verified across llms.txt files"
       
       - name: Fix canonical URLs
         run: |
@@ -396,17 +430,26 @@ jobs:
           echo "   Base URL: $BASE_URL"
           echo "   Path: $output_dir"
           
-          # Fix missing canonical tags
+          # Fix missing canonical tags (auto-verifies after fixing)
           swift run util canonical fix \
             --path "$output_dir" \
             --base-url "$BASE_URL"
+      
+      - name: Inject agent directives
+        run: |
+          project="${{ inputs.project-name }}"
+          output_dir="Websites/${project}"
+          BASE_URL="https://${project//-/.}"
           
-          # Verify all canonicals are valid
-          swift run util canonical check \
+          echo "🤖 Injecting agent directives for ${project}..."
+          echo "   Base URL: $BASE_URL"
+          echo "   Path: $output_dir"
+          
+          # Inject directives (auto-verifies after injection)
+          swift run util agent-directive inject \
             --path "$output_dir" \
-            --base-url "$BASE_URL"
-          
-          echo "✅ Canonical URLs fixed and verified"
+            --base-url "$BASE_URL" \
+            --force
       
       - name: Create documentation archive
         run: |

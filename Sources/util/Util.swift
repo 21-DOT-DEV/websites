@@ -28,6 +28,7 @@ struct Util: AsyncParsableCommand {
             CanonicalCommand.self,
             CommentCommand.self,
             SearchConsoleCommand.self,
+            AgentDirectiveCommand.self,
         ]
     )
 }

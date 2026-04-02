@@ -8,6 +8,7 @@
 //  See the accompanying file LICENSE for information
 //
 
+import SchemaLib
 import Slipstream
 
 /// A FAQ component that renders a visual accordion with JSON-LD schema support.

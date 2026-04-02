@@ -1,6 +1,6 @@
 //
 //  SoftwareSourceCodeSchema.swift
-//  DesignSystem
+//  SchemaLib
 //
 //  Copyright (c) 2026 Timechain Software Initiative, Inc.
 //  Distributed under the MIT software license

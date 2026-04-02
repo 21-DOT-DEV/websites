@@ -1,6 +1,6 @@
 //
 //  FAQPageSchema.swift
-//  DesignSystem
+//  SchemaLib
 //
 //  Copyright (c) 2026 Timechain Software Initiative, Inc.
 //  Distributed under the MIT software license
@@ -21,13 +21,6 @@ public struct FAQPageSchema: Schema {
     /// Creates an FAQPage schema from an array of questions.
     public init(questions: [QuestionSchema]) {
         self.mainEntity = questions
-    }
-    
-    /// Creates an FAQPage schema from FAQItems, filtering by includeInJSONLD.
-    public init(items: [FAQItem]) {
-        self.mainEntity = items
-            .filter { $0.includeInJSONLD }
-            .map { QuestionSchema(question: $0.question, answer: $0.answer) }
     }
     
     enum CodingKeys: String, CodingKey {

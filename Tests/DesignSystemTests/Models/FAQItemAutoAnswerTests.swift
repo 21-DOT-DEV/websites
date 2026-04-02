@@ -7,6 +7,7 @@
 
 import Testing
 import Foundation
+import SchemaLib
 import Slipstream
 @testable import DesignSystem
 

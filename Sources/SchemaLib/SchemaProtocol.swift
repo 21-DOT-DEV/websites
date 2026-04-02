@@ -1,6 +1,6 @@
 //
 //  SchemaProtocol.swift
-//  DesignSystem
+//  SchemaLib
 //
 //  Copyright (c) 2026 Timechain Software Initiative, Inc.
 //  Distributed under the MIT software license
@@ -35,11 +35,21 @@ public struct SchemaGraph: Sendable {
         self.schemas = schemas.map { AnyEncodable($0) }
     }
     
-    /// Renders the schema(s) as a JSON-LD string.
+    /// Renders the schema(s) as a pretty-printed JSON-LD string.
     /// Uses simple format for single schema, @graph for multiple.
     public func render() throws -> String {
+        try render(formatting: [.prettyPrinted, .sortedKeys])
+    }
+
+    /// Renders the schema(s) as a compact (minified) JSON-LD string.
+    /// Ideal for inline HTML injection where file size matters.
+    public func renderCompact() throws -> String {
+        try render(formatting: [.sortedKeys])
+    }
+
+    private func render(formatting: JSONEncoder.OutputFormatting) throws -> String {
         let encoder = JSONEncoder()
-        encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+        encoder.outputFormatting = formatting
         
         if schemas.count == 1 {
             // Single schema: use simple format without @graph
@@ -84,16 +94,16 @@ private struct GraphSchemaWrapper: Encodable {
 }
 
 /// Type-erased wrapper for encoding heterogeneous Schema types.
-struct AnyEncodable: Encodable, Sendable {
+public struct AnyEncodable: Encodable, Sendable {
     private let _encode: @Sendable (Encoder) throws -> Void
     
-    init<T: Encodable & Sendable>(_ wrapped: T) {
+    public init<T: Encodable & Sendable>(_ wrapped: T) {
         _encode = { encoder in
             try wrapped.encode(to: encoder)
         }
     }
     
-    func encode(to encoder: Encoder) throws {
+    public func encode(to encoder: Encoder) throws {
         try _encode(encoder)
     }
 }
