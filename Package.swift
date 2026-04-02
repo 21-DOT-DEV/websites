@@ -38,7 +38,8 @@ let package = Package(
                 .product(name: "Slipstream", package: "slipstream"),
                 .product(name: "Subprocess", package: "swift-subprocess"),
                 .product(name: "SwiftSoup", package: "SwiftSoup"),
-                .target(name: "UtilLib")
+                .target(name: "UtilLib"),
+                .target(name: "SchemaLib")
             ]
         ),
         .target(
@@ -62,12 +63,21 @@ let package = Package(
                 "UtilLib"
             ]
         ),
+        // MARK: - Schema Library (pure Foundation, shared by DesignSystem + UtilLib)
+        .target(
+            name: "SchemaLib"
+        ),
+        .testTarget(
+            name: "SchemaLibTests",
+            dependencies: ["SchemaLib"]
+        ),
         // MARK: - Utilities Library & CLI
         .target(
             name: "UtilLib",
             dependencies: [
                 .product(name: "Subprocess", package: "swift-subprocess"),
-                .product(name: "SwiftSoup", package: "SwiftSoup")
+                .product(name: "SwiftSoup", package: "SwiftSoup"),
+                .target(name: "SchemaLib")
             ]
         ),
         .executableTarget(

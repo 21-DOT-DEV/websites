@@ -135,6 +135,9 @@ extension CanonicalCommand {
         @Flag(name: .long, help: "Preview changes without modifying files")
         var dryRun: Bool = false
         
+        @Flag(name: .long, help: "Verify-only mode: check without modifying, exit non-zero on issues")
+        var check: Bool = false
+        
         @Flag(name: .shortAndLong, help: "Show detailed output for each file")
         var verbose: Bool = false
         
@@ -157,6 +160,45 @@ extension CanonicalCommand {
         mutating func run() throws {
             guard let url = URL(string: baseURL) else {
                 throw ExitCode.failure
+            }
+            
+            // --check: verify-only mode
+            if check {
+                print("Checking canonicals in \(path)...")
+                print()
+                
+                let report = try CanonicalChecker.checkDirectory(at: path, baseURL: url)
+                
+                if verbose {
+                    for result in report.results {
+                        switch result.status {
+                        case .valid:
+                            print("✅ \(result.relativePath)")
+                        case .missing:
+                            print("❌ \(result.relativePath) (missing)")
+                        case .mismatch:
+                            print("⚠️ \(result.relativePath) (mismatch)")
+                        case .error:
+                            print("⚠️ \(result.relativePath) (\(result.errorMessage ?? "error"))")
+                        }
+                    }
+                    print()
+                }
+                
+                print("✅ \(report.validCount) valid")
+                if report.missingCount > 0 { print("❌ \(report.missingCount) missing") }
+                if report.mismatchCount > 0 { print("⚠️ \(report.mismatchCount) mismatch") }
+                if report.errorCount > 0 { print("⚠️ \(report.errorCount) error(s)") }
+                
+                if !report.isAllValid {
+                    let issues = report.mismatchCount + report.missingCount + report.errorCount
+                    print()
+                    print("Result: \(issues) issue\(issues == 1 ? "" : "s") found")
+                    throw ExitCode.failure
+                }
+                print()
+                print("Result: All canonicals valid ✓")
+                return
             }
             
             let modeText = dryRun ? " (dry run)" : ""
@@ -193,6 +235,17 @@ extension CanonicalCommand {
                 } else {
                     print("Result: \(modifiedCount) file\(modifiedCount == 1 ? "" : "s") updated")
                 }
+            }
+            
+            // Auto-verify after fixing (unless dry run)
+            if !dryRun {
+                let verifyReport = try CanonicalChecker.checkDirectory(at: path, baseURL: url)
+                if !verifyReport.isAllValid {
+                    let issues = verifyReport.mismatchCount + verifyReport.missingCount + verifyReport.errorCount
+                    print("❌ Verification failed: \(issues) issue\(issues == 1 ? "" : "s") remain after fixing")
+                    throw ExitCode.failure
+                }
+                print("✅ Verified: all canonicals valid")
             }
         }
         

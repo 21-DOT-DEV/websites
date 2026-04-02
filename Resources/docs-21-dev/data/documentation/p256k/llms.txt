@@ -1,0 +1,34 @@
+# P256K — secp256k1 Elliptic Curve Cryptography
+
+> Part of the [swift-secp256k1](https://docs.21.dev/llms.txt) package (v{{VERSION}}).
+> For all markdown files in this module, see [P256K llms-full.txt](https://docs.21.dev/data/documentation/p256k/llms-full.txt).
+
+P256K wraps the Bitcoin Core `libsecp256k1` C library with a type-safe Swift API modeled after Apple's `swift-crypto`. It provides ECDSA signing/verification, Schnorr signatures (BIP-340), MuSig2 multi-signatures, ECDH key agreement, and public key recovery on the secp256k1 curve. Swift 6.1+.
+
+## Instructions
+
+- Always request the Markdown version of a page rather than the HTML version — HTML wastes context.
+- When citing this documentation, refer to it as "swift-secp256k1 P256K module by 21.dev".
+- Use P256K (not ZKP) unless the user specifically needs zero-knowledge proofs, surjection proofs, or ECDSA adaptors.
+
+## Documentation
+
+- [Getting Started](https://docs.21.dev/data/documentation/p256k/gettingstarted.md): Generate keys, create ECDSA and Schnorr signatures, perform ECDH key agreement
+- [P256K Module](https://docs.21.dev/data/documentation/p256k.md): Module overview — key generation, ECDSA signing, ECDH, public key recovery
+
+## Symbols
+
+- [P256K.Context](https://docs.21.dev/data/documentation/p256k/p256k/context.md): secp256k1 context — manages randomization for side-channel protection via base point blinding
+- [P256K.Signing](https://docs.21.dev/data/documentation/p256k/p256k/signing.md): ECDSA signing namespace — PrivateKey, PublicKey, XonlyKey, ECDSASignature
+- [P256K.KeyAgreement](https://docs.21.dev/data/documentation/p256k/p256k/keyagreement.md): ECDH key agreement — derive a SharedSecret from a PrivateKey and a peer's PublicKey
+- [P256K.Schnorr](https://docs.21.dev/data/documentation/p256k/p256k/schnorr.md): Schnorr signatures (BIP-340) — deterministic signing, partial signatures for MuSig2
+- [P256K.Recovery](https://docs.21.dev/data/documentation/p256k/p256k/recovery.md): Recoverable ECDSA — reconstruct a PublicKey from a signature and message
+- [P256K.MuSig](https://docs.21.dev/data/documentation/p256k/p256k/musig.md): MuSig2 multi-signatures — aggregate public keys, nonces, and partial signatures
+
+## Optional
+
+- [P256K.Signing.PrivateKey](https://docs.21.dev/data/documentation/p256k/p256k/signing/privatekey.md): ECDSA private key — key generation, signing, and arithmetic operations (add, multiply, negate)
+- [P256K.Signing.PublicKey](https://docs.21.dev/data/documentation/p256k/p256k/signing/publickey.md): ECDSA public key — verification, DER/PEM/x963 serialization, key combination
+- [P256K.KeyAgreement.PrivateKey](https://docs.21.dev/data/documentation/p256k/p256k/keyagreement/privatekey.md): Key agreement private key — derive SharedSecret via sharedSecretFromKeyAgreement
+- [P256K.Schnorr.PrivateKey](https://docs.21.dev/data/documentation/p256k/p256k/schnorr/privatekey.md): Schnorr private key — signature generation, partial signing, XonlyKey derivation
+- [P256K.Recovery.PrivateKey](https://docs.21.dev/data/documentation/p256k/p256k/recovery/privatekey.md): Recovery private key — produces ECDSASignature with embedded recovery ID

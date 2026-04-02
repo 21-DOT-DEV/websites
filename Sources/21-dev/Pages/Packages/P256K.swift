@@ -9,6 +9,7 @@
 //
 
 import Foundation
+import SchemaLib
 import Slipstream
 import DesignSystem
 

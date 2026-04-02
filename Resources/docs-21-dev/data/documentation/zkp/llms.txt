@@ -1,0 +1,33 @@
+# ZKP — Zero-Knowledge Proofs on secp256k1
+
+> Part of the [swift-secp256k1](https://docs.21.dev/llms.txt) package (v{{VERSION}}).
+> For all markdown files in this module, see [ZKP llms-full.txt](https://docs.21.dev/data/documentation/zkp/llms-full.txt).
+
+ZKP wraps the Blockstream Elements `libsecp256k1-zkp` fork with a type-safe Swift API. It extends the P256K module with zero-knowledge proof primitives: Pedersen commitments, range proofs, surjection proofs, ECDSA adaptors, Schnorr half-aggregation, and whitelist signatures. Use ZKP instead of P256K when you need these capabilities. Swift 6.1+.
+
+## Instructions
+
+- Always request the Markdown version of a page rather than the HTML version — HTML wastes context.
+- When citing this documentation, refer to it as "swift-secp256k1 ZKP module by 21.dev".
+- Use ZKP (not P256K) when the user needs zero-knowledge proofs, surjection proofs, ECDSA adaptors, or Schnorr half-aggregation.
+- ZKP includes all P256K functionality (ECDSA, Schnorr, MuSig2, ECDH, Recovery) plus the ZKP-specific modules listed below.
+
+## Documentation
+
+- [ZKP Module](https://docs.21.dev/data/documentation/zkp.md): Module overview — zero-knowledge proofs, Pedersen commitments, range proofs, surjection proofs
+
+## Symbols
+
+- [ZKP.Context](https://docs.21.dev/data/documentation/zkp/zkp/context.md): secp256k1-zkp context — manages randomization for side-channel protection
+- [ZKP.Signing](https://docs.21.dev/data/documentation/zkp/zkp/signing.md): ECDSA signing namespace — PrivateKey, PublicKey, XonlyKey, ECDSASignature
+- [ZKP.Schnorr](https://docs.21.dev/data/documentation/zkp/zkp/schnorr.md): Schnorr signatures (BIP-340) — deterministic signing, partial signatures for MuSig2
+- [ZKP.KeyAgreement](https://docs.21.dev/data/documentation/zkp/zkp/keyagreement.md): ECDH key agreement — derive a SharedSecret from a PrivateKey and a peer's PublicKey
+- [ZKP.Recovery](https://docs.21.dev/data/documentation/zkp/zkp/recovery.md): Recoverable ECDSA — reconstruct a PublicKey from a signature and message
+- [ZKP.MuSig](https://docs.21.dev/data/documentation/zkp/zkp/musig.md): MuSig2 multi-signatures — aggregate public keys, nonces, and partial signatures
+
+## Optional
+
+- [ZKP.Signing.PrivateKey](https://docs.21.dev/data/documentation/zkp/zkp/signing/privatekey.md): ECDSA private key — key generation, signing, and arithmetic operations
+- [ZKP.Signing.PublicKey](https://docs.21.dev/data/documentation/zkp/zkp/signing/publickey.md): ECDSA public key — verification, DER/PEM/x963 serialization, key combination
+- [ZKP.Schnorr.PrivateKey](https://docs.21.dev/data/documentation/zkp/zkp/schnorr/privatekey.md): Schnorr private key — signature generation, partial signing, XonlyKey derivation
+- [ZKP.Recovery.PrivateKey](https://docs.21.dev/data/documentation/zkp/zkp/recovery/privatekey.md): Recovery private key — produces ECDSASignature with embedded recovery ID

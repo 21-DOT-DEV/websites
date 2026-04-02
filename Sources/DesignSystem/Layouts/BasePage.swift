@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import SchemaLib
 import Slipstream
 
 /// A foundational page layout providing the HTML/Head/Body structure for sites.
