@@ -16,11 +16,30 @@ import SchemaLib
 public enum AgentDirectiveInjector {
 
     /// Marker string used to detect existing JSON-LD directives.
-    /// Works with both raw string format and JSONEncoder-escaped output.
-    static let marker = "\"encodingFormat\""
+    /// Present in both full directives (with markdown link) and fallback directives.
+    static let marker = "\"isPartOf\""
 
     /// Legacy marker class from the previous `<p>` tag format.
     static let legacyMarkerClass = "agent-directive"
+
+    /// Derives the markdown-relative path for an HTML page path.
+    ///
+    /// Transformation: `documentation/p256k/context/index.html`
+    /// → `data/documentation/p256k/context.md`
+    ///
+    /// - Parameter relativePath: File path relative to the output directory
+    /// - Returns: The relative path to the expected markdown file
+    public static func deriveMarkdownRelativePath(from relativePath: String) -> String {
+        var path = relativePath
+
+        if path.hasSuffix("/index.html") {
+            path = String(path.dropLast("/index.html".count))
+        } else if path.hasSuffix(".html") {
+            path = String(path.dropLast(".html".count))
+        }
+
+        return "data/" + path + ".md"
+    }
 
     /// Derives the markdown URL for an HTML page path.
     ///
@@ -32,15 +51,7 @@ public enum AgentDirectiveInjector {
     ///   - relativePath: File path relative to the output directory
     /// - Returns: The derived markdown URL
     public static func deriveMarkdownURL(baseURL: URL, relativePath: String) -> URL {
-        var path = relativePath
-
-        if path.hasSuffix("/index.html") {
-            path = String(path.dropLast("/index.html".count))
-        } else if path.hasSuffix(".html") {
-            path = String(path.dropLast(".html".count))
-        }
-
-        let markdownPath = "data/" + path + ".md"
+        let markdownPath = deriveMarkdownRelativePath(from: relativePath)
         return baseURL.appendingPathComponent(markdownPath)
     }
 
@@ -61,17 +72,20 @@ public enum AgentDirectiveInjector {
     /// Builds the agent directive as a JSON-LD `<script>` tag.
     ///
     /// The JSON-LD uses schema.org vocabulary to express:
-    /// - `encoding`: Markdown version of this page (`MediaObject` with `text/markdown`)
+    /// - `encoding`: Markdown version of this page (`MediaObject` with `text/markdown`) — omitted when `nil`
     /// - `isPartOf`: Module-level `llms.txt` index
     /// - `mainEntity`: Root `llms.txt` index
     ///
+    /// When `markdownURL` is `nil` (no markdown counterpart exists), the directive
+    /// still points the agent to the closest llms.txt files for context.
+    ///
     /// - Parameters:
-    ///   - markdownURL: The markdown URL for this specific page
+    ///   - markdownURL: The markdown URL for this specific page, or `nil` if none exists
     ///   - module: The documentation module name (e.g., `p256k`), or `nil`
     ///   - baseURL: Site base URL
     /// - Returns: The `<script type="application/ld+json">` HTML string
     public static func buildDirective(
-        markdownURL: URL,
+        markdownURL: URL?,
         module: String?,
         baseURL: URL
     ) throws -> String {
@@ -86,11 +100,15 @@ public enum AgentDirectiveInjector {
             moduleLlms = globalLlms
         }
 
-        let schema = AgentDirectiveWebPage(
-            encoding: MediaObjectSchema(
-                contentUrl: markdownURL.absoluteString,
+        let encoding: MediaObjectSchema? = markdownURL.map {
+            MediaObjectSchema(
+                contentUrl: $0.absoluteString,
                 encodingFormat: "text/markdown"
-            ),
+            )
+        }
+
+        let schema = AgentDirectiveWebPage(
+            encoding: encoding,
             isPartOf: WebSiteSchema(url: moduleLlms),
             mainEntity: WebSiteSchema(url: globalLlms)
         )
@@ -226,7 +244,11 @@ public enum AgentDirectiveInjector {
         for entry in entries {
             do {
                 let html = try String(contentsOfFile: entry.absolutePath, encoding: .utf8)
-                let markdownURL = deriveMarkdownURL(baseURL: baseURL, relativePath: entry.relativePath)
+                let mdRelPath = deriveMarkdownRelativePath(from: entry.relativePath)
+                let mdLocalPath = (directoryPath as NSString).appendingPathComponent(mdRelPath)
+                let markdownURL: URL? = FileManager.default.fileExists(atPath: mdLocalPath)
+                    ? deriveMarkdownURL(baseURL: baseURL, relativePath: entry.relativePath)
+                    : nil
                 let module = extractModule(from: entry.relativePath)
                 let directive = try buildDirective(markdownURL: markdownURL, module: module, baseURL: baseURL)
 

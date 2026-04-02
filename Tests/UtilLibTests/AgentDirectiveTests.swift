@@ -17,6 +17,24 @@ struct AgentDirectiveTests {
 
     let baseURL = URL(string: "https://docs.21.dev")!
 
+    // MARK: - deriveMarkdownRelativePath
+
+    @Test("Derives markdown relative path from index.html")
+    func deriveMarkdownRelativePathFromIndex() {
+        let path = AgentDirectiveInjector.deriveMarkdownRelativePath(
+            from: "documentation/p256k/p256k/context/index.html"
+        )
+        #expect(path == "data/documentation/p256k/p256k/context.md")
+    }
+
+    @Test("Derives markdown relative path from .html")
+    func deriveMarkdownRelativePathFromHTML() {
+        let path = AgentDirectiveInjector.deriveMarkdownRelativePath(
+            from: "documentation/p256k/p256k/signing.html"
+        )
+        #expect(path == "data/documentation/p256k/p256k/signing.md")
+    }
+
     // MARK: - deriveMarkdownURL
 
     @Test("Derives markdown URL from index.html path")
@@ -96,6 +114,25 @@ struct AgentDirectiveTests {
         #expect(llmsCount >= 2)
     }
 
+    @Test("Builds fallback directive when markdownURL is nil")
+    func buildFallbackDirective() throws {
+        let directive = try AgentDirectiveInjector.buildDirective(
+            markdownURL: nil,
+            module: "p256k",
+            baseURL: baseURL
+        )
+
+        #expect(directive.hasPrefix("<script type=\"application/ld+json\">"))
+        #expect(directive.hasSuffix("</script>"))
+        // Should NOT contain encoding/MediaObject
+        #expect(!directive.contains("MediaObject"))
+        #expect(!directive.contains("encodingFormat"))
+        // Should still point to llms.txt
+        #expect(directive.contains("llms.txt"))
+        #expect(directive.contains("isPartOf"))
+        #expect(directive.contains("WebPage"))
+    }
+
     // MARK: - inject
 
     @Test("Injects directive before </head>")
@@ -116,7 +153,7 @@ struct AgentDirectiveTests {
     @Test("Skips when JSON-LD directive already exists")
     func skipExistingDirective() {
         let html = """
-        <html><head><script type="application/ld+json">{"encodingFormat":"text/markdown"}</script></head><body></body></html>
+        <html><head><script type="application/ld+json">{"isPartOf":{"url":"https://docs.21.dev/llms.txt"}}</script></head><body></body></html>
         """
         let directive = "<script type=\"application/ld+json\">{\"new\":true}</script>"
 
@@ -138,10 +175,10 @@ struct AgentDirectiveTests {
     @Test("Force replaces existing JSON-LD directive")
     func forceReplaceExisting() {
         let html = """
-        <html><head><script type="application/ld+json">{"encodingFormat":"text/markdown","old":true}</script>
+        <html><head><script type="application/ld+json">{"isPartOf":{"url":"old"},"old":true}</script>
         </head><body></body></html>
         """
-        let newDirective = "<script type=\"application/ld+json\">{\"encodingFormat\":\"text/markdown\",\"new\":true}</script>"
+        let newDirective = "<script type=\"application/ld+json\">{\"isPartOf\":{\"url\":\"new\"},\"new\":true}</script>"
 
         let (result, action) = AgentDirectiveInjector.inject(html: html, directive: newDirective, force: true)
 
@@ -156,7 +193,7 @@ struct AgentDirectiveTests {
         let html = """
         <html><head></head><body><p class="agent-directive" aria-hidden="true">STOP! Old verbose directive</p></body></html>
         """
-        let newDirective = "<script type=\"application/ld+json\">{\"encodingFormat\":\"text/markdown\"}</script>"
+        let newDirective = "<script type=\"application/ld+json\">{\"isPartOf\":{\"url\":\"test\"}}</script>"
 
         let (result, action) = AgentDirectiveInjector.inject(html: html, directive: newDirective, force: true)
 

@@ -14,13 +14,13 @@ import SchemaLib
 /// Schema.org WebPage used for agent directive injection.
 ///
 /// Encodes a WebPage with:
-/// - `encoding`: A `MediaObject` pointing to the markdown version
+/// - `encoding`: A `MediaObject` pointing to the markdown version (omitted when no markdown exists)
 /// - `isPartOf`: A `WebSite` for the module-level llms.txt
 /// - `mainEntity`: A `WebSite` for the root llms.txt
 struct AgentDirectiveWebPage: Schema {
     static let schemaType = "WebPage"
 
-    let encoding: MediaObjectSchema
+    let encoding: MediaObjectSchema?
     let isPartOf: WebSiteSchema
     let mainEntity: WebSiteSchema
 
@@ -34,7 +34,7 @@ struct AgentDirectiveWebPage: Schema {
     func encode(to encoder: Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)
         try container.encode(Self.schemaType, forKey: .type)
-        try container.encode(encoding, forKey: .encoding)
+        try container.encodeIfPresent(encoding, forKey: .encoding)
         try container.encode(isPartOf, forKey: .isPartOf)
         try container.encode(mainEntity, forKey: .mainEntity)
     }
