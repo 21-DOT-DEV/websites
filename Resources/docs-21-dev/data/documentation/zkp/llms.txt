@@ -18,16 +18,16 @@ ZKP wraps the Blockstream Elements `libsecp256k1-zkp` fork with a type-safe Swif
 
 ## Symbols
 
-- [ZKP.Context](https://docs.21.dev/data/documentation/zkp/zkp/context.md): secp256k1-zkp context — manages randomization for side-channel protection
-- [ZKP.Signing](https://docs.21.dev/data/documentation/zkp/zkp/signing.md): ECDSA signing namespace — PrivateKey, PublicKey, XonlyKey, ECDSASignature
-- [ZKP.Schnorr](https://docs.21.dev/data/documentation/zkp/zkp/schnorr.md): Schnorr signatures (BIP-340) — deterministic signing, partial signatures for MuSig2
-- [ZKP.KeyAgreement](https://docs.21.dev/data/documentation/zkp/zkp/keyagreement.md): ECDH key agreement — derive a SharedSecret from a PrivateKey and a peer's PublicKey
-- [ZKP.Recovery](https://docs.21.dev/data/documentation/zkp/zkp/recovery.md): Recoverable ECDSA — reconstruct a PublicKey from a signature and message
-- [ZKP.MuSig](https://docs.21.dev/data/documentation/zkp/zkp/musig.md): MuSig2 multi-signatures — aggregate public keys, nonces, and partial signatures
+- [ZKP.Context](https://docs.21.dev/data/documentation/zkp/p256k/context.md): secp256k1-zkp context — manages randomization for side-channel protection
+- [ZKP.Signing](https://docs.21.dev/data/documentation/zkp/p256k/signing.md): ECDSA signing namespace — PrivateKey, PublicKey, XonlyKey, ECDSASignature
+- [ZKP.Schnorr](https://docs.21.dev/data/documentation/zkp/p256k/schnorr.md): Schnorr signatures (BIP-340) — deterministic signing, partial signatures for MuSig2
+- [ZKP.KeyAgreement](https://docs.21.dev/data/documentation/zkp/p256k/keyagreement.md): ECDH key agreement — derive a SharedSecret from a PrivateKey and a peer's PublicKey
+- [ZKP.Recovery](https://docs.21.dev/data/documentation/zkp/p256k/recovery.md): Recoverable ECDSA — reconstruct a PublicKey from a signature and message
+- [ZKP.MuSig](https://docs.21.dev/data/documentation/zkp/p256k/musig.md): MuSig2 multi-signatures — aggregate public keys, nonces, and partial signatures
 
 ## Optional
 
-- [ZKP.Signing.PrivateKey](https://docs.21.dev/data/documentation/zkp/zkp/signing/privatekey.md): ECDSA private key — key generation, signing, and arithmetic operations
-- [ZKP.Signing.PublicKey](https://docs.21.dev/data/documentation/zkp/zkp/signing/publickey.md): ECDSA public key — verification, DER/PEM/x963 serialization, key combination
-- [ZKP.Schnorr.PrivateKey](https://docs.21.dev/data/documentation/zkp/zkp/schnorr/privatekey.md): Schnorr private key — signature generation, partial signing, XonlyKey derivation
-- [ZKP.Recovery.PrivateKey](https://docs.21.dev/data/documentation/zkp/zkp/recovery/privatekey.md): Recovery private key — produces ECDSASignature with embedded recovery ID
+- [ZKP.Signing.PrivateKey](https://docs.21.dev/data/documentation/zkp/p256k/signing/privatekey.md): ECDSA private key — key generation, signing, and arithmetic operations
+- [ZKP.Signing.PublicKey](https://docs.21.dev/data/documentation/zkp/p256k/signing/publickey.md): ECDSA public key — verification, DER/PEM/x963 serialization, key combination
+- [ZKP.Schnorr.PrivateKey](https://docs.21.dev/data/documentation/zkp/p256k/schnorr/privatekey.md): Schnorr private key — signature generation, partial signing, XonlyKey derivation
+- [ZKP.Recovery.PrivateKey](https://docs.21.dev/data/documentation/zkp/p256k/recovery/privatekey.md): Recovery private key — produces ECDSASignature with embedded recovery ID
