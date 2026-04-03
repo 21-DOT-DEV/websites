@@ -58,7 +58,7 @@
 
 # Content negotiation: markdown alternate for AI agents
 /documentation/*
-  Vary: Accept
+  Vary: Accept, Accept-Encoding
 
 # Production HTML (DocC) — strict baseline + CSP allowing DocC assets and analytics
 # NOTE: Extend CSP allowlists by appending origins (e.g., extra script host) instead of removing defaults to keep minimum protections intact.

@@ -53,7 +53,7 @@
 
 # Content negotiation: markdown alternate for AI agents
 /documentation/*
-  Vary: Accept
+  Vary: Accept, Accept-Encoding
 
 # Preview HTML (DocC) — security headers without HSTS, noindex to prevent search indexing
 # NOTE: Extend CSP allowlists by appending origins (e.g., extra script host) instead of removing defaults to keep minimum protections intact.

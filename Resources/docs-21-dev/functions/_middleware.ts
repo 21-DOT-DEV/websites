@@ -75,11 +75,13 @@ export async function onRequest(context: EventContext<unknown, string, unknown>)
 
   if (wantsMarkdown && isPage) {
     let mdPath: string;
-    if (url.pathname.endsWith(".html")) {
+    if (url.pathname.endsWith("/index.html")) {
+      mdPath = "/data" + url.pathname.replace(/\/index\.html$/, ".md");
+    } else if (url.pathname.endsWith(".html")) {
       mdPath = "/data" + url.pathname.replace(/\.html$/, ".md");
     } else {
-      const normalized = url.pathname.endsWith("/") ? url.pathname : url.pathname + "/";
-      mdPath = "/data" + normalized + "index.md";
+      const stripped = url.pathname.endsWith("/") ? url.pathname.slice(0, -1) : url.pathname;
+      mdPath = "/data" + stripped + ".md";
     }
 
     try {
