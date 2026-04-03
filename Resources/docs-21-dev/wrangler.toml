@@ -1,0 +1,10 @@
+# Cloudflare Pages configuration for docs.21.dev
+# Primary binding config is in the Cloudflare Dashboard.
+# This file serves as version-controlled reference and local dev config.
+
+name = "docs-21-dev"
+compatibility_date = "2024-09-23"
+
+[[analytics_engine_datasets]]
+binding = "MD_ANALYTICS"
+dataset = "markdown_serves"

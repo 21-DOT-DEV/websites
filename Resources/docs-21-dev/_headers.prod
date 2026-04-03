@@ -56,6 +56,10 @@
   Content-Type: text/plain; charset=utf-8
   X-Content-Type-Options: nosniff
 
+# Content negotiation: markdown alternate for AI agents
+/documentation/*
+  Vary: Accept
+
 # Production HTML (DocC) — strict baseline + CSP allowing DocC assets and analytics
 # NOTE: Extend CSP allowlists by appending origins (e.g., extra script host) instead of removing defaults to keep minimum protections intact.
 /*

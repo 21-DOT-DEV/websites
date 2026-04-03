@@ -87,7 +87,7 @@ struct AgentDirectiveTests {
 
     // MARK: - buildDirective
 
-    @Test("Builds JSON-LD directive with module")
+    @Test("Builds combined directive with module and markdown")
     func buildDirectiveWithModule() throws {
         let markdownURL = URL(string: "https://docs.21.dev/data/documentation/p256k/p256k/context.md")!
         let directive = try AgentDirectiveInjector.buildDirective(
@@ -96,20 +96,22 @@ struct AgentDirectiveTests {
             baseURL: baseURL
         )
 
-        #expect(directive.hasPrefix("<script type=\"application/ld+json\">"))
-        #expect(directive.hasSuffix("</script>"))
-        #expect(directive.contains("text/markdown") || directive.contains("text\\/markdown"))
+        // <link rel="alternate"> for markdown
+        #expect(directive.contains("rel=\"alternate\""))
+        #expect(directive.contains("type=\"text/markdown\""))
         #expect(directive.contains("context.md"))
-        #expect(directive.contains("p256k"))
-        #expect(directive.contains("llms.txt"))
+        // JSON-LD for hierarchy
+        #expect(directive.contains("application/ld+json"))
         #expect(directive.contains("schema.org"))
         #expect(directive.contains("WebPage"))
-        // New descriptive fields
-        #expect(directive.contains("Markdown version of this page"))
         #expect(directive.contains("P256K Module"))
+        #expect(directive.contains("llms.txt"))
+        // No MediaObject in JSON-LD (markdown is in <link> now)
+        #expect(!directive.contains("MediaObject"))
+        #expect(!directive.contains("encodingFormat"))
     }
 
-    @Test("Builds JSON-LD directive without module uses site as isPartOf")
+    @Test("Builds combined directive without module uses site as isPartOf")
     func buildDirectiveWithoutModule() throws {
         let markdownURL = URL(string: "https://docs.21.dev/data/documentation/overview.md")!
         let directive = try AgentDirectiveInjector.buildDirective(
@@ -118,9 +120,12 @@ struct AgentDirectiveTests {
             baseURL: baseURL
         )
 
+        // <link rel="alternate"> for markdown
+        #expect(directive.contains("rel=\"alternate\""))
+        #expect(directive.contains("overview.md"))
         // mainEntity points to root llms.txt
         #expect(directive.contains("llms.txt"))
-        // isPartOf points to the site itself, not llms.txt
+        // isPartOf points to the site itself
         #expect(directive.contains("docs.21.dev"))
         // No "Module" label when module is nil
         #expect(!directive.contains("Module"))
@@ -134,12 +139,12 @@ struct AgentDirectiveTests {
             baseURL: baseURL
         )
 
+        // No <link rel="alternate"> when no markdown
+        #expect(!directive.contains("rel=\"alternate\""))
+        #expect(!directive.contains("text/markdown"))
+        // JSON-LD only
         #expect(directive.hasPrefix("<script type=\"application/ld+json\">"))
         #expect(directive.hasSuffix("</script>"))
-        // Should NOT contain encoding/MediaObject
-        #expect(!directive.contains("MediaObject"))
-        #expect(!directive.contains("encodingFormat"))
-        #expect(!directive.contains("Markdown version"))
         // Should still point to llms.txt with module name
         #expect(directive.contains("llms.txt"))
         #expect(directive.contains("isPartOf"))
@@ -175,6 +180,17 @@ struct AgentDirectiveTests {
         #expect(action == .skipped)
     }
 
+    @Test("Skips when <link rel=alternate> already exists")
+    func skipExistingAlternate() {
+        let html = """
+        <html><head><link rel="alternate" type="text/markdown" href="/docs/page.md" /></head><body></body></html>
+        """
+        let directive = "<script type=\"application/ld+json\">{\"new\":true}</script>"
+
+        let (_, action) = AgentDirectiveInjector.inject(html: html, directive: directive, force: false)
+        #expect(action == .skipped)
+    }
+
     @Test("Skips when legacy <p> directive exists")
     func skipLegacyDirective() {
         let html = """
@@ -200,6 +216,24 @@ struct AgentDirectiveTests {
         #expect(result.contains("\"new\":true"))
         // Old content should be removed
         #expect(!result.contains("\"old\":true"))
+    }
+
+    @Test("Force replaces existing <link rel=alternate> and JSON-LD")
+    func forceReplaceAlternateAndJsonLd() {
+        let html = """
+        <html><head>
+        <link rel="alternate" type="text/markdown" href="/old.md" />
+        <script type="application/ld+json">{"isPartOf":{"url":"old"}}</script>
+        </head><body></body></html>
+        """
+        let newDirective = "<link rel=\"alternate\" type=\"text/markdown\" href=\"/new.md\" />\n<script type=\"application/ld+json\">{\"isPartOf\":{\"url\":\"new\"}}</script>"
+
+        let (result, action) = AgentDirectiveInjector.inject(html: html, directive: newDirective, force: true)
+
+        #expect(action == .injected)
+        #expect(result.contains("new.md"))
+        #expect(!result.contains("old.md"))
+        #expect(result.contains("\"url\":\"new\""))
     }
 
     @Test("Force replaces legacy <p> directive with JSON-LD")
