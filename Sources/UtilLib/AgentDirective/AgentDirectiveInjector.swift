@@ -74,21 +74,23 @@ public enum AgentDirectiveInjector {
         return String(components[1])
     }
 
-    /// Builds the agent directive as a JSON-LD `<script>` tag.
+    /// Marker for the `<link rel="alternate">` markdown tag.
+    static let alternateMarker = "rel=\"alternate\" type=\"text/markdown\""
+
+    /// Builds the agent directive tags for injection into `<head>`.
     ///
-    /// The JSON-LD uses schema.org vocabulary to express:
-    /// - `encoding`: Markdown version of this page (`MediaObject` with `text/markdown`) — omitted when `nil`
-    /// - `isPartOf`: Module-level `llms.txt` index
-    /// - `mainEntity`: Root `llms.txt` index
-    ///
-    /// When `markdownURL` is `nil` (no markdown counterpart exists), the directive
-    /// still points the agent to the closest llms.txt files for context.
+    /// Produces up to two tags:
+    /// 1. `<link rel="alternate" type="text/markdown">` — standard HTML alternate
+    ///    link pointing to the markdown version of this page (only when markdown exists)
+    /// 2. `<script type="application/ld+json">` — JSON-LD with schema.org hierarchy:
+    ///    - `isPartOf`: Module-level `llms.txt` index (or parent site)
+    ///    - `mainEntity`: Root `llms.txt` index
     ///
     /// - Parameters:
     ///   - markdownURL: The markdown URL for this specific page, or `nil` if none exists
     ///   - module: The documentation module name (e.g., `p256k`), or `nil`
     ///   - baseURL: Site base URL
-    /// - Returns: The `<script type="application/ld+json">` HTML string
+    /// - Returns: Combined HTML string for injection before `</head>`
     public static func buildDirective(
         markdownURL: URL?,
         module: String?,
@@ -106,37 +108,41 @@ public enum AgentDirectiveInjector {
             partOf = WebSiteSchema(name: baseURL.host, url: baseURL.absoluteString)
         }
 
-        let encoding: MediaObjectSchema? = markdownURL.map {
-            MediaObjectSchema(
-                contentUrl: $0.absoluteString,
-                encodingFormat: "text/markdown",
-                description: "Markdown version of this page"
-            )
-        }
-
         let schema = AgentDirectiveWebPage(
-            encoding: encoding,
             isPartOf: partOf,
             mainEntity: WebSiteSchema(url: globalLlms)
         )
 
+        var parts: [String] = []
+
+        // 1. Standard <link rel="alternate"> for markdown (when available)
+        if let markdownURL {
+            parts.append("<link \(alternateMarker) href=\"\(markdownURL.absoluteString)\" />")
+        }
+
+        // 2. JSON-LD for site hierarchy
         let json = try SchemaGraph(schema).renderCompact()
-        return "<script type=\"application/ld+json\">\(json)</script>"
+        parts.append("<script type=\"application/ld+json\">\(json)</script>")
+
+        return parts.joined(separator: "\n")
     }
 
-    /// Injects an agent directive tag into HTML content.
+    /// Injects agent directive tags into HTML content.
     ///
-    /// The JSON-LD tag is inserted immediately before `</head>`. If a
-    /// directive already exists (detected by `encodingFormat` marker or
-    /// legacy `agent-directive` class), the file is skipped unless
-    /// `force` is `true`.
+    /// Inserts up to two tags immediately before `</head>`:
+    /// 1. `<link rel="alternate" type="text/markdown">` (when markdown exists)
+    /// 2. `<script type="application/ld+json">` (always)
+    ///
+    /// If a directive already exists (detected by JSON-LD marker, alternate
+    /// link marker, or legacy `agent-directive` class), the file is skipped
+    /// unless `force` is `true`.
     ///
     /// Uses string manipulation (not DOM parsing) to preserve the original
     /// HTML structure exactly — important for DocC Vue.js apps.
     ///
     /// - Parameters:
     ///   - html: The HTML content
-    ///   - directive: The directive tag HTML
+    ///   - directive: The directive tag(s) HTML
     ///   - force: If `true`, replaces an existing directive
     /// - Returns: Tuple of (modified HTML, action taken)
     public static func inject(
@@ -145,9 +151,10 @@ public enum AgentDirectiveInjector {
         force: Bool
     ) -> (String, InjectionAction) {
         let hasExisting = html.contains(marker)
+        let hasAlternate = html.contains(alternateMarker)
         let hasLegacy = html.contains("class=\"\(legacyMarkerClass)\"")
 
-        if (hasExisting || hasLegacy) && !force {
+        if (hasExisting || hasAlternate || hasLegacy) && !force {
             return (html, .skipped)
         }
 
@@ -161,6 +168,11 @@ public enum AgentDirectiveInjector {
                 openTag: "<script",
                 closeTag: "</script>"
             )
+        }
+
+        // Remove existing <link rel="alternate" type="text/markdown"> if forcing
+        if hasAlternate && force {
+            content = removeSelfClosingTag(from: content, marker: alternateMarker)
         }
 
         // Remove legacy <p class="agent-directive"> tag if forcing
@@ -180,6 +192,44 @@ public enum AgentDirectiveInjector {
 
         content.insert(contentsOf: directive + "\n", at: headEnd.lowerBound)
         return (content, .injected)
+    }
+
+    /// Removes a self-closing HTML tag (e.g., `<link ... />`) containing a marker string.
+    private static func removeSelfClosingTag(from content: String, marker: String) -> String {
+        var result = content
+        guard let markerRange = result.range(of: marker) else {
+            return result
+        }
+
+        // Search backward from marker to find the opening <
+        let searchBackward = result[result.startIndex..<markerRange.lowerBound]
+        guard let openRange = searchBackward.range(of: "<", options: .backwards) else {
+            return result
+        }
+
+        // Search forward from marker to find the closing /> or >
+        let afterMarker = markerRange.upperBound..<result.endIndex
+        guard let closeRange = result.range(of: "/>", range: afterMarker)
+                ?? result.range(of: ">", range: afterMarker) else {
+            return result
+        }
+
+        var removeStart = openRange.lowerBound
+        var removeEnd = closeRange.upperBound
+
+        // Include surrounding newlines
+        if removeStart > result.startIndex {
+            let before = result.index(before: removeStart)
+            if result[before] == "\n" {
+                removeStart = before
+            }
+        }
+        if removeEnd < result.endIndex && result[removeEnd] == "\n" {
+            removeEnd = result.index(after: removeEnd)
+        }
+
+        result.removeSubrange(removeStart..<removeEnd)
+        return result
     }
 
     /// Removes an HTML tag containing a marker string, including surrounding newlines.
@@ -286,8 +336,8 @@ public enum AgentDirectiveInjector {
 
     /// Verifies that all documentation HTML files contain an agent directive.
     ///
-    /// Detects the current JSON-LD format (`encodingFormat` marker) and
-    /// also accepts the legacy `<p class="agent-directive">` format.
+    /// Detects the current combined format (JSON-LD marker or alternate link),
+    /// and also accepts the legacy `<p class="agent-directive">` format.
     ///
     /// - Parameter directoryPath: Path to the output directory
     /// - Returns: Tuple of (total files, files with directive, relative paths of files missing directive)
@@ -304,7 +354,9 @@ public enum AgentDirectiveInjector {
 
         for entry in entries {
             let html = try String(contentsOfFile: entry.absolutePath, encoding: .utf8)
-            if html.contains(marker) || html.contains("class=\"\(legacyMarkerClass)\"") {
+            if html.contains(marker)
+                || html.contains(alternateMarker)
+                || html.contains("class=\"\(legacyMarkerClass)\"") {
                 present += 1
             } else {
                 missing.append(entry.relativePath)
