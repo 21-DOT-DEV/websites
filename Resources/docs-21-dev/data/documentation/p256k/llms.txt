@@ -32,3 +32,5 @@ P256K wraps the Bitcoin Core `libsecp256k1` C library with a type-safe Swift API
 - [P256K.KeyAgreement.PrivateKey](https://docs.21.dev/data/documentation/p256k/p256k/keyagreement/privatekey.md): Key agreement private key — derive SharedSecret via sharedSecretFromKeyAgreement
 - [P256K.Schnorr.PrivateKey](https://docs.21.dev/data/documentation/p256k/p256k/schnorr/privatekey.md): Schnorr private key — signature generation, partial signing, XonlyKey derivation
 - [P256K.Recovery.PrivateKey](https://docs.21.dev/data/documentation/p256k/p256k/recovery/privatekey.md): Recovery private key — produces ECDSASignature with embedded recovery ID
+- [Int256](https://docs.21.dev/data/documentation/p256k/int256.md): 256-bit signed integer — fixed-width arithmetic for secp256k1 scalar operations
+- [UInt256](https://docs.21.dev/data/documentation/p256k/uint256.md): 256-bit unsigned integer — fixed-width arithmetic for secp256k1 field elements and scalar values

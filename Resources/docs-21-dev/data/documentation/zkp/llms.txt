@@ -31,3 +31,5 @@ ZKP wraps the Blockstream Elements `libsecp256k1-zkp` fork with a type-safe Swif
 - [ZKP.Signing.PublicKey](https://docs.21.dev/data/documentation/zkp/p256k/signing/publickey.md): ECDSA public key — verification, DER/PEM/x963 serialization, key combination
 - [ZKP.Schnorr.PrivateKey](https://docs.21.dev/data/documentation/zkp/p256k/schnorr/privatekey.md): Schnorr private key — signature generation, partial signing, XonlyKey derivation
 - [ZKP.Recovery.PrivateKey](https://docs.21.dev/data/documentation/zkp/p256k/recovery/privatekey.md): Recovery private key — produces ECDSASignature with embedded recovery ID
+- [Int256](https://docs.21.dev/data/documentation/zkp/int256.md): 256-bit signed integer — fixed-width arithmetic for secp256k1 scalar operations
+- [UInt256](https://docs.21.dev/data/documentation/zkp/uint256.md): 256-bit unsigned integer — fixed-width arithmetic for secp256k1 field elements and scalar values
