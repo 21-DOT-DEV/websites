@@ -135,30 +135,6 @@ public struct SoftwareSourceCodeSchema: Schema {
     }
 }
 
-/// Schema.org WebPage type for mainEntityOfPage references.
-/// https://schema.org/WebPage
-public struct WebPageSchema: Encodable, Sendable {
-    private let type = "WebPage"
-    public let id: String
-    
-    /// Creates a WebPage schema reference.
-    /// - Parameter id: The canonical URL of the web page
-    public init(id: String) {
-        self.id = id
-    }
-    
-    enum CodingKeys: String, CodingKey {
-        case type = "@type"
-        case id = "@id"
-    }
-    
-    public func encode(to encoder: Encoder) throws {
-        var container = encoder.container(keyedBy: CodingKeys.self)
-        try container.encode(type, forKey: .type)
-        try container.encode(id, forKey: .id)
-    }
-}
-
 /// Schema.org ComputerLanguage type for programming language.
 /// https://schema.org/ComputerLanguage
 public struct ComputerLanguageSchema: Encodable, Sendable {

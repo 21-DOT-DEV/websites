@@ -11,14 +11,27 @@
 import Foundation
 import Slipstream
 import DesignSystem
+import SchemaLib
 
 struct BlogListingPage {
+    // Page metadata
+    private static let pageTitle = "Bitcoin Dev + Swift Cryptography Tutorials & Updates | 21.dev Blog"
+    private static let pageDescription = "Practical Bitcoin developer notes, Swift cryptography tutorials, and the latest P256K open-source updates—21.dev."
+    private static let pageURL = "\(SiteIdentity.url)blog/"
     
     static func page(posts: [BlogPost]) -> some View {
         BasePage(
-            title: "Bitcoin Dev + Swift Cryptography Tutorials & Updates | 21.dev Blog",
-            description: "Practical Bitcoin developer notes, Swift cryptography tutorials, and the latest P256K open-source updates—21.dev.",
-            canonicalURL: URL(string: "\(SiteIdentity.url)blog/")
+            title: pageTitle,
+            description: pageDescription,
+            canonicalURL: URL(string: pageURL),
+            schemas: [
+                SiteIdentity.webPageSchema(
+                    url: pageURL,
+                    name: pageTitle,
+                    description: pageDescription
+                )
+            ],
+            llmsTxtURL: SiteIdentity.llmsTxtURL
         ) {
             SiteDefaults.header
             

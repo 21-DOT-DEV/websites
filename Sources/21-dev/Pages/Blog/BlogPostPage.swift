@@ -11,6 +11,7 @@
 import Foundation
 import Slipstream
 import DesignSystem
+import SchemaLib
 
 struct BlogPostPage {
     private let post: BlogPost
@@ -56,12 +57,41 @@ struct BlogPostPage {
         return truncated + "..."
     }
     
+    private var postURL: String {
+        "\(SiteIdentity.url)blog/\(post.metadata.slug)/"
+    }
+    
+    private func buildSchemas() -> [any Schema] {
+        let description = generateDescription()
+        return [
+            BlogPostingSchema(
+                id: "\(postURL)#blogposting",
+                headline: post.metadata.title,
+                datePublished: post.metadata.date,
+                description: description,
+                author: SchemaReference(id: SiteIdentity.schemaID),
+                url: postURL,
+                mainEntityOfPage: SchemaReference(id: "\(postURL)#webpage")
+            ),
+            SiteIdentity.webPageSchema(
+                url: postURL,
+                name: post.metadata.title,
+                description: description,
+                mainEntity: SchemaReference(id: "\(postURL)#blogposting")
+            ),
+            SiteIdentity.organizationSchema
+        ]
+    }
+    
     var body: some View {
         BasePage(
             title: post.metadata.seoTitle ?? "\(post.metadata.title) | 21.dev Blog",
             description: generateDescription(),
-            canonicalURL: URL(string: "\(SiteIdentity.url)blog/\(post.metadata.slug)/"),
-            articleMetadata: post.metadata.toArticleMetadata()
+            canonicalURL: URL(string: postURL),
+            articleMetadata: post.metadata.toArticleMetadata(),
+            schemas: buildSchemas(),
+            llmsTxtURL: SiteIdentity.llmsTxtURL,
+            alternateMarkdownURL: URL(string: "\(SiteIdentity.url)data/blog/\(post.metadata.slug).md")
         ) {
             SiteDefaults.header
             

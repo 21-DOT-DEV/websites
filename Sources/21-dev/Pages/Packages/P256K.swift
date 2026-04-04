@@ -14,6 +14,11 @@ import Slipstream
 import DesignSystem
 
 struct P256KPage {
+    // Page metadata
+    private static let pageTitle = "P256K: Swift secp256k1 (ECDSA + Schnorr) + SPM | 21.dev"
+    private static let pageDescription = "P256K is a Swift wrapper for libsecp256k1 with ECDSA + Schnorr, type-safe APIs, and Swift Package Manager support for Bitcoin and Nostr apps."
+    private static let pageURL = "\(SiteIdentity.url)packages/p256k/"
+    
     // Static component instances for CSS generation and page content
     static let codeHeroSection = CodeHeroSection(
         icon: "🔏",
@@ -308,10 +313,20 @@ struct P256KPage {
     
     static var page: some View {
         BasePage(
-            title: "P256K: Swift secp256k1 (ECDSA + Schnorr) + SPM | 21.dev",
-            description: "P256K is a Swift wrapper for libsecp256k1 with ECDSA + Schnorr, type-safe APIs, and Swift Package Manager support for Bitcoin and Nostr apps.",
-            canonicalURL: URL(string: "\(SiteIdentity.url)packages/p256k/"),
-            schemas: [faq.schema, softwareSourceCode, SiteIdentity.organizationSchema]
+            title: pageTitle,
+            description: pageDescription,
+            canonicalURL: URL(string: pageURL),
+            schemas: [
+                faq.schema,
+                softwareSourceCode,
+                SiteIdentity.organizationSchema,
+                SiteIdentity.webPageSchema(
+                    url: pageURL,
+                    name: pageTitle,
+                    description: pageDescription
+                )
+            ],
+            llmsTxtURL: SiteIdentity.llmsTxtURL
         ) {
             SiteDefaults.header
             

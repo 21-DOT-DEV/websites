@@ -8,6 +8,7 @@
 import Testing
 import Foundation
 @testable import DesignSystem
+import SchemaLib
 import Slipstream
 import TestUtils
 
@@ -129,6 +130,71 @@ struct BasePageTests {
             let bodyContent = String(html[bodyStart..<bodyEnd])
             #expect(bodyContent.contains("h-screen"))
         }
+    }
+    
+    @Test("BasePage renders llms-txt link when llmsTxtURL provided")
+    func testBasePageLLMsTxtLink() throws {
+        let page = BasePage(
+            title: "Test",
+            llmsTxtURL: URL(string: "https://21.dev/llms.txt")
+        ) {
+            Text("Content")
+        }
+        let html = try TestUtils.renderHTML(page)
+        
+        #expect(html.contains("rel=\"llms-txt\""))
+        #expect(html.contains("href=\"https://21.dev/llms.txt\""))
+    }
+    
+    @Test("BasePage omits llms-txt link when llmsTxtURL is nil")
+    func testBasePageNoLLMsTxtLink() throws {
+        let page = BasePage(title: "Test") {
+            Text("Content")
+        }
+        let html = try TestUtils.renderHTML(page)
+        
+        #expect(!html.contains("llms-txt"))
+    }
+    
+    @Test("BasePage renders alternate markdown link when alternateMarkdownURL provided")
+    func testBasePageAlternateMarkdown() throws {
+        let page = BasePage(
+            title: "Test",
+            alternateMarkdownURL: URL(string: "https://21.dev/data/blog/hello.md")
+        ) {
+            Text("Content")
+        }
+        let html = try TestUtils.renderHTML(page)
+        
+        #expect(html.contains("rel=\"alternate\""))
+        #expect(html.contains("type=\"text/markdown\""))
+        #expect(html.contains("href=\"https://21.dev/data/blog/hello.md\""))
+    }
+    
+    @Test("BasePage omits alternate link when alternateMarkdownURL is nil")
+    func testBasePageNoAlternateMarkdown() throws {
+        let page = BasePage(title: "Test") {
+            Text("Content")
+        }
+        let html = try TestUtils.renderHTML(page)
+        
+        #expect(!html.contains("text/markdown"))
+    }
+    
+    @Test("BasePage renders both llms-txt and alternate markdown links together")
+    func testBasePageBothLinks() throws {
+        let page = BasePage(
+            title: "Blog Post",
+            llmsTxtURL: URL(string: "https://21.dev/llms.txt"),
+            alternateMarkdownURL: URL(string: "https://21.dev/data/blog/post.md")
+        ) {
+            Text("Content")
+        }
+        let html = try TestUtils.renderHTML(page)
+        
+        #expect(html.contains("rel=\"llms-txt\""))
+        #expect(html.contains("rel=\"alternate\""))
+        #expect(html.contains("text/markdown"))
     }
     
     @Test("BasePage complete HTML snapshot")

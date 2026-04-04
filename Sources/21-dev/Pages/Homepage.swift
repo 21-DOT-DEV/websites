@@ -11,14 +11,28 @@
 import Foundation
 import Slipstream
 import DesignSystem
+import SchemaLib
 
 struct Homepage {
+    // Page metadata
+    private static let pageTitle = "Build Bitcoin Apps in Swift with Open-Source Tools | 21.dev"
+    private static let pageDescription = "Build Bitcoin apps in Swift with 21.dev—open-source libsecp256k1 wrapper, SPM tools, and docs to ship faster."
     
     static var page: some View {
         BasePage(
-            title: "Build Bitcoin Apps in Swift with Open-Source Tools | 21.dev",
-            description: "Build Bitcoin apps in Swift with 21.dev—open-source libsecp256k1 wrapper, SPM tools, and docs to ship faster.",
-            canonicalURL: URL(string: SiteIdentity.url)
+            title: pageTitle,
+            description: pageDescription,
+            canonicalURL: URL(string: SiteIdentity.url),
+            schemas: [
+                SiteIdentity.websiteSchema,
+                SiteIdentity.organizationSchema,
+                SiteIdentity.webPageSchema(
+                    url: SiteIdentity.url,
+                    name: pageTitle,
+                    description: pageDescription
+                )
+            ],
+            llmsTxtURL: SiteIdentity.llmsTxtURL
         ) {
             SiteDefaults.header
 

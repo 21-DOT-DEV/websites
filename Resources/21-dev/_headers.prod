@@ -30,6 +30,14 @@
   Cache-Control: no-store
   Pragma: no-cache
 
+# Blog markdown alternates for AI agents
+/data/blog/*.md
+  Content-Type: text/markdown; charset=utf-8
+  X-Content-Type-Options: nosniff
+  X-Robots-Tag: noindex
+  Cache-Control: public, max-age=300, must-revalidate
+  Vary: Accept-Encoding
+
 # Production HTML pages — include strict security headers + HSTS
 # NOTE: Extend CSP allowlists by appending origins to the existing directive (e.g., add another `connect-src` host) rather than removing defaults.
 /*

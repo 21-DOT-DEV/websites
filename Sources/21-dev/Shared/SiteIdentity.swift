@@ -39,6 +39,41 @@ public struct SiteIdentity {
     // Social links array for sameAs schema.org property
     public static let sameAs: [String] = [githubURL, twitterURL, nostrURL]
     
+    // AI agent discovery
+    public static let llmsTxtURL = URL(string: "\(url)llms.txt")!
+    
+    // JSON-LD @id fragment convention:
+    // #website      — WebSiteSchema (homepage only)
+    // #organization — OrganizationSchema (homepage, P256K, blog posts)
+    // #webpage      — WebPageSchema (every indexed page, scoped by page URL)
+    // #blogposting  — BlogPostingSchema (blog post pages, scoped by post URL)
+    // Fragments must be unique within a single page's @graph.
+    
+    // Shared WebSite schema with @id for cross-referencing
+    public static let websiteSchema = WebSiteSchema(
+        id: "\(url)#website",
+        name: name,
+        url: url
+    )
+    
+    /// Creates a WebPageSchema for an indexed page, applying the site's
+    /// `isPartOf` reference and `#webpage` fragment convention automatically.
+    public static func webPageSchema(
+        url pageURL: String,
+        name: String,
+        description: String? = nil,
+        mainEntity: SchemaReference? = nil
+    ) -> WebPageSchema {
+        WebPageSchema(
+            id: "\(pageURL)#webpage",
+            isPartOf: SchemaReference(id: "\(url)#website"),
+            name: name,
+            url: pageURL,
+            description: description,
+            mainEntity: mainEntity
+        )
+    }
+    
     // Organization schema for structured data
     public static let organizationSchema = OrganizationSchema(
         id: schemaID,

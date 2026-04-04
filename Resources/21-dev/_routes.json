@@ -17,6 +17,8 @@
     "/*.svg",
     "/*.woff2",
     "/*.woff",
-    "/*.ico"
+    "/*.ico",
+    "/llms.txt",
+    "/llms-full.txt"
   ]
 }

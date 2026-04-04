@@ -20,7 +20,8 @@ struct PackagesNotFoundPage {
         BasePage(
             title: "404: Package not found | 21.dev",
             description: "The package page you're looking for doesn't exist.",
-            robotsDirective: "noindex, nofollow"
+            robotsDirective: "noindex, nofollow",
+            llmsTxtURL: SiteIdentity.llmsTxtURL
         ) {
             SiteDefaults.header
             
