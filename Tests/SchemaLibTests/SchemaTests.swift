@@ -801,6 +801,39 @@ struct SchemaTests {
         #expect(parsed["@id"] as? String == "https://21.dev/blog/#webpage")
     }
     
+    @Test("WebPageSchema encodes breadcrumb reference when provided")
+    func testWebPageSchemaWithBreadcrumb() throws {
+        let schema = WebPageSchema(
+            id: "https://docs.21.dev/documentation/p256k/signing/#webpage",
+            isPartOf: SchemaReference(id: "https://docs.21.dev/#website"),
+            name: "Signing",
+            url: "https://docs.21.dev/documentation/p256k/signing/",
+            breadcrumb: SchemaReference(id: "https://docs.21.dev/documentation/p256k/signing/#breadcrumb")
+        )
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.sortedKeys]
+        let data = try encoder.encode(schema)
+        let parsed = try JSONSerialization.jsonObject(with: data) as! [String: Any]
+        
+        let breadcrumb = parsed["breadcrumb"] as? [String: Any]
+        #expect(breadcrumb?["@id"] as? String == "https://docs.21.dev/documentation/p256k/signing/#breadcrumb")
+    }
+    
+    @Test("WebPageSchema omits breadcrumb when nil")
+    func testWebPageSchemaOmitsBreadcrumb() throws {
+        let schema = WebPageSchema(
+            id: "https://docs.21.dev/documentation/p256k/#webpage",
+            isPartOf: SchemaReference(id: "https://docs.21.dev/#website"),
+            name: "P256K",
+            url: "https://docs.21.dev/documentation/p256k/"
+        )
+        let encoder = JSONEncoder()
+        let data = try encoder.encode(schema)
+        let parsed = try JSONSerialization.jsonObject(with: data) as! [String: Any]
+        
+        #expect(parsed["breadcrumb"] == nil)
+    }
+    
     @Test("WebPageSchema defaults to WebPage type")
     func testWebPageSchemaDefaultType() throws {
         let schema = WebPageSchema(id: "https://example.com/")
@@ -1030,6 +1063,32 @@ struct SchemaTests {
         #expect(items?[0]["item"] as? String == "https://21.dev/")
         #expect(items?[1]["item"] == nil)
         #expect(items?[1]["name"] as? String == "Blog")
+    }
+    
+    @Test("BreadcrumbListSchema encodes @id when provided")
+    func testBreadcrumbListSchemaWithId() throws {
+        let schema = BreadcrumbListSchema(id: "https://docs.21.dev/documentation/p256k/#breadcrumb", items: [
+            BreadcrumbItemSchema(position: 1, name: "P256K", item: "https://docs.21.dev/documentation/p256k/")
+        ])
+        let graph = SchemaGraph(schema)
+        let json = try graph.render()
+        
+        let data = json.data(using: .utf8)!
+        let parsed = try JSONSerialization.jsonObject(with: data) as! [String: Any]
+        
+        #expect(parsed["@id"] as? String == "https://docs.21.dev/documentation/p256k/#breadcrumb")
+        #expect(parsed["@type"] as? String == "BreadcrumbList")
+    }
+    
+    @Test("BreadcrumbListSchema omits @id when nil")
+    func testBreadcrumbListSchemaOmitsId() throws {
+        let schema = BreadcrumbListSchema(items: [
+            BreadcrumbItemSchema(position: 1, name: "Home", item: "https://21.dev/")
+        ])
+        let graph = SchemaGraph(schema)
+        let json = try graph.render()
+        
+        #expect(!json.contains("@id"))
     }
     
     @Test("BreadcrumbListSchema works in @graph with other schemas")

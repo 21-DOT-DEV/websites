@@ -74,54 +74,228 @@ public enum AgentDirectiveInjector {
         return String(components[1])
     }
 
+    /// Marker for the `<link rel="llms-txt">` tag.
+    static let llmsTxtMarker = "rel=\"llms-txt\""
+
     /// Marker for the `<link rel="alternate">` markdown tag.
     static let alternateMarker = "rel=\"alternate\" type=\"text/markdown\""
 
+    /// Known display names for DocC URL segments.
+    ///
+    /// Maps lowercased URL segments to their proper-cased display names.
+    /// Single-word segments use capitalize-first fallback; only multi-word
+    /// compounds that would fail under fallback need explicit entries.
+    ///
+    /// Implementation step: After building locally, scan BOTH modules:
+    ///   find Websites/docs-21-dev/documentation -name index.html | \
+    ///     sed 's|.*/documentation/||; s|/index.html||' | \
+    ///     tr '/' '\n' | sort -u
+    /// Compare unique segments against knownNames keys.
+    /// This covers both P256K and ZKP (including ZKP's re-exported P256K symbols).
+    ///
+    /// Future contributors: when new symbols are added to P256K or ZKP,
+    /// run the scan command above and add any new multi-word compounds to this map.
+    static let knownNames: [String: String] = [
+        // Modules
+        "p256k": "P256K",
+        "zkp": "ZKP",
+        // Compound names (capitalize-first fallback would be wrong)
+        "int256": "Int256",
+        "keyagreement": "KeyAgreement",
+        "privatekey": "PrivateKey",
+        "publickey": "PublicKey",
+        "xonlypublickey": "XonlyPublicKey",
+        "sharedsecret": "SharedSecret",
+        "sha256digest": "SHA256Digest",
+        "partialsignature": "PartialSignature",
+        "surjectionproof": "SurjectionProof",
+        "rangeproof": "RangeProof",
+        "cryptokitasn1error": "CryptoKitASN1Error",
+        "cryptokitmetaerror": "CryptoKitMetaError",
+        // Articles
+        "gettingstarted": "GettingStarted",
+        // Top-level documentation root
+        "documentation": "API Reference",
+    ]
+
+    /// Resolves a URL segment to its display name using knownNames, with fallback.
+    ///
+    /// Rules (in order):
+    /// 1. If segment is in `knownNames`, use the mapped value
+    /// 2. If segment contains `(` (Swift symbol like `init(rawrepresentation:)`), keep as-is
+    /// 3. Otherwise, capitalize the first letter (fallback for single-word segments)
+    static func resolveName(for segment: String) -> String {
+        if let known = knownNames[segment] {
+            return known
+        }
+        if segment.contains("(") {
+            return segment
+        }
+        return segment.prefix(1).uppercased() + segment.dropFirst()
+    }
+
+    /// Derives breadcrumb items and page name from a documentation-relative path.
+    ///
+    /// Uses an interleaved dedup + URL construction algorithm that preserves
+    /// canonical DocC URLs (with doubled segments) in breadcrumb item URLs.
+    ///
+    /// - Parameters:
+    ///   - relativePath: File path relative to output directory (from HTMLFileWalker,
+    ///     always includes `index.html` — never a bare directory)
+    ///   - baseURL: Site base URL (e.g., `https://docs.21.dev/`)
+    /// - Returns: Tuple of (breadcrumb items for BreadcrumbList, page display name)
+    public static func deriveBreadcrumbs(
+        from relativePath: String,
+        baseURL: URL
+    ) -> (items: [BreadcrumbItemSchema], pageName: String) {
+        // Step 0: Strip trailing /index.html or .html
+        var stripped = relativePath
+        if stripped.hasSuffix("/index.html") {
+            stripped = String(stripped.dropLast("/index.html".count))
+        } else if stripped.hasSuffix(".html") {
+            stripped = String(stripped.dropLast(".html".count))
+        }
+
+        // Step 1: Extract segments after "documentation/" prefix
+        let prefix = "documentation/"
+        let segments: [String]
+        if stripped.hasPrefix(prefix) {
+            let remainder = String(stripped.dropFirst(prefix.count))
+            segments = remainder.split(separator: "/").map(String.init)
+        } else {
+            // Path is just "documentation" (no trailing slash) → zero segments
+            segments = []
+        }
+
+        // Zero segments: top-level documentation/index.html
+        if segments.isEmpty {
+            return (items: [], pageName: resolveName(for: "documentation"))
+        }
+
+        // Step 2: Walk original segments, building cumulative URLs AND deduplicating.
+        // Each candidate stores (name, url) for a breadcrumb item.
+        // Dedup-consecutive collapses ALL consecutive runs — safe because DocC
+        // never generates triple-or-more consecutive identical segments.
+        var candidates: [(name: String, url: String)] = []
+        var cumulativePath = "documentation/"
+        var previousSegment: String?
+
+        for segment in segments {
+            cumulativePath += segment + "/"
+
+            if segment == previousSegment {
+                // Consecutive duplicate — skip (dedup) but URL path still extends
+                previousSegment = segment
+                continue
+            }
+
+            let name = resolveName(for: segment)
+            let url = baseURL.appendingPathComponent(cumulativePath).absoluteString
+            candidates.append((name: name, url: url))
+            previousSegment = segment
+        }
+
+        // Step 3: Pop the last candidate as the leaf (becomes WebPage.name)
+        guard let leaf = candidates.popLast() else {
+            return (items: [], pageName: resolveName(for: "documentation"))
+        }
+
+        // Step 4: Remaining candidates become BreadcrumbItemSchema entries
+        let items = candidates.enumerated().map { index, candidate in
+            BreadcrumbItemSchema(
+                position: index + 1,
+                name: candidate.name,
+                item: candidate.url
+            )
+        }
+
+        return (items: items, pageName: leaf.name)
+    }
+
     /// Builds the agent directive tags for injection into `<head>`.
     ///
-    /// Produces up to two tags:
-    /// 1. `<link rel="alternate" type="text/markdown">` — standard HTML alternate
-    ///    link pointing to the markdown version of this page (only when markdown exists)
-    /// 2. `<script type="application/ld+json">` — JSON-LD with schema.org hierarchy:
-    ///    - `isPartOf`: Module-level `llms.txt` index (or parent site)
-    ///    - `mainEntity`: Root `llms.txt` index
+    /// Produces up to three tags:
+    /// 1. `<link rel="llms-txt">` — llms.txt discovery (always present)
+    /// 2. `<link rel="alternate" type="text/markdown">` — markdown alternate (when available)
+    /// 3. `<script type="application/ld+json">` — JSON-LD `@graph` with:
+    ///    - `WebSite` node (always — intentionally on every page, docs subdomain has no homepage)
+    ///    - `WebPage` node with `isPartOf → WebSite`
+    ///    - `BreadcrumbList` node (only when breadcrumb items exist)
     ///
     /// - Parameters:
     ///   - markdownURL: The markdown URL for this specific page, or `nil` if none exists
-    ///   - module: The documentation module name (e.g., `p256k`), or `nil`
-    ///   - baseURL: Site base URL
+    ///   - relativePath: File path relative to the output directory
+    ///   - baseURL: Site base URL (e.g., `https://docs.21.dev/`)
     /// - Returns: Combined HTML string for injection before `</head>`
     public static func buildDirective(
         markdownURL: URL?,
-        module: String?,
+        relativePath: String,
         baseURL: URL
     ) throws -> String {
-        let globalLlms = baseURL.appendingPathComponent("llms.txt").absoluteString
+        let baseURLString = baseURL.absoluteString
 
-        let partOf: WebSiteSchema
-        if let module {
-            let moduleLlms = baseURL
-                .appendingPathComponent("data/documentation/\(module)/llms.txt")
-                .absoluteString
-            partOf = WebSiteSchema(name: "\(module.uppercased()) Module", url: moduleLlms)
+        // Derive breadcrumbs and page name
+        let (breadcrumbItems, pageName) = deriveBreadcrumbs(from: relativePath, baseURL: baseURL)
+
+        // Derive page URL from relativePath
+        var pagePathComponent = relativePath
+        if pagePathComponent.hasSuffix("/index.html") {
+            pagePathComponent = String(pagePathComponent.dropLast("index.html".count))
+        } else if pagePathComponent.hasSuffix(".html") {
+            pagePathComponent = String(pagePathComponent.dropLast(".html".count)) + "/"
+        }
+        let pageURL = baseURL.appendingPathComponent(pagePathComponent).absoluteString
+
+        // Build @graph nodes
+        var schemas: [any Schema] = []
+
+        // 1. WebSite — always present on every page
+        let websiteId = "\(baseURLString)#website"
+        let website = WebSiteSchema(
+            id: websiteId,
+            name: "docs.21.dev",
+            url: baseURLString
+        )
+        schemas.append(website)
+
+        // 2. BreadcrumbList — only when items exist
+        let breadcrumbId = "\(pageURL)#breadcrumb"
+        let breadcrumbRef: SchemaReference?
+        if !breadcrumbItems.isEmpty {
+            let breadcrumbList = BreadcrumbListSchema(
+                id: breadcrumbId,
+                items: breadcrumbItems
+            )
+            schemas.append(breadcrumbList)
+            breadcrumbRef = SchemaReference(id: breadcrumbId)
         } else {
-            partOf = WebSiteSchema(name: baseURL.host, url: baseURL.absoluteString)
+            breadcrumbRef = nil
         }
 
-        let schema = AgentDirectiveWebPage(
-            isPartOf: partOf,
-            mainEntity: WebSiteSchema(url: globalLlms)
+        // 3. WebPage — always present
+        let webPage = WebPageSchema(
+            id: "\(pageURL)#webpage",
+            isPartOf: SchemaReference(id: websiteId),
+            name: pageName,
+            url: pageURL,
+            breadcrumb: breadcrumbRef
         )
+        schemas.append(webPage)
 
+        // Build output tags
         var parts: [String] = []
 
-        // 1. Standard <link rel="alternate"> for markdown (when available)
+        // 1. <link rel="llms-txt"> — always present
+        let llmsTxtURL = baseURL.appendingPathComponent("llms.txt").absoluteString
+        parts.append("<link \(llmsTxtMarker) href=\"\(llmsTxtURL)\" />")
+
+        // 2. <link rel="alternate"> for markdown (when available)
         if let markdownURL {
             parts.append("<link \(alternateMarker) href=\"\(markdownURL.absoluteString)\" />")
         }
 
-        // 2. JSON-LD for site hierarchy
-        let json = try SchemaGraph(schema).renderCompact()
+        // 3. JSON-LD @graph
+        let json = try SchemaGraph(schemas).renderCompact()
         parts.append("<script type=\"application/ld+json\">\(json)</script>")
 
         return parts.joined(separator: "\n")
@@ -152,9 +326,10 @@ public enum AgentDirectiveInjector {
     ) -> (String, InjectionAction) {
         let hasExisting = html.contains(marker)
         let hasAlternate = html.contains(alternateMarker)
+        let hasLlmsTxt = html.contains(llmsTxtMarker)
         let hasLegacy = html.contains("class=\"\(legacyMarkerClass)\"")
 
-        if (hasExisting || hasAlternate || hasLegacy) && !force {
+        if (hasExisting || hasAlternate || hasLlmsTxt || hasLegacy) && !force {
             return (html, .skipped)
         }
 
@@ -173,6 +348,11 @@ public enum AgentDirectiveInjector {
         // Remove existing <link rel="alternate" type="text/markdown"> if forcing
         if hasAlternate && force {
             content = removeSelfClosingTag(from: content, marker: alternateMarker)
+        }
+
+        // Remove existing <link rel="llms-txt"> if forcing
+        if hasLlmsTxt && force {
+            content = removeSelfClosingTag(from: content, marker: llmsTxtMarker)
         }
 
         // Remove legacy <p class="agent-directive"> tag if forcing
@@ -306,8 +486,7 @@ public enum AgentDirectiveInjector {
                 let markdownURL: URL? = FileManager.default.fileExists(atPath: mdLocalPath)
                     ? deriveMarkdownURL(baseURL: baseURL, relativePath: entry.relativePath)
                     : nil
-                let module = extractModule(from: entry.relativePath)
-                let directive = try buildDirective(markdownURL: markdownURL, module: module, baseURL: baseURL)
+                let directive = try buildDirective(markdownURL: markdownURL, relativePath: entry.relativePath, baseURL: baseURL)
 
                 let (fixedHTML, action) = inject(html: html, directive: directive, force: force)
 
@@ -354,9 +533,11 @@ public enum AgentDirectiveInjector {
 
         for entry in entries {
             let html = try String(contentsOfFile: entry.absolutePath, encoding: .utf8)
-            if html.contains(marker)
-                || html.contains(alternateMarker)
-                || html.contains("class=\"\(legacyMarkerClass)\"") {
+            // Dual-marker check: both isPartOf AND llms-txt must be present.
+            // This distinguishes new format from old (AgentDirectiveWebPage had
+            // isPartOf but no llms-txt link). Old-format pages fail this check,
+            // which is intentional — forces complete migration via --force.
+            if html.contains(marker) && html.contains(llmsTxtMarker) {
                 present += 1
             } else {
                 missing.append(entry.relativePath)

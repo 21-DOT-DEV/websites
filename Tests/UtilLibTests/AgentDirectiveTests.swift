@@ -85,71 +85,244 @@ struct AgentDirectiveTests {
         #expect(module == nil)
     }
 
+    // MARK: - deriveBreadcrumbs
+
+    @Test("Top-level documentation/index.html produces zero breadcrumbs and API Reference name")
+    func breadcrumbsTopLevel() {
+        let result = AgentDirectiveInjector.deriveBreadcrumbs(
+            from: "documentation/index.html",
+            baseURL: baseURL
+        )
+        #expect(result.items.isEmpty)
+        #expect(result.pageName == "API Reference")
+    }
+
+    @Test("Module root produces zero breadcrumbs")
+    func breadcrumbsModuleRoot() {
+        let result = AgentDirectiveInjector.deriveBreadcrumbs(
+            from: "documentation/p256k/index.html",
+            baseURL: baseURL
+        )
+        #expect(result.items.isEmpty)
+        #expect(result.pageName == "P256K")
+    }
+
+    @Test("Non-doubled direct child produces 1 breadcrumb")
+    func breadcrumbsDirectChild() {
+        let result = AgentDirectiveInjector.deriveBreadcrumbs(
+            from: "documentation/p256k/int256/index.html",
+            baseURL: baseURL
+        )
+        #expect(result.items.count == 1)
+        #expect(result.items[0].name == "P256K")
+        #expect(result.items[0].item?.contains("/documentation/p256k/") == true)
+        #expect(result.pageName == "Int256")
+    }
+
+    @Test("Article path produces 1 breadcrumb")
+    func breadcrumbsArticle() {
+        let result = AgentDirectiveInjector.deriveBreadcrumbs(
+            from: "documentation/p256k/gettingstarted/index.html",
+            baseURL: baseURL
+        )
+        #expect(result.items.count == 1)
+        #expect(result.items[0].name == "P256K")
+        #expect(result.pageName == "GettingStarted")
+    }
+
+    @Test("Doubled one level deduplicates correctly")
+    func breadcrumbsDoubledOneLevel() {
+        let result = AgentDirectiveInjector.deriveBreadcrumbs(
+            from: "documentation/p256k/p256k/signing/index.html",
+            baseURL: baseURL
+        )
+        #expect(result.items.count == 1)
+        #expect(result.items[0].name == "P256K")
+        // Breadcrumb URL points to /documentation/p256k/ (canonical path)
+        #expect(result.items[0].item?.contains("/documentation/p256k/") == true)
+        #expect(result.pageName == "Signing")
+    }
+
+    @Test("Doubled two levels produces correct breadcrumbs with canonical URLs")
+    func breadcrumbsDoubledTwoLevels() {
+        let result = AgentDirectiveInjector.deriveBreadcrumbs(
+            from: "documentation/p256k/p256k/signing/privatekey/index.html",
+            baseURL: baseURL
+        )
+        #expect(result.items.count == 2)
+        #expect(result.items[0].name == "P256K")
+        #expect(result.items[0].item?.contains("/documentation/p256k/") == true)
+        #expect(result.items[1].name == "Signing")
+        // Signing URL uses canonical DocC path with doubled p256k
+        #expect(result.items[1].item?.contains("/documentation/p256k/p256k/signing/") == true)
+        #expect(result.pageName == "PrivateKey")
+    }
+
+    @Test("Cross-module ZKP path produces correct breadcrumbs")
+    func breadcrumbsCrossModule() {
+        let result = AgentDirectiveInjector.deriveBreadcrumbs(
+            from: "documentation/zkp/p256k/signing/privatekey/index.html",
+            baseURL: baseURL
+        )
+        #expect(result.items.count == 3)
+        #expect(result.items[0].name == "ZKP")
+        #expect(result.items[1].name == "P256K")
+        #expect(result.items[2].name == "Signing")
+        #expect(result.pageName == "PrivateKey")
+    }
+
+    @Test("Known compound name resolves correctly")
+    func breadcrumbsKnownName() {
+        let result = AgentDirectiveInjector.deriveBreadcrumbs(
+            from: "documentation/p256k/p256k/keyagreement/index.html",
+            baseURL: baseURL
+        )
+        #expect(result.items.count == 1)
+        #expect(result.items[0].name == "P256K")
+        #expect(result.pageName == "KeyAgreement")
+    }
+
+    @Test("Swift symbol with parentheses kept as-is")
+    func breadcrumbsParentheses() {
+        let result = AgentDirectiveInjector.deriveBreadcrumbs(
+            from: "documentation/p256k/p256k/init(rawrepresentation:)/index.html",
+            baseURL: baseURL
+        )
+        #expect(result.items.count == 1)
+        #expect(result.items[0].name == "P256K")
+        #expect(result.pageName == "init(rawrepresentation:)")
+    }
+
+    @Test("Unknown single-word segment uses capitalize-first fallback")
+    func breadcrumbsCapitalizeFallback() {
+        let result = AgentDirectiveInjector.deriveBreadcrumbs(
+            from: "documentation/p256k/p256k/context/index.html",
+            baseURL: baseURL
+        )
+        #expect(result.items.count == 1)
+        #expect(result.pageName == "Context")
+    }
+
+    @Test("Extended module page swift uses capitalize-first")
+    func breadcrumbsExtendedModuleSwift() {
+        let result = AgentDirectiveInjector.deriveBreadcrumbs(
+            from: "documentation/p256k/swift/index.html",
+            baseURL: baseURL
+        )
+        #expect(result.items.count == 1)
+        #expect(result.items[0].name == "P256K")
+        #expect(result.pageName == "Swift")
+    }
+
+    @Test("Extended module page foundation uses capitalize-first")
+    func breadcrumbsExtendedModuleFoundation() {
+        let result = AgentDirectiveInjector.deriveBreadcrumbs(
+            from: "documentation/p256k/foundation/index.html",
+            baseURL: baseURL
+        )
+        #expect(result.items.count == 1)
+        #expect(result.items[0].name == "P256K")
+        #expect(result.pageName == "Foundation")
+    }
+
     // MARK: - buildDirective
 
-    @Test("Builds combined directive with module and markdown")
-    func buildDirectiveWithModule() throws {
+    @Test("Builds directive with @graph containing WebSite and WebPage")
+    func buildDirectiveWithGraph() throws {
         let markdownURL = URL(string: "https://docs.21.dev/data/documentation/p256k/p256k/context.md")!
         let directive = try AgentDirectiveInjector.buildDirective(
             markdownURL: markdownURL,
-            module: "p256k",
+            relativePath: "documentation/p256k/p256k/context/index.html",
             baseURL: baseURL
         )
 
+        // <link rel="llms-txt"> always present
+        #expect(directive.contains("rel=\"llms-txt\""))
+        #expect(directive.contains("llms.txt"))
         // <link rel="alternate"> for markdown
         #expect(directive.contains("rel=\"alternate\""))
         #expect(directive.contains("type=\"text/markdown\""))
         #expect(directive.contains("context.md"))
-        // JSON-LD for hierarchy
+        // JSON-LD @graph
         #expect(directive.contains("application/ld+json"))
-        #expect(directive.contains("schema.org"))
+        #expect(directive.contains("@graph"))
+        #expect(directive.contains("WebSite"))
         #expect(directive.contains("WebPage"))
-        #expect(directive.contains("P256K Module"))
-        #expect(directive.contains("llms.txt"))
-        // No MediaObject in JSON-LD (markdown is in <link> now)
-        #expect(!directive.contains("MediaObject"))
-        #expect(!directive.contains("encodingFormat"))
-    }
-
-    @Test("Builds combined directive without module uses site as isPartOf")
-    func buildDirectiveWithoutModule() throws {
-        let markdownURL = URL(string: "https://docs.21.dev/data/documentation/overview.md")!
-        let directive = try AgentDirectiveInjector.buildDirective(
-            markdownURL: markdownURL,
-            module: nil,
-            baseURL: baseURL
-        )
-
-        // <link rel="alternate"> for markdown
-        #expect(directive.contains("rel=\"alternate\""))
-        #expect(directive.contains("overview.md"))
-        // mainEntity points to root llms.txt
-        #expect(directive.contains("llms.txt"))
-        // isPartOf points to the site itself
         #expect(directive.contains("docs.21.dev"))
-        // No "Module" label when module is nil
-        #expect(!directive.contains("Module"))
+        #expect(directive.contains("isPartOf"))
+        // No mainEntity (removed in migration)
+        #expect(!directive.contains("mainEntity"))
+        // No MediaObject
+        #expect(!directive.contains("MediaObject"))
     }
 
-    @Test("Builds fallback directive when markdownURL is nil")
-    func buildFallbackDirective() throws {
+    @Test("Builds directive with breadcrumbs when path has depth")
+    func buildDirectiveWithBreadcrumbs() throws {
         let directive = try AgentDirectiveInjector.buildDirective(
             markdownURL: nil,
-            module: "p256k",
+            relativePath: "documentation/p256k/p256k/signing/privatekey/index.html",
             baseURL: baseURL
         )
 
-        // No <link rel="alternate"> when no markdown
+        #expect(directive.contains("BreadcrumbList"))
+        #expect(directive.contains("#breadcrumb"))
+        #expect(directive.contains("breadcrumb"))
+    }
+
+    @Test("Builds directive without breadcrumbs for module root")
+    func buildDirectiveNoBreadcrumbs() throws {
+        let directive = try AgentDirectiveInjector.buildDirective(
+            markdownURL: nil,
+            relativePath: "documentation/p256k/index.html",
+            baseURL: baseURL
+        )
+
+        #expect(!directive.contains("BreadcrumbList"))
+        // WebSite always present
+        #expect(directive.contains("WebSite"))
+        #expect(directive.contains("WebPage"))
+    }
+
+    @Test("Builds directive with llms-txt link but no alternate when markdown nil")
+    func buildDirectiveNoMarkdown() throws {
+        let directive = try AgentDirectiveInjector.buildDirective(
+            markdownURL: nil,
+            relativePath: "documentation/p256k/index.html",
+            baseURL: baseURL
+        )
+
+        // llms-txt always present
+        #expect(directive.contains("rel=\"llms-txt\""))
+        // No alternate link
         #expect(!directive.contains("rel=\"alternate\""))
         #expect(!directive.contains("text/markdown"))
-        // JSON-LD only
-        #expect(directive.hasPrefix("<script type=\"application/ld+json\">"))
-        #expect(directive.hasSuffix("</script>"))
-        // Should still point to llms.txt with module name
-        #expect(directive.contains("llms.txt"))
-        #expect(directive.contains("isPartOf"))
-        #expect(directive.contains("WebPage"))
-        #expect(directive.contains("P256K Module"))
+    }
+
+    @Test("WebSite node always present in @graph regardless of breadcrumb count")
+    func buildDirectiveWebSiteAlwaysPresent() throws {
+        // Module root (0 breadcrumbs)
+        let d1 = try AgentDirectiveInjector.buildDirective(
+            markdownURL: nil,
+            relativePath: "documentation/p256k/index.html",
+            baseURL: baseURL
+        )
+        #expect(d1.contains("WebSite"))
+
+        // Deep page (2 breadcrumbs)
+        let d2 = try AgentDirectiveInjector.buildDirective(
+            markdownURL: nil,
+            relativePath: "documentation/p256k/p256k/signing/privatekey/index.html",
+            baseURL: baseURL
+        )
+        #expect(d2.contains("WebSite"))
+
+        // Top-level (0 breadcrumbs)
+        let d3 = try AgentDirectiveInjector.buildDirective(
+            markdownURL: nil,
+            relativePath: "documentation/index.html",
+            baseURL: baseURL
+        )
+        #expect(d3.contains("WebSite"))
     }
 
     // MARK: - inject
@@ -202,6 +375,17 @@ struct AgentDirectiveTests {
         #expect(action == .skipped)
     }
 
+    @Test("Skips when llms-txt link already exists")
+    func skipExistingLlmsTxt() {
+        let html = """
+        <html><head><link rel="llms-txt" href="https://docs.21.dev/llms.txt" /></head><body></body></html>
+        """
+        let directive = "<script type=\"application/ld+json\">{\"new\":true}</script>"
+
+        let (_, action) = AgentDirectiveInjector.inject(html: html, directive: directive, force: false)
+        #expect(action == .skipped)
+    }
+
     @Test("Force replaces existing JSON-LD directive")
     func forceReplaceExisting() {
         let html = """
@@ -218,15 +402,16 @@ struct AgentDirectiveTests {
         #expect(!result.contains("\"old\":true"))
     }
 
-    @Test("Force replaces existing <link rel=alternate> and JSON-LD")
-    func forceReplaceAlternateAndJsonLd() {
+    @Test("Force replaces existing <link rel=alternate>, llms-txt, and JSON-LD")
+    func forceReplaceAllMarkers() {
         let html = """
         <html><head>
+        <link rel="llms-txt" href="https://docs.21.dev/llms.txt" />
         <link rel="alternate" type="text/markdown" href="/old.md" />
         <script type="application/ld+json">{"isPartOf":{"url":"old"}}</script>
         </head><body></body></html>
         """
-        let newDirective = "<link rel=\"alternate\" type=\"text/markdown\" href=\"/new.md\" />\n<script type=\"application/ld+json\">{\"isPartOf\":{\"url\":\"new\"}}</script>"
+        let newDirective = "<link rel=\"llms-txt\" href=\"https://docs.21.dev/llms.txt\" />\n<link rel=\"alternate\" type=\"text/markdown\" href=\"/new.md\" />\n<script type=\"application/ld+json\">{\"isPartOf\":{\"url\":\"new\"}}</script>"
 
         let (result, action) = AgentDirectiveInjector.inject(html: html, directive: newDirective, force: true)
 
@@ -234,6 +419,29 @@ struct AgentDirectiveTests {
         #expect(result.contains("new.md"))
         #expect(!result.contains("old.md"))
         #expect(result.contains("\"url\":\"new\""))
+    }
+
+    @Test("Force on old AgentDirectiveWebPage format removes mainEntity and adds llms-txt")
+    func forceReplaceOldFormat() {
+        // Real old format output has isPartOf AND mainEntity, but no <link rel="llms-txt">
+        let oldJsonLd = "{\"@context\":\"https://schema.org\",\"@type\":\"WebPage\",\"isPartOf\":{\"@type\":\"WebSite\",\"name\":\"P256K Module\",\"url\":\"https://docs.21.dev/data/documentation/p256k/llms.txt\"},\"mainEntity\":{\"@type\":\"WebSite\",\"url\":\"https://docs.21.dev/llms.txt\"}}"
+        let html = """
+        <html><head>
+        <link rel="alternate" type="text/markdown" href="/old.md" />
+        <script type="application/ld+json">\(oldJsonLd)</script>
+        </head><body></body></html>
+        """
+        let newDirective = "<link rel=\"llms-txt\" href=\"https://docs.21.dev/llms.txt\" />\n<script type=\"application/ld+json\">{\"@graph\":[{\"isPartOf\":{}}]}</script>"
+
+        let (result, action) = AgentDirectiveInjector.inject(html: html, directive: newDirective, force: true)
+
+        #expect(action == .injected)
+        // Old mainEntity removed
+        #expect(!result.contains("mainEntity"))
+        // New llms-txt link added
+        #expect(result.contains("rel=\"llms-txt\""))
+        // New format has @graph
+        #expect(result.contains("@graph"))
     }
 
     @Test("Force replaces legacy <p> directive with JSON-LD")
@@ -258,5 +466,54 @@ struct AgentDirectiveTests {
 
         let (_, action) = AgentDirectiveInjector.inject(html: html, directive: directive, force: false)
         #expect(action == .failed)
+    }
+
+    // MARK: - knownNames snapshot validation
+
+    @Test("Every multi-word compound segment in snapshot has a knownNames entry")
+    func knownNamesSnapshotCompleteness() throws {
+        // Load the checked-in snapshot of all DocC URL segments
+        let snapshotPath = URL(fileURLWithPath: #filePath)
+            .deletingLastPathComponent() // Tests/UtilLibTests/
+            .deletingLastPathComponent() // Tests/
+            .deletingLastPathComponent() // repo root
+            .appendingPathComponent("Resources/docs-21-dev/known-segments.txt")
+            .path
+
+        let content = try String(contentsOfFile: snapshotPath, encoding: .utf8)
+        let segments = content
+            .components(separatedBy: .newlines)
+            .map { $0.trimmingCharacters(in: .whitespaces) }
+            .filter { !$0.isEmpty && !$0.hasPrefix("#") }
+
+        // A segment is "multi-word compound" if it contains more than one
+        // logical word — detected by having a lowercase letter followed by
+        // an uppercase letter (camelCase when properly cased) or by being
+        // a known compound in the knownNames map.
+        // Simple heuristic: if capitalize-first would NOT produce the correct
+        // name, the segment MUST be in knownNames.
+        let knownNames = AgentDirectiveInjector.knownNames
+        var missing: [String] = []
+
+        for segment in segments {
+            if knownNames[segment] != nil {
+                // Entry exists in knownNames — correctly mapped
+            } else {
+                // Not in knownNames. Check if it's a multi-word compound where
+                // capitalize-first fallback would produce wrong casing.
+                // Use known word-boundary patterns that indicate compound names.
+                let compoundSuffixes = ["key", "secret", "digest", "error", "signature",
+                                        "proof", "started", "only", "kit"]
+                let isLikelyCompound = compoundSuffixes.contains(where: { suffix in
+                    segment.hasSuffix(suffix) && segment != suffix
+                })
+
+                if isLikelyCompound {
+                    missing.append(segment)
+                }
+            }
+        }
+
+        #expect(missing.isEmpty, "Segments missing from knownNames: \(missing). Add entries to AgentDirectiveInjector.knownNames.")
     }
 }

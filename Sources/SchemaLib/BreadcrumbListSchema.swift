@@ -17,22 +17,28 @@ public struct BreadcrumbListSchema: Schema {
     public static let schemaType = "BreadcrumbList"
     
     private let type = "BreadcrumbList"
+    public let id: String?
     public let itemListElement: [BreadcrumbItemSchema]
     
     /// Creates a BreadcrumbList schema from an array of breadcrumb items.
-    /// - Parameter items: Array of BreadcrumbItemSchema representing each level in the trail
-    public init(items: [BreadcrumbItemSchema]) {
+    /// - Parameters:
+    ///   - id: Stable entity identifier for cross-referencing (e.g., from WebPage.breadcrumb)
+    ///   - items: Array of BreadcrumbItemSchema representing each level in the trail
+    public init(id: String? = nil, items: [BreadcrumbItemSchema]) {
+        self.id = id
         self.itemListElement = items
     }
     
     enum CodingKeys: String, CodingKey {
         case type = "@type"
+        case id = "@id"
         case itemListElement
     }
     
     public func encode(to encoder: Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)
         try container.encode(type, forKey: .type)
+        try container.encodeIfPresent(id, forKey: .id)
         try container.encode(itemListElement, forKey: .itemListElement)
     }
 }
