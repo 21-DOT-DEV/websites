@@ -285,8 +285,14 @@ public enum AgentDirectiveInjector {
         // Build output tags
         var parts: [String] = []
 
-        // 1. <link rel="llms-txt"> — always present
-        let llmsTxtURL = baseURL.appendingPathComponent("llms.txt").absoluteString
+        // 1. <link rel="llms-txt"> — module-specific when under a module, root otherwise
+        let module = extractModule(from: relativePath)
+        let llmsTxtURL: String
+        if let module {
+            llmsTxtURL = baseURL.appendingPathComponent("data/documentation/\(module)/llms.txt").absoluteString
+        } else {
+            llmsTxtURL = baseURL.appendingPathComponent("llms.txt").absoluteString
+        }
         parts.append("<link \(llmsTxtMarker) href=\"\(llmsTxtURL)\" />")
 
         // 2. <link rel="alternate"> for markdown (when available)

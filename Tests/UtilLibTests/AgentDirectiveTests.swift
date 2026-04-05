@@ -298,6 +298,39 @@ struct AgentDirectiveTests {
         #expect(!directive.contains("text/markdown"))
     }
 
+    @Test("llms-txt link points to module-specific llms.txt for P256K pages")
+    func buildDirectiveLlmsTxtP256K() throws {
+        let directive = try AgentDirectiveInjector.buildDirective(
+            markdownURL: nil,
+            relativePath: "documentation/p256k/p256k/signing/index.html",
+            baseURL: baseURL
+        )
+
+        #expect(directive.contains("href=\"https://docs.21.dev/data/documentation/p256k/llms.txt\""))
+    }
+
+    @Test("llms-txt link points to module-specific llms.txt for ZKP pages")
+    func buildDirectiveLlmsTxtZKP() throws {
+        let directive = try AgentDirectiveInjector.buildDirective(
+            markdownURL: nil,
+            relativePath: "documentation/zkp/p256k/signing/index.html",
+            baseURL: baseURL
+        )
+
+        #expect(directive.contains("href=\"https://docs.21.dev/data/documentation/zkp/llms.txt\""))
+    }
+
+    @Test("llms-txt link points to root llms.txt for documentation/index.html")
+    func buildDirectiveLlmsTxtRoot() throws {
+        let directive = try AgentDirectiveInjector.buildDirective(
+            markdownURL: nil,
+            relativePath: "documentation/index.html",
+            baseURL: baseURL
+        )
+
+        #expect(directive.contains("href=\"https://docs.21.dev/llms.txt\""))
+    }
+
     @Test("WebSite node always present in @graph regardless of breadcrumb count")
     func buildDirectiveWebSiteAlwaysPresent() throws {
         // Module root (0 breadcrumbs)
