@@ -47,11 +47,12 @@ struct PackagesListingPage {
     ]
     
     static var page: some View {
-        let itemList = ItemListSchema(items: packages.enumerated().map { index, pkg in
+        let itemList = ItemListSchema(id: "\(pageURL)#itemlist", items: packages.enumerated().map { index, pkg in
             ListItemSchema(
                 position: index + 1,
                 url: pkg.isExternal ? pkg.href : "\(SiteIdentity.url)packages/\(pkg.href.trimmingCharacters(in: CharacterSet(charactersIn: "/")).components(separatedBy: "/").last ?? "")/",
-                name: pkg.name
+                name: pkg.name,
+                description: pkg.description
             )
         })
         

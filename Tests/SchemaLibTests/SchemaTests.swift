@@ -929,6 +929,58 @@ struct SchemaTests {
         #expect(items?[0]["url"] as? String == "https://example.com/page/")
     }
     
+    @Test("ItemListSchema encodes @id when provided")
+    func testItemListSchemaWithId() throws {
+        let schema = ItemListSchema(id: "https://21.dev/blog/#itemlist", items: [
+            ListItemSchema(position: 1, url: "https://21.dev/blog/hello/", name: "Hello")
+        ])
+        let graph = SchemaGraph(schema)
+        let json = try graph.render()
+        
+        let data = json.data(using: .utf8)!
+        let parsed = try JSONSerialization.jsonObject(with: data) as! [String: Any]
+        
+        #expect(parsed["@id"] as? String == "https://21.dev/blog/#itemlist")
+        #expect(parsed["@type"] as? String == "ItemList")
+    }
+    
+    @Test("ItemListSchema omits @id when nil")
+    func testItemListSchemaOmitsId() throws {
+        let schema = ItemListSchema(items: [
+            ListItemSchema(position: 1, url: "https://example.com/")
+        ])
+        let graph = SchemaGraph(schema)
+        let json = try graph.render()
+        
+        #expect(!json.contains("@id"))
+    }
+    
+    @Test("ListItemSchema encodes description when provided")
+    func testListItemSchemaWithDescription() throws {
+        let schema = ItemListSchema(items: [
+            ListItemSchema(position: 1, url: "https://example.com/pkg/", name: "P256K", description: "Swift secp256k1 library")
+        ])
+        let graph = SchemaGraph(schema)
+        let json = try graph.render()
+        
+        let data = json.data(using: .utf8)!
+        let parsed = try JSONSerialization.jsonObject(with: data) as! [String: Any]
+        
+        let items = parsed["itemListElement"] as? [[String: Any]]
+        #expect(items?[0]["description"] as? String == "Swift secp256k1 library")
+    }
+    
+    @Test("ListItemSchema omits description when nil")
+    func testListItemSchemaOmitsDescription() throws {
+        let schema = ItemListSchema(items: [
+            ListItemSchema(position: 1, url: "https://example.com/page/", name: "Test")
+        ])
+        let graph = SchemaGraph(schema)
+        let json = try graph.render()
+        
+        #expect(!json.contains("description"))
+    }
+    
     // MARK: - BreadcrumbListSchema Tests
     
     @Test("BreadcrumbListSchema encodes BreadcrumbList with ListItem elements")

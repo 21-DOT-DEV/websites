@@ -17,22 +17,28 @@ public struct ItemListSchema: Schema {
     public static let schemaType = "ItemList"
     
     private let type = "ItemList"
+    public let id: String?
     public let itemListElement: [ListItemSchema]
     
     /// Creates an ItemList schema from an array of list items.
-    /// - Parameter items: Array of ListItemSchema representing each item in the list
-    public init(items: [ListItemSchema]) {
+    /// - Parameters:
+    ///   - id: Stable entity identifier (e.g., https://21.dev/blog/#itemlist)
+    ///   - items: Array of ListItemSchema representing each item in the list
+    public init(id: String? = nil, items: [ListItemSchema]) {
+        self.id = id
         self.itemListElement = items
     }
     
     enum CodingKeys: String, CodingKey {
         case type = "@type"
+        case id = "@id"
         case itemListElement
     }
     
     public func encode(to encoder: Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)
         try container.encode(type, forKey: .type)
+        try container.encodeIfPresent(id, forKey: .id)
         try container.encode(itemListElement, forKey: .itemListElement)
     }
 }
@@ -44,16 +50,19 @@ public struct ListItemSchema: Encodable, Sendable {
     public let position: Int
     public let url: String
     public let name: String?
+    public let description: String?
     
     /// Creates a ListItem schema.
     /// - Parameters:
     ///   - position: 1-indexed position of the item in the list
     ///   - url: URL of the item
     ///   - name: Optional display name for the item
-    public init(position: Int, url: String, name: String? = nil) {
+    ///   - description: Optional description of the item (useful for LLMs and structured data consumers)
+    public init(position: Int, url: String, name: String? = nil, description: String? = nil) {
         self.position = position
         self.url = url
         self.name = name
+        self.description = description
     }
     
     enum CodingKeys: String, CodingKey {
@@ -61,6 +70,7 @@ public struct ListItemSchema: Encodable, Sendable {
         case position
         case url
         case name
+        case description
     }
     
     public func encode(to encoder: Encoder) throws {
@@ -69,5 +79,6 @@ public struct ListItemSchema: Encodable, Sendable {
         try container.encode(position, forKey: .position)
         try container.encode(url, forKey: .url)
         try container.encodeIfPresent(name, forKey: .name)
+        try container.encodeIfPresent(description, forKey: .description)
     }
 }

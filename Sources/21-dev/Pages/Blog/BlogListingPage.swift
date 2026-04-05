@@ -20,7 +20,7 @@ struct BlogListingPage {
     private static let pageURL = "\(SiteIdentity.url)blog/"
     
     static func page(posts: [BlogPost]) -> some View {
-        let itemList = ItemListSchema(items: posts.enumerated().map { index, post in
+        let itemList = ItemListSchema(id: "\(pageURL)#itemlist", items: posts.enumerated().map { index, post in
             ListItemSchema(
                 position: index + 1,
                 url: "\(SiteIdentity.url)blog/\(post.metadata.slug)/",

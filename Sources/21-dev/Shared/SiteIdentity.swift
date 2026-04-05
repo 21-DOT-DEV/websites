@@ -58,10 +58,7 @@ public struct SiteIdentity {
     public static let websiteSchema = WebSiteSchema(
         id: "\(url)#website",
         name: name,
-        url: url,
-        potentialAction: SearchActionSchema(
-            targetURLTemplate: "\(url)search?q={search_term_string}"
-        )
+        url: url
     )
     
     /// Creates a WebPageSchema for an indexed page, applying the site's
