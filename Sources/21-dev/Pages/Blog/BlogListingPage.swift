@@ -11,14 +11,44 @@
 import Foundation
 import Slipstream
 import DesignSystem
+import SchemaLib
 
 struct BlogListingPage {
+    // Page metadata
+    private static let pageTitle = "Bitcoin Dev + Swift Cryptography Tutorials & Updates | 21.dev Blog"
+    private static let pageDescription = "Practical Bitcoin developer notes, Swift cryptography tutorials, and the latest P256K open-source updates—21.dev."
+    private static let pageURL = "\(SiteIdentity.url)blog/"
     
     static func page(posts: [BlogPost]) -> some View {
-        BasePage(
-            title: "Bitcoin Dev + Swift Cryptography Tutorials & Updates | 21.dev Blog",
-            description: "Practical Bitcoin developer notes, Swift cryptography tutorials, and the latest P256K open-source updates—21.dev.",
-            canonicalURL: URL(string: "\(SiteIdentity.url)blog/")
+        let itemList = ItemListSchema(id: "\(pageURL)#itemlist", items: posts.enumerated().map { index, post in
+            ListItemSchema(
+                position: index + 1,
+                url: "\(SiteIdentity.url)blog/\(post.metadata.slug)/",
+                name: post.metadata.title
+            )
+        })
+        
+        return BasePage(
+            title: pageTitle,
+            description: pageDescription,
+            canonicalURL: URL(string: pageURL),
+            robotsDirective: "noindex",
+            schemas: [
+                SiteIdentity.webPageSchema(
+                    url: pageURL,
+                    pageType: .collectionPage,
+                    name: pageTitle,
+                    description: pageDescription,
+                    mainEntity: SchemaReference(id: "\(pageURL)#itemlist")
+                ),
+                itemList,
+                SiteIdentity.organizationSchema,
+                BreadcrumbListSchema(items: [
+                    BreadcrumbItemSchema(position: 1, name: "Home", item: SiteIdentity.url),
+                    BreadcrumbItemSchema(position: 2, name: "Blog")
+                ])
+            ],
+            llmsTxtURL: SiteIdentity.llmsTxtURL
         ) {
             SiteDefaults.header
             

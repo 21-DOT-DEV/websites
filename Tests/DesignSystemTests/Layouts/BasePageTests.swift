@@ -8,6 +8,7 @@
 import Testing
 import Foundation
 @testable import DesignSystem
+import SchemaLib
 import Slipstream
 import TestUtils
 
@@ -129,6 +130,114 @@ struct BasePageTests {
             let bodyContent = String(html[bodyStart..<bodyEnd])
             #expect(bodyContent.contains("h-screen"))
         }
+    }
+    
+    @Test("BasePage renders llms-txt link when llmsTxtURL provided")
+    func testBasePageLLMsTxtLink() throws {
+        let page = BasePage(
+            title: "Test",
+            llmsTxtURL: URL(string: "https://21.dev/llms.txt")
+        ) {
+            Text("Content")
+        }
+        let html = try TestUtils.renderHTML(page)
+        
+        #expect(html.contains("rel=\"llms-txt\""))
+        #expect(html.contains("href=\"https://21.dev/llms.txt\""))
+    }
+    
+    @Test("BasePage omits llms-txt link when llmsTxtURL is nil")
+    func testBasePageNoLLMsTxtLink() throws {
+        let page = BasePage(title: "Test") {
+            Text("Content")
+        }
+        let html = try TestUtils.renderHTML(page)
+        
+        #expect(!html.contains("llms-txt"))
+    }
+    
+    @Test("BasePage renders alternate markdown link when alternateMarkdownURL provided")
+    func testBasePageAlternateMarkdown() throws {
+        let page = BasePage(
+            title: "Test",
+            alternateMarkdownURL: URL(string: "https://21.dev/data/blog/hello.md")
+        ) {
+            Text("Content")
+        }
+        let html = try TestUtils.renderHTML(page)
+        
+        #expect(html.contains("rel=\"alternate\""))
+        #expect(html.contains("type=\"text/markdown\""))
+        #expect(html.contains("href=\"https://21.dev/data/blog/hello.md\""))
+    }
+    
+    @Test("BasePage omits alternate link when alternateMarkdownURL is nil")
+    func testBasePageNoAlternateMarkdown() throws {
+        let page = BasePage(title: "Test") {
+            Text("Content")
+        }
+        let html = try TestUtils.renderHTML(page)
+        
+        #expect(!html.contains("text/markdown"))
+    }
+    
+    @Test("BasePage renders both llms-txt and alternate markdown links together")
+    func testBasePageBothLinks() throws {
+        let page = BasePage(
+            title: "Blog Post",
+            llmsTxtURL: URL(string: "https://21.dev/llms.txt"),
+            alternateMarkdownURL: URL(string: "https://21.dev/data/blog/post.md")
+        ) {
+            Text("Content")
+        }
+        let html = try TestUtils.renderHTML(page)
+        
+        #expect(html.contains("rel=\"llms-txt\""))
+        #expect(html.contains("rel=\"alternate\""))
+        #expect(html.contains("text/markdown"))
+    }
+    
+    @Test("BasePage renders article:* meta tags with property attribute")
+    func testBasePageArticleMetaPropertyAttribute() throws {
+        let article = ArticleMetadata(
+            publishedTime: "2025-10-15T00:00:00Z",
+            modifiedTime: "2025-10-16T00:00:00Z",
+            author: "21.dev",
+            tags: ["swift", "bitcoin"]
+        )
+        let page = BasePage(
+            title: "Test Article",
+            articleMetadata: article
+        ) {
+            Text("Content")
+        }
+        let html = try TestUtils.renderHTML(page)
+        
+        // Verify property attribute is used (not name) for OG compliance
+        #expect(html.contains("property=\"article:published_time\""))
+        #expect(html.contains("content=\"2025-10-15T00:00:00Z\""))
+        #expect(html.contains("property=\"article:modified_time\""))
+        #expect(html.contains("content=\"2025-10-16T00:00:00Z\""))
+        #expect(html.contains("property=\"article:author\""))
+        #expect(html.contains("content=\"21.dev\""))
+        #expect(html.contains("property=\"article:tag\""))
+        #expect(html.contains("content=\"swift\""))
+        #expect(html.contains("content=\"bitcoin\""))
+        
+        // Ensure name attribute is NOT used for article:* tags
+        #expect(!html.contains("name=\"article:"))
+    }
+    
+    @Test("BasePage omits article metadata when nil")
+    func testBasePageNoArticleMetadata() throws {
+        let page = BasePage(title: "Test") {
+            Text("Content")
+        }
+        let html = try TestUtils.renderHTML(page)
+        
+        #expect(!html.contains("article:published_time"))
+        #expect(!html.contains("article:author"))
+        #expect(!html.contains("article:tag"))
     }
     
     @Test("BasePage complete HTML snapshot")

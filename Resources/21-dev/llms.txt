@@ -19,6 +19,11 @@ Two subdomains serve documentation:
 - docs.21.dev — DocC-generated HTML reference with search and type hierarchies, plus co-located LLM-optimized markdown files at /data/documentation/*.md
 - 21.dev — this hub site with project pages and blog
 
+## Full Context
+
+- [21.dev llms-full.txt](https://21.dev/llms-full.txt): Complete site content for full-context ingestion (this file + all page content + blog posts inline)
+- [docs.21.dev llms-full.txt](https://docs.21.dev/llms-full.txt): Complete documentation content for full-context ingestion
+
 ## Docs
 
 - [docs.21.dev llms.txt](https://docs.21.dev/llms.txt): Local llms.txt for the documentation subdomain (HTML + markdown)

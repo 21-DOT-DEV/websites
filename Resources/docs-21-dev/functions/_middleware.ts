@@ -52,8 +52,6 @@ function writeAnalytics(
   }
 }
 
-const NON_PAGE_EXT = /\.(css|js|json|png|jpe?g|gif|webp|avif|svg|woff2?|ico|xml|txt|md|map|wasm)$/i;
-
 export async function onRequest(context: EventContext<unknown, string, unknown>) {
   const url = new URL(context.request.url);
 
@@ -71,9 +69,8 @@ export async function onRequest(context: EventContext<unknown, string, unknown>)
   const accept = context.request.headers.get("Accept") || "";
   const userAgent = context.request.headers.get("User-Agent") || "";
   const wantsMarkdown = accept.includes("text/markdown");
-  const isPage = !NON_PAGE_EXT.test(url.pathname);
 
-  if (wantsMarkdown && isPage) {
+  if (wantsMarkdown) {
     let mdPath: string;
     if (url.pathname.endsWith("/index.html")) {
       mdPath = "/data" + url.pathname.replace(/\/index\.html$/, ".md");

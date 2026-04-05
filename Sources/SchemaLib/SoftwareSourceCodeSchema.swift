@@ -25,6 +25,7 @@ public struct SoftwareSourceCodeSchema: Schema {
     public let programmingLanguage: ComputerLanguageSchema?
     public let license: String?
     public let author: SchemaReference?
+    public let publisher: SchemaReference?
     public let creator: SchemaReference?
     public let runtimePlatform: [String]?
     public let sameAs: [String]?
@@ -45,6 +46,7 @@ public struct SoftwareSourceCodeSchema: Schema {
     ///   - programmingLanguage: Primary programming language as ComputerLanguage object
     ///   - license: License URL (e.g., https://opensource.org/licenses/MIT)
     ///   - author: Reference to the author organization/person (@id only)
+    ///   - publisher: Reference to the publisher organization (@id only)
     ///   - creator: Reference to the creator organization/person (@id only)
     ///   - runtimePlatform: Supported runtime platforms (e.g., iOS, macOS, Linux)
     ///   - sameAs: URLs of pages that represent the same entity (e.g., GitHub, docs)
@@ -63,6 +65,7 @@ public struct SoftwareSourceCodeSchema: Schema {
         programmingLanguage: ComputerLanguageSchema? = nil,
         license: String? = nil,
         author: SchemaReference? = nil,
+        publisher: SchemaReference? = nil,
         creator: SchemaReference? = nil,
         runtimePlatform: [String]? = nil,
         sameAs: [String]? = nil,
@@ -81,6 +84,7 @@ public struct SoftwareSourceCodeSchema: Schema {
         self.programmingLanguage = programmingLanguage
         self.license = license
         self.author = author
+        self.publisher = publisher
         self.creator = creator
         self.runtimePlatform = runtimePlatform
         self.sameAs = sameAs
@@ -102,6 +106,7 @@ public struct SoftwareSourceCodeSchema: Schema {
         case programmingLanguage
         case license
         case author
+        case publisher
         case creator
         case runtimePlatform
         case sameAs
@@ -124,6 +129,7 @@ public struct SoftwareSourceCodeSchema: Schema {
         try container.encodeIfPresent(programmingLanguage, forKey: .programmingLanguage)
         try container.encodeIfPresent(license, forKey: .license)
         try container.encodeIfPresent(author, forKey: .author)
+        try container.encodeIfPresent(publisher, forKey: .publisher)
         try container.encodeIfPresent(creator, forKey: .creator)
         try container.encodeIfPresent(runtimePlatform, forKey: .runtimePlatform)
         try container.encodeIfPresent(sameAs, forKey: .sameAs)
@@ -132,30 +138,6 @@ public struct SoftwareSourceCodeSchema: Schema {
         try container.encodeIfPresent(isBasedOn, forKey: .isBasedOn)
         try container.encodeIfPresent(potentialAction, forKey: .potentialAction)
         try container.encodeIfPresent(applicationCategory, forKey: .applicationCategory)
-    }
-}
-
-/// Schema.org WebPage type for mainEntityOfPage references.
-/// https://schema.org/WebPage
-public struct WebPageSchema: Encodable, Sendable {
-    private let type = "WebPage"
-    public let id: String
-    
-    /// Creates a WebPage schema reference.
-    /// - Parameter id: The canonical URL of the web page
-    public init(id: String) {
-        self.id = id
-    }
-    
-    enum CodingKeys: String, CodingKey {
-        case type = "@type"
-        case id = "@id"
-    }
-    
-    public func encode(to encoder: Encoder) throws {
-        var container = encoder.container(keyedBy: CodingKeys.self)
-        try container.encode(type, forKey: .type)
-        try container.encode(id, forKey: .id)
     }
 }
 

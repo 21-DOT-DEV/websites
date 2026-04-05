@@ -20,7 +20,8 @@ struct NotFoundPage {
         BasePage(
             title: "404: Page not found | 21.dev",
             description: "The page you're looking for doesn't exist.",
-            robotsDirective: "noindex, nofollow"
+            robotsDirective: "noindex, nofollow",
+            llmsTxtURL: SiteIdentity.llmsTxtURL
         ) {
             SiteDefaults.header
             

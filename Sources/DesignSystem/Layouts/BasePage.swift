@@ -20,6 +20,8 @@ public struct BasePage: View {
     let robotsDirective: String?
     let articleMetadata: ArticleMetadata?
     let schemas: [any Schema]?
+    let llmsTxtURL: URL?
+    let alternateMarkdownURL: URL?
     let bodyContent: any View
     
     /// Creates a base page with the specified title and custom body content.
@@ -36,6 +38,8 @@ public struct BasePage: View {
         robotsDirective: String? = nil,
         articleMetadata: ArticleMetadata? = nil,
         schemas: [any Schema]? = nil,
+        llmsTxtURL: URL? = nil,
+        alternateMarkdownURL: URL? = nil,
         @ViewBuilder bodyContent: () -> Content
     ) {
         self.title = title
@@ -45,6 +49,8 @@ public struct BasePage: View {
         self.robotsDirective = robotsDirective
         self.articleMetadata = articleMetadata
         self.schemas = schemas
+        self.llmsTxtURL = llmsTxtURL
+        self.alternateMarkdownURL = alternateMarkdownURL
         self.bodyContent = bodyContent()
     }
     
@@ -61,6 +67,8 @@ public struct BasePage: View {
         robotsDirective: String? = nil,
         articleMetadata: ArticleMetadata? = nil,
         schemas: [any Schema]? = nil,
+        llmsTxtURL: URL? = nil,
+        alternateMarkdownURL: URL? = nil,
         text: String = "Initial Website"
     ) {
         self.title = title
@@ -70,6 +78,8 @@ public struct BasePage: View {
         self.robotsDirective = robotsDirective
         self.articleMetadata = articleMetadata
         self.schemas = schemas
+        self.llmsTxtURL = llmsTxtURL
+        self.alternateMarkdownURL = alternateMarkdownURL
         self.bodyContent = PlaceholderView(text: text)
     }
     
@@ -92,19 +102,25 @@ public struct BasePage: View {
                     Meta("robots", content: robotsDirective)
                 }
                 if let article = articleMetadata {
-                    Meta("article:published_time", content: article.publishedTime)
+                    RawHTML("<meta property=\"article:published_time\" content=\"\(article.publishedTime)\">")
                     if let modifiedTime = article.modifiedTime {
-                        Meta("article:modified_time", content: modifiedTime)
+                        RawHTML("<meta property=\"article:modified_time\" content=\"\(modifiedTime)\">")
                     }
                     if let author = article.author {
-                        Meta("article:author", content: author)
+                        RawHTML("<meta property=\"article:author\" content=\"\(author)\">")
                     }
                     ForEach(article.tags, id: \.self) { tag in
-                        Meta("article:tag", content: tag)
+                        RawHTML("<meta property=\"article:tag\" content=\"\(tag)\">")
                     }
                 }
                 Viewport.mobileFriendly
                 Canonical(canonicalURL)
+                if let llmsTxtURL {
+                    LLMsTxtLink(llmsTxtURL)
+                }
+                if let alternateMarkdownURL {
+                    Alternate(alternateMarkdownURL, type: "text/markdown")
+                }
                 Stylesheet(URL(string: stylesheet))
                 if let json = structuredDataJSON {
                     Script(json)

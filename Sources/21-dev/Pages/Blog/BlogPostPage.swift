@@ -11,6 +11,7 @@
 import Foundation
 import Slipstream
 import DesignSystem
+import SchemaLib
 
 struct BlogPostPage {
     private let post: BlogPost
@@ -56,12 +57,55 @@ struct BlogPostPage {
         return truncated + "..."
     }
     
+    private var postURL: String {
+        "\(SiteIdentity.url)blog/\(post.metadata.slug)/"
+    }
+    
+    private var wordCount: Int {
+        post.content.components(separatedBy: .whitespacesAndNewlines)
+            .filter { !$0.isEmpty }.count
+    }
+    
+    private func buildSchemas() -> [any Schema] {
+        let description = generateDescription()
+        return [
+            BlogPostingSchema(
+                id: "\(postURL)#blogposting",
+                headline: post.metadata.title,
+                datePublished: post.metadata.date,
+                description: description,
+                author: SchemaReference(id: SiteIdentity.schemaID),
+                publisher: SchemaReference(id: SiteIdentity.schemaID),
+                url: postURL,
+                wordCount: wordCount,
+                articleSection: post.metadata.tags.first,
+                keywords: post.metadata.tags.isEmpty ? nil : post.metadata.tags,
+                mainEntityOfPage: SchemaReference(id: "\(postURL)#webpage")
+            ),
+            SiteIdentity.webPageSchema(
+                url: postURL,
+                name: post.metadata.title,
+                description: description,
+                mainEntity: SchemaReference(id: "\(postURL)#blogposting")
+            ),
+            SiteIdentity.organizationSchema,
+            BreadcrumbListSchema(items: [
+                BreadcrumbItemSchema(position: 1, name: "Home", item: SiteIdentity.url),
+                BreadcrumbItemSchema(position: 2, name: "Blog", item: "\(SiteIdentity.url)blog/"),
+                BreadcrumbItemSchema(position: 3, name: post.metadata.title)
+            ])
+        ]
+    }
+    
     var body: some View {
         BasePage(
             title: post.metadata.seoTitle ?? "\(post.metadata.title) | 21.dev Blog",
             description: generateDescription(),
-            canonicalURL: URL(string: "\(SiteIdentity.url)blog/\(post.metadata.slug)/"),
-            articleMetadata: post.metadata.toArticleMetadata()
+            canonicalURL: URL(string: postURL),
+            articleMetadata: post.metadata.toArticleMetadata(),
+            schemas: buildSchemas(),
+            llmsTxtURL: SiteIdentity.llmsTxtURL,
+            alternateMarkdownURL: URL(string: "\(SiteIdentity.url)data/blog/\(post.metadata.slug).md")
         ) {
             SiteDefaults.header
             
