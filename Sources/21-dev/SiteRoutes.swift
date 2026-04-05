@@ -22,6 +22,7 @@ struct SiteRoutes {
     static var staticPages: Sitemap {
         [
             "index.html": Homepage.page,
+            "packages/index.html": PackagesListingPage.page,
             "packages/p256k/index.html": P256KPage.page
         ]
     }

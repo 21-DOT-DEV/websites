@@ -52,17 +52,6 @@ struct BlogListingPage {
         ) {
             SiteDefaults.header
             
-            Breadcrumb(levels: [
-                BreadcrumbLevel(name: "Home", href: "/"),
-                BreadcrumbLevel(name: "Blog")
-            ])
-            .padding(.horizontal, 16)
-            .padding(.horizontal, 24, condition: .startingAt(.small))
-            .padding(.horizontal, 32, condition: .startingAt(.large))
-            .frame(maxWidth: .fourXLarge)
-            .margin(.horizontal, .auto)
-            .padding(.top, 16)
-            
             // Blog posts section
             blogPostsSection(posts: posts)
             

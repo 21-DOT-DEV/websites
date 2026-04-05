@@ -109,18 +109,6 @@ struct BlogPostPage {
         ) {
             SiteDefaults.header
             
-            Breadcrumb(levels: [
-                BreadcrumbLevel(name: "Home", href: "/"),
-                BreadcrumbLevel(name: "Blog", href: "/blog/"),
-                BreadcrumbLevel(name: post.metadata.title)
-            ])
-            .padding(.horizontal, 16)
-            .padding(.horizontal, 24, condition: .startingAt(.small))
-            .padding(.horizontal, 32, condition: .startingAt(.large))
-            .frame(maxWidth: .extraExtraExtraLarge)
-            .margin(.horizontal, .auto)
-            .padding(.top, 16)
-            
             // Main content using compound BlogPost component
             Div {
                 BlogPostComponent(

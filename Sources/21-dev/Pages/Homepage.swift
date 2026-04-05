@@ -54,7 +54,7 @@ struct Homepage {
             AboutSection(
                 title: "What is 21.dev?",
                 paragraphs: [
-                    "21.dev is a organization dedicated to empowering developers with high-quality, open-source tools for building Bitcoin applications. We focus on creating robust software packages and libraries that make Bitcoin development more accessible and efficient for developers across multiple platforms.",
+                    "21.dev is an organization dedicated to empowering developers with high-quality, open-source tools for building Bitcoin applications. We focus on creating robust software packages and libraries that make Bitcoin development more accessible and efficient for developers across multiple platforms.",
                     "Our mission is to accelerate Bitcoin adoption by providing developers with the foundational tools they need to build and maintain secure, scalable Bitcoin applications. From cryptographic primitives to high-level APIs, we're building the infrastructure that powers the next generation of Bitcoin apps.",
                     "All of our work is open source, community-driven, and designed with developer experience as the top priority. It is our fundamental belief that better tools lead to better applications, which in turn benefits the entire Bitcoin ecosystem."
                 ]
