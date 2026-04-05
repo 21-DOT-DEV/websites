@@ -123,17 +123,17 @@ struct P256KPage {
                 title: "Xcode",
                 codeSnippet: SiteIdentity.p256kRepoURL,
                 language: "text",
-                instructions: "In Xcode, go to File → Add Package Dependencies, paste the URL above, select version 0.21.1, and add to your target."
+                instructions: "In Xcode, go to File → Add Package Dependencies, paste the URL above, select version 0.23.0, and add to your target."
             ),
             InstallationOption(
                 title: "Swift Package Manager",
-                codeSnippet: ".package(url: \"\(SiteIdentity.p256kRepoURL)\", exact: \"0.21.1\")",
+                codeSnippet: ".package(url: \"\(SiteIdentity.p256kRepoURL)\", exact: \"0.23.0\")",
                 language: "swift",
                 instructions: "Add this line to your Package.swift dependencies array, then run `swift build` to integrate P256K into your project."
             ),
             InstallationOption(
                 title: "CocoaPods",
-                codeSnippet: "pod 'swift-secp256k1', '0.21.1'",
+                codeSnippet: "pod 'swift-secp256k1', '0.23.0'",
                 language: "ruby",
                 instructions: "Add this line to your Podfile, then run `pod install` to integrate P256K into your Xcode workspace."
             )
@@ -246,7 +246,7 @@ struct P256KPage {
             Text("The underlying libsecp256k1 has been heavily reviewed and tested in the Bitcoin ecosystem over many years. P256K (the Swift wrapper) has not yet undergone a dedicated third-party security audit.")
         },
         FAQItem(question: "What Swift versions and platforms are supported?", includeInJSONLD: true) {
-            Text("P256K supports Swift 5.9 and newer and is tested on iOS, macOS, watchOS, tvOS, and Linux. It works with UIKit, SwiftUI, and server-side Swift environments.")
+            Text("P256K supports Swift 6.1 and newer and is tested on iOS, macOS, watchOS, tvOS, and Linux. It works with UIKit, SwiftUI, and server-side Swift environments.")
         },
         FAQItem(question: "What cryptographic operations does P256K support?", includeInJSONLD: true) {
             Text("P256K supports common secp256k1 operations including ECDSA signing and verification, Schnorr signatures, public key recovery, key agreement, key tweaking, and MuSig-related primitives commonly used in Bitcoin-adjacent protocols.")
@@ -285,6 +285,7 @@ struct P256KPage {
         programmingLanguage: ComputerLanguageSchema(name: "Swift"),
         license: "https://opensource.org/licenses/MIT",
         author: SchemaReference(id: SiteIdentity.schemaID),
+        publisher: SchemaReference(id: SiteIdentity.schemaID),
         creator: SchemaReference(id: SiteIdentity.schemaID),
         runtimePlatform: ["iOS", "macOS", "watchOS", "tvOS", "Linux"],
         sameAs: [
@@ -292,7 +293,7 @@ struct P256KPage {
             SiteIdentity.p256kDocsURL,
             "https://swiftpackageindex.com/21-DOT-DEV/swift-secp256k1"
         ],
-        softwareVersion: "0.21.1",
+        softwareVersion: "0.23.0",
         keywords: [
             "secp256k1",
             "Swift",
@@ -308,7 +309,7 @@ struct P256KPage {
             PotentialActionSchema(type: .read, target: SiteIdentity.p256kDocsURL),
             PotentialActionSchema(type: .view, target: SiteIdentity.p256kRepoURL)
         ],
-        applicationCategory: ["DeveloperApplication", "Cryptography Library"]
+        applicationCategory: ["DeveloperApplication", "DeveloperTools"]
     )
     
     static var page: some View {
@@ -324,11 +325,28 @@ struct P256KPage {
                     url: pageURL,
                     name: pageTitle,
                     description: pageDescription
-                )
+                ),
+                BreadcrumbListSchema(items: [
+                    BreadcrumbItemSchema(position: 1, name: "Home", item: SiteIdentity.url),
+                    BreadcrumbItemSchema(position: 2, name: "Packages", item: "\(SiteIdentity.url)packages/"),
+                    BreadcrumbItemSchema(position: 3, name: "P256K")
+                ])
             ],
             llmsTxtURL: SiteIdentity.llmsTxtURL
         ) {
             SiteDefaults.header
+            
+            Breadcrumb(levels: [
+                BreadcrumbLevel(name: "Home", href: "/"),
+                BreadcrumbLevel(name: "Packages", href: "/packages/"),
+                BreadcrumbLevel(name: "P256K")
+            ])
+            .padding(.horizontal, 16)
+            .padding(.horizontal, 24, condition: .startingAt(.small))
+            .padding(.horizontal, 32, condition: .startingAt(.large))
+            .frame(maxWidth: .fourXLarge)
+            .margin(.horizontal, .auto)
+            .padding(.top, 16)
             
             codeHeroSection
             

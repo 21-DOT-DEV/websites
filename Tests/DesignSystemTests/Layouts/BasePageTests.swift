@@ -197,6 +197,49 @@ struct BasePageTests {
         #expect(html.contains("text/markdown"))
     }
     
+    @Test("BasePage renders article:* meta tags with property attribute")
+    func testBasePageArticleMetaPropertyAttribute() throws {
+        let article = ArticleMetadata(
+            publishedTime: "2025-10-15T00:00:00Z",
+            modifiedTime: "2025-10-16T00:00:00Z",
+            author: "21.dev",
+            tags: ["swift", "bitcoin"]
+        )
+        let page = BasePage(
+            title: "Test Article",
+            articleMetadata: article
+        ) {
+            Text("Content")
+        }
+        let html = try TestUtils.renderHTML(page)
+        
+        // Verify property attribute is used (not name) for OG compliance
+        #expect(html.contains("property=\"article:published_time\""))
+        #expect(html.contains("content=\"2025-10-15T00:00:00Z\""))
+        #expect(html.contains("property=\"article:modified_time\""))
+        #expect(html.contains("content=\"2025-10-16T00:00:00Z\""))
+        #expect(html.contains("property=\"article:author\""))
+        #expect(html.contains("content=\"21.dev\""))
+        #expect(html.contains("property=\"article:tag\""))
+        #expect(html.contains("content=\"swift\""))
+        #expect(html.contains("content=\"bitcoin\""))
+        
+        // Ensure name attribute is NOT used for article:* tags
+        #expect(!html.contains("name=\"article:"))
+    }
+    
+    @Test("BasePage omits article metadata when nil")
+    func testBasePageNoArticleMetadata() throws {
+        let page = BasePage(title: "Test") {
+            Text("Content")
+        }
+        let html = try TestUtils.renderHTML(page)
+        
+        #expect(!html.contains("article:published_time"))
+        #expect(!html.contains("article:author"))
+        #expect(!html.contains("article:tag"))
+    }
+    
     @Test("BasePage complete HTML snapshot")
     func testBasePageSnapshot() throws {
         let page = BasePage(title: "Snapshot Test") {

@@ -20,20 +20,48 @@ struct BlogListingPage {
     private static let pageURL = "\(SiteIdentity.url)blog/"
     
     static func page(posts: [BlogPost]) -> some View {
-        BasePage(
+        let itemList = ItemListSchema(items: posts.enumerated().map { index, post in
+            ListItemSchema(
+                position: index + 1,
+                url: "\(SiteIdentity.url)blog/\(post.metadata.slug)/",
+                name: post.metadata.title
+            )
+        })
+        
+        return BasePage(
             title: pageTitle,
             description: pageDescription,
             canonicalURL: URL(string: pageURL),
+            robotsDirective: "noindex",
             schemas: [
                 SiteIdentity.webPageSchema(
                     url: pageURL,
+                    pageType: .collectionPage,
                     name: pageTitle,
-                    description: pageDescription
-                )
+                    description: pageDescription,
+                    mainEntity: SchemaReference(id: "\(pageURL)#itemlist")
+                ),
+                itemList,
+                SiteIdentity.organizationSchema,
+                BreadcrumbListSchema(items: [
+                    BreadcrumbItemSchema(position: 1, name: "Home", item: SiteIdentity.url),
+                    BreadcrumbItemSchema(position: 2, name: "Blog")
+                ])
             ],
             llmsTxtURL: SiteIdentity.llmsTxtURL
         ) {
             SiteDefaults.header
+            
+            Breadcrumb(levels: [
+                BreadcrumbLevel(name: "Home", href: "/"),
+                BreadcrumbLevel(name: "Blog")
+            ])
+            .padding(.horizontal, 16)
+            .padding(.horizontal, 24, condition: .startingAt(.small))
+            .padding(.horizontal, 32, condition: .startingAt(.large))
+            .frame(maxWidth: .fourXLarge)
+            .margin(.horizontal, .auto)
+            .padding(.top, 16)
             
             // Blog posts section
             blogPostsSection(posts: posts)

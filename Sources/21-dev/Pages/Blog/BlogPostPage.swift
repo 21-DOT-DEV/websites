@@ -61,6 +61,11 @@ struct BlogPostPage {
         "\(SiteIdentity.url)blog/\(post.metadata.slug)/"
     }
     
+    private var wordCount: Int {
+        post.content.components(separatedBy: .whitespacesAndNewlines)
+            .filter { !$0.isEmpty }.count
+    }
+    
     private func buildSchemas() -> [any Schema] {
         let description = generateDescription()
         return [
@@ -70,7 +75,11 @@ struct BlogPostPage {
                 datePublished: post.metadata.date,
                 description: description,
                 author: SchemaReference(id: SiteIdentity.schemaID),
+                publisher: SchemaReference(id: SiteIdentity.schemaID),
                 url: postURL,
+                wordCount: wordCount,
+                articleSection: post.metadata.tags.first,
+                keywords: post.metadata.tags.isEmpty ? nil : post.metadata.tags,
                 mainEntityOfPage: SchemaReference(id: "\(postURL)#webpage")
             ),
             SiteIdentity.webPageSchema(
@@ -79,7 +88,12 @@ struct BlogPostPage {
                 description: description,
                 mainEntity: SchemaReference(id: "\(postURL)#blogposting")
             ),
-            SiteIdentity.organizationSchema
+            SiteIdentity.organizationSchema,
+            BreadcrumbListSchema(items: [
+                BreadcrumbItemSchema(position: 1, name: "Home", item: SiteIdentity.url),
+                BreadcrumbItemSchema(position: 2, name: "Blog", item: "\(SiteIdentity.url)blog/"),
+                BreadcrumbItemSchema(position: 3, name: post.metadata.title)
+            ])
         ]
     }
     
@@ -94,6 +108,18 @@ struct BlogPostPage {
             alternateMarkdownURL: URL(string: "\(SiteIdentity.url)data/blog/\(post.metadata.slug).md")
         ) {
             SiteDefaults.header
+            
+            Breadcrumb(levels: [
+                BreadcrumbLevel(name: "Home", href: "/"),
+                BreadcrumbLevel(name: "Blog", href: "/blog/"),
+                BreadcrumbLevel(name: post.metadata.title)
+            ])
+            .padding(.horizontal, 16)
+            .padding(.horizontal, 24, condition: .startingAt(.small))
+            .padding(.horizontal, 32, condition: .startingAt(.large))
+            .frame(maxWidth: .extraExtraExtraLarge)
+            .margin(.horizontal, .auto)
+            .padding(.top, 16)
             
             // Main content using compound BlogPost component
             Div {

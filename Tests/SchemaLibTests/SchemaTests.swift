@@ -710,4 +710,289 @@ struct SchemaTests {
         #expect(typeIdx < contentIdx)
         #expect(contentIdx < formatIdx)
     }
+    
+    // MARK: - OrganizationSchema foundingDate Tests
+    
+    @Test("OrganizationSchema encodes foundingDate when provided")
+    func testOrganizationSchemaFoundingDate() throws {
+        let schema = OrganizationSchema(
+            id: "https://21.dev/#organization",
+            name: "21.dev",
+            url: "https://21.dev",
+            logo: "https://github.com/21-DOT-DEV.png",
+            foundingDate: "2024",
+            description: "Open-source tools for Bitcoin developers",
+            sameAs: ["https://github.com/21-DOT-DEV"]
+        )
+        let graph = SchemaGraph(schema)
+        let json = try graph.render()
+        
+        let data = json.data(using: .utf8)!
+        let parsed = try JSONSerialization.jsonObject(with: data) as! [String: Any]
+        
+        #expect(parsed["foundingDate"] as? String == "2024")
+        #expect(parsed["logo"] as? String == "https://github.com/21-DOT-DEV.png")
+        #expect(parsed["description"] as? String == "Open-source tools for Bitcoin developers")
+    }
+    
+    @Test("OrganizationSchema omits foundingDate when nil")
+    func testOrganizationSchemaOmitsFoundingDate() throws {
+        let schema = OrganizationSchema(name: "Test Org")
+        let graph = SchemaGraph(schema)
+        let json = try graph.render()
+        
+        #expect(!json.contains("foundingDate"))
+    }
+    
+    // MARK: - SearchActionSchema Tests
+    
+    @Test("SearchActionSchema encodes SearchAction with EntryPoint target")
+    func testSearchActionSchemaEncoding() throws {
+        let schema = WebSiteSchema(
+            id: "https://21.dev/#website",
+            name: "21.dev",
+            url: "https://21.dev/",
+            potentialAction: SearchActionSchema(
+                targetURLTemplate: "https://21.dev/search?q={search_term_string}"
+            )
+        )
+        let graph = SchemaGraph(schema)
+        let json = try graph.render()
+        
+        let data = json.data(using: .utf8)!
+        let parsed = try JSONSerialization.jsonObject(with: data) as! [String: Any]
+        
+        let action = parsed["potentialAction"] as? [String: Any]
+        #expect(action?["@type"] as? String == "SearchAction")
+        #expect(action?["query-input"] as? String == "required name=search_term_string")
+        
+        let target = action?["target"] as? [String: Any]
+        #expect(target?["@type"] as? String == "EntryPoint")
+        #expect(target?["urlTemplate"] as? String == "https://21.dev/search?q={search_term_string}")
+    }
+    
+    @Test("WebSiteSchema omits potentialAction when nil")
+    func testWebSiteSchemaOmitsPotentialAction() throws {
+        let schema = WebSiteSchema(url: "https://21.dev/")
+        let graph = SchemaGraph(schema)
+        let json = try graph.render()
+        
+        #expect(!json.contains("potentialAction"))
+        #expect(!json.contains("SearchAction"))
+    }
+    
+    // MARK: - WebPageSchema CollectionPage Tests
+    
+    @Test("WebPageSchema encodes CollectionPage type when specified")
+    func testWebPageSchemaCollectionPage() throws {
+        let schema = WebPageSchema(
+            id: "https://21.dev/blog/#webpage",
+            pageType: .collectionPage,
+            isPartOf: SchemaReference(id: "https://21.dev/#website"),
+            name: "Blog",
+            url: "https://21.dev/blog/"
+        )
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.sortedKeys]
+        let data = try encoder.encode(schema)
+        let parsed = try JSONSerialization.jsonObject(with: data) as! [String: Any]
+        
+        #expect(parsed["@type"] as? String == "CollectionPage")
+        #expect(parsed["@id"] as? String == "https://21.dev/blog/#webpage")
+    }
+    
+    @Test("WebPageSchema defaults to WebPage type")
+    func testWebPageSchemaDefaultType() throws {
+        let schema = WebPageSchema(id: "https://example.com/")
+        let encoder = JSONEncoder()
+        let data = try encoder.encode(schema)
+        let parsed = try JSONSerialization.jsonObject(with: data) as! [String: Any]
+        
+        #expect(parsed["@type"] as? String == "WebPage")
+    }
+    
+    // MARK: - BlogPostingSchema Extended Fields Tests
+    
+    @Test("BlogPostingSchema encodes image, publisher, wordCount, articleSection, keywords")
+    func testBlogPostingSchemaExtendedFields() throws {
+        let schema = BlogPostingSchema(
+            id: "https://21.dev/blog/hello/#blogposting",
+            headline: "Hello World",
+            datePublished: "2025-10-15",
+            description: "Welcome to 21.dev",
+            image: "https://21.dev/images/hello-world.jpg",
+            author: SchemaReference(id: "https://21.dev/#organization"),
+            publisher: SchemaReference(id: "https://21.dev/#organization"),
+            url: "https://21.dev/blog/hello/",
+            wordCount: 350,
+            articleSection: "announcement",
+            keywords: ["announcement", "welcome", "first post"],
+            mainEntityOfPage: SchemaReference(id: "https://21.dev/blog/hello/#webpage")
+        )
+        let graph = SchemaGraph(schema)
+        let json = try graph.render()
+        
+        let data = json.data(using: .utf8)!
+        let parsed = try JSONSerialization.jsonObject(with: data) as! [String: Any]
+        
+        #expect(parsed["image"] as? String == "https://21.dev/images/hello-world.jpg")
+        #expect(parsed["wordCount"] as? Int == 350)
+        #expect(parsed["articleSection"] as? String == "announcement")
+        
+        let keywords = parsed["keywords"] as? [String]
+        #expect(keywords == ["announcement", "welcome", "first post"])
+        
+        let publisher = parsed["publisher"] as? [String: Any]
+        #expect(publisher?["@id"] as? String == "https://21.dev/#organization")
+    }
+    
+    @Test("BlogPostingSchema omits new optional fields when nil")
+    func testBlogPostingSchemaOmitsNewFields() throws {
+        let schema = BlogPostingSchema(
+            headline: "Minimal Post",
+            datePublished: "2025-01-01"
+        )
+        let graph = SchemaGraph(schema)
+        let json = try graph.render()
+        
+        #expect(!json.contains("image"))
+        #expect(!json.contains("publisher"))
+        #expect(!json.contains("wordCount"))
+        #expect(!json.contains("articleSection"))
+        #expect(!json.contains("keywords"))
+    }
+    
+    // MARK: - SoftwareSourceCodeSchema publisher Tests
+    
+    @Test("SoftwareSourceCodeSchema encodes publisher when provided")
+    func testSoftwareSourceCodeSchemaPublisher() throws {
+        let schema = SoftwareSourceCodeSchema(
+            name: "P256K",
+            codeRepository: "https://github.com/21-DOT-DEV/swift-secp256k1",
+            author: SchemaReference(id: "https://21.dev/#organization"),
+            publisher: SchemaReference(id: "https://21.dev/#organization")
+        )
+        let graph = SchemaGraph(schema)
+        let json = try graph.render()
+        
+        let data = json.data(using: .utf8)!
+        let parsed = try JSONSerialization.jsonObject(with: data) as! [String: Any]
+        
+        let publisher = parsed["publisher"] as? [String: Any]
+        #expect(publisher?["@id"] as? String == "https://21.dev/#organization")
+        
+        let author = parsed["author"] as? [String: Any]
+        #expect(author?["@id"] as? String == "https://21.dev/#organization")
+    }
+    
+    // MARK: - ItemListSchema Tests
+    
+    @Test("ItemListSchema encodes ItemList with ListItem elements")
+    func testItemListSchemaEncoding() throws {
+        let schema = ItemListSchema(items: [
+            ListItemSchema(position: 1, url: "https://21.dev/blog/hello-world/", name: "Hello World"),
+            ListItemSchema(position: 2, url: "https://21.dev/blog/second-post/", name: "Second Post")
+        ])
+        let graph = SchemaGraph(schema)
+        let json = try graph.render()
+        
+        let data = json.data(using: .utf8)!
+        let parsed = try JSONSerialization.jsonObject(with: data) as! [String: Any]
+        
+        #expect(parsed["@type"] as? String == "ItemList")
+        
+        let items = parsed["itemListElement"] as? [[String: Any]]
+        #expect(items?.count == 2)
+        
+        #expect(items?[0]["@type"] as? String == "ListItem")
+        #expect(items?[0]["position"] as? Int == 1)
+        #expect(items?[0]["url"] as? String == "https://21.dev/blog/hello-world/")
+        #expect(items?[0]["name"] as? String == "Hello World")
+        
+        #expect(items?[1]["position"] as? Int == 2)
+        #expect(items?[1]["url"] as? String == "https://21.dev/blog/second-post/")
+    }
+    
+    @Test("ListItemSchema omits name when nil")
+    func testListItemSchemaOmitsName() throws {
+        let schema = ItemListSchema(items: [
+            ListItemSchema(position: 1, url: "https://example.com/page/")
+        ])
+        let graph = SchemaGraph(schema)
+        let json = try graph.render()
+        
+        let data = json.data(using: .utf8)!
+        let parsed = try JSONSerialization.jsonObject(with: data) as! [String: Any]
+        
+        let items = parsed["itemListElement"] as? [[String: Any]]
+        #expect(items?[0]["name"] == nil)
+        #expect(items?[0]["url"] as? String == "https://example.com/page/")
+    }
+    
+    // MARK: - BreadcrumbListSchema Tests
+    
+    @Test("BreadcrumbListSchema encodes BreadcrumbList with ListItem elements")
+    func testBreadcrumbListSchemaEncoding() throws {
+        let schema = BreadcrumbListSchema(items: [
+            BreadcrumbItemSchema(position: 1, name: "Home", item: "https://21.dev/"),
+            BreadcrumbItemSchema(position: 2, name: "Packages", item: "https://21.dev/packages/"),
+            BreadcrumbItemSchema(position: 3, name: "P256K")
+        ])
+        let graph = SchemaGraph(schema)
+        let json = try graph.render()
+        
+        let data = json.data(using: .utf8)!
+        let parsed = try JSONSerialization.jsonObject(with: data) as! [String: Any]
+        
+        #expect(parsed["@type"] as? String == "BreadcrumbList")
+        
+        let items = parsed["itemListElement"] as? [[String: Any]]
+        #expect(items?.count == 3)
+        
+        #expect(items?[0]["@type"] as? String == "ListItem")
+        #expect(items?[0]["position"] as? Int == 1)
+        #expect(items?[0]["name"] as? String == "Home")
+        #expect(items?[0]["item"] as? String == "https://21.dev/")
+        
+        #expect(items?[1]["position"] as? Int == 2)
+        #expect(items?[1]["name"] as? String == "Packages")
+        #expect(items?[1]["item"] as? String == "https://21.dev/packages/")
+        
+        #expect(items?[2]["position"] as? Int == 3)
+        #expect(items?[2]["name"] as? String == "P256K")
+    }
+    
+    @Test("BreadcrumbItemSchema omits item URL for final breadcrumb (current page)")
+    func testBreadcrumbItemSchemaOmitsItemForCurrentPage() throws {
+        let schema = BreadcrumbListSchema(items: [
+            BreadcrumbItemSchema(position: 1, name: "Home", item: "https://21.dev/"),
+            BreadcrumbItemSchema(position: 2, name: "Blog")
+        ])
+        let graph = SchemaGraph(schema)
+        let json = try graph.render()
+        
+        let data = json.data(using: .utf8)!
+        let parsed = try JSONSerialization.jsonObject(with: data) as! [String: Any]
+        
+        let items = parsed["itemListElement"] as? [[String: Any]]
+        #expect(items?[0]["item"] as? String == "https://21.dev/")
+        #expect(items?[1]["item"] == nil)
+        #expect(items?[1]["name"] as? String == "Blog")
+    }
+    
+    @Test("BreadcrumbListSchema works in @graph with other schemas")
+    func testBreadcrumbListSchemaInGraph() throws {
+        let orgSchema = OrganizationSchema(name: "21.dev")
+        let breadcrumbs = BreadcrumbListSchema(items: [
+            BreadcrumbItemSchema(position: 1, name: "Home", item: "https://21.dev/"),
+            BreadcrumbItemSchema(position: 2, name: "Blog")
+        ])
+        
+        let graph = SchemaGraph([orgSchema, breadcrumbs])
+        let json = try graph.render()
+        
+        #expect(json.contains("@graph"))
+        #expect(json.contains("Organization"))
+        #expect(json.contains("BreadcrumbList"))
+    }
 }

@@ -36,6 +36,11 @@ public struct SiteIdentity {
     // Contact
     public static let contactEmail = "hello@21.dev"
     
+    // Branding
+    public static let logoURL = "https://github.com/21-DOT-DEV.png"
+    public static let orgDescription = "Open-source tools for Bitcoin developers — Swift cryptography libraries, documentation, and developer resources."
+    public static let foundingDate = "2024"
+    
     // Social links array for sameAs schema.org property
     public static let sameAs: [String] = [githubURL, twitterURL, nostrURL]
     
@@ -53,19 +58,24 @@ public struct SiteIdentity {
     public static let websiteSchema = WebSiteSchema(
         id: "\(url)#website",
         name: name,
-        url: url
+        url: url,
+        potentialAction: SearchActionSchema(
+            targetURLTemplate: "\(url)search?q={search_term_string}"
+        )
     )
     
     /// Creates a WebPageSchema for an indexed page, applying the site's
     /// `isPartOf` reference and `#webpage` fragment convention automatically.
     public static func webPageSchema(
         url pageURL: String,
+        pageType: WebPageSchema.PageType = .webPage,
         name: String,
         description: String? = nil,
         mainEntity: SchemaReference? = nil
     ) -> WebPageSchema {
         WebPageSchema(
             id: "\(pageURL)#webpage",
+            pageType: pageType,
             isPartOf: SchemaReference(id: "\(url)#website"),
             name: name,
             url: pageURL,
@@ -79,6 +89,9 @@ public struct SiteIdentity {
         id: schemaID,
         name: name,
         url: url,
+        logo: logoURL,
+        foundingDate: foundingDate,
+        description: orgDescription,
         sameAs: sameAs
     )
 }

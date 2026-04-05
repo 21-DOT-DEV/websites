@@ -20,6 +20,7 @@ public struct OrganizationSchema: Schema {
     public let name: String
     public let url: String?
     public let logo: String?
+    public let foundingDate: String?
     public let description: String?
     public let sameAs: [String]?
     
@@ -29,6 +30,7 @@ public struct OrganizationSchema: Schema {
     ///   - name: Organization name
     ///   - url: Organization website URL
     ///   - logo: URL to organization logo
+    ///   - foundingDate: ISO 8601 founding date (e.g., "2024")
     ///   - description: Brief description of the organization
     ///   - sameAs: Array of social profile URLs
     public init(
@@ -36,6 +38,7 @@ public struct OrganizationSchema: Schema {
         name: String,
         url: String? = nil,
         logo: String? = nil,
+        foundingDate: String? = nil,
         description: String? = nil,
         sameAs: [String]? = nil
     ) {
@@ -43,6 +46,7 @@ public struct OrganizationSchema: Schema {
         self.name = name
         self.url = url
         self.logo = logo
+        self.foundingDate = foundingDate
         self.description = description
         self.sameAs = sameAs
     }
@@ -53,6 +57,7 @@ public struct OrganizationSchema: Schema {
         case name
         case url
         case logo
+        case foundingDate
         case description
         case sameAs
     }
@@ -64,6 +69,7 @@ public struct OrganizationSchema: Schema {
         try container.encode(name, forKey: .name)
         try container.encodeIfPresent(url, forKey: .url)
         try container.encodeIfPresent(logo, forKey: .logo)
+        try container.encodeIfPresent(foundingDate, forKey: .foundingDate)
         try container.encodeIfPresent(description, forKey: .description)
         try container.encodeIfPresent(sameAs, forKey: .sameAs)
     }

@@ -13,11 +13,18 @@ import Foundation
 /// Schema.org WebPage type for structured data.
 /// Used both as a reference-only type (for mainEntityOfPage) and as a full
 /// page-level schema node in @graph (with isPartOf, name, url, etc.).
+/// Supports subtypes like CollectionPage via the pageType parameter.
 /// https://schema.org/WebPage
 public struct WebPageSchema: Schema {
     public static let schemaType = "WebPage"
     
-    private let type = "WebPage"
+    /// Schema.org page type variants.
+    public enum PageType: String, Sendable {
+        case webPage = "WebPage"
+        case collectionPage = "CollectionPage"
+    }
+    
+    private let type: String
     public let id: String
     public let isPartOf: SchemaReference?
     public let name: String?
@@ -27,9 +34,12 @@ public struct WebPageSchema: Schema {
     public let mainEntity: SchemaReference?
     
     /// Creates a WebPage schema reference (backward-compatible).
-    /// - Parameter id: The canonical URL of the web page
-    public init(id: String) {
+    /// - Parameters:
+    ///   - id: The canonical URL of the web page
+    ///   - pageType: The schema.org type (defaults to WebPage)
+    public init(id: String, pageType: PageType = .webPage) {
         self.id = id
+        self.type = pageType.rawValue
         self.isPartOf = nil
         self.name = nil
         self.url = nil
@@ -41,6 +51,7 @@ public struct WebPageSchema: Schema {
     /// Creates a full WebPage schema for @graph.
     /// - Parameters:
     ///   - id: Stable entity identifier (e.g., https://21.dev/#webpage)
+    ///   - pageType: The schema.org type (defaults to WebPage, use .collectionPage for listing pages)
     ///   - isPartOf: Reference to the parent WebSite via @id
     ///   - name: Page title
     ///   - url: Canonical URL of the page
@@ -49,6 +60,7 @@ public struct WebPageSchema: Schema {
     ///   - mainEntity: Back-link to the primary entity on this page (e.g., BlogPosting)
     public init(
         id: String,
+        pageType: PageType = .webPage,
         isPartOf: SchemaReference,
         name: String,
         url: String,
@@ -57,6 +69,7 @@ public struct WebPageSchema: Schema {
         mainEntity: SchemaReference? = nil
     ) {
         self.id = id
+        self.type = pageType.rawValue
         self.isPartOf = isPartOf
         self.name = name
         self.url = url

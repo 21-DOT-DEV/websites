@@ -102,15 +102,15 @@ public struct BasePage: View {
                     Meta("robots", content: robotsDirective)
                 }
                 if let article = articleMetadata {
-                    Meta("article:published_time", content: article.publishedTime)
+                    RawHTML("<meta property=\"article:published_time\" content=\"\(article.publishedTime)\">")
                     if let modifiedTime = article.modifiedTime {
-                        Meta("article:modified_time", content: modifiedTime)
+                        RawHTML("<meta property=\"article:modified_time\" content=\"\(modifiedTime)\">")
                     }
                     if let author = article.author {
-                        Meta("article:author", content: author)
+                        RawHTML("<meta property=\"article:author\" content=\"\(author)\">")
                     }
                     ForEach(article.tags, id: \.self) { tag in
-                        Meta("article:tag", content: tag)
+                        RawHTML("<meta property=\"article:tag\" content=\"\(tag)\">")
                     }
                 }
                 Viewport.mobileFriendly
