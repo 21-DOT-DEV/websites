@@ -31,6 +31,7 @@ public struct WebPageSchema: Schema {
     public let url: String?
     public let inLanguage: String?
     public let description: String?
+    public let breadcrumb: SchemaReference?
     public let mainEntity: SchemaReference?
     
     /// Creates a WebPage schema reference (backward-compatible).
@@ -45,6 +46,7 @@ public struct WebPageSchema: Schema {
         self.url = nil
         self.inLanguage = nil
         self.description = nil
+        self.breadcrumb = nil
         self.mainEntity = nil
     }
     
@@ -57,6 +59,7 @@ public struct WebPageSchema: Schema {
     ///   - url: Canonical URL of the page
     ///   - inLanguage: BCP-47 language tag (defaults to "en-US")
     ///   - description: Page description (should match <meta name="description">)
+    ///   - breadcrumb: Reference to the BreadcrumbList via @id
     ///   - mainEntity: Back-link to the primary entity on this page (e.g., BlogPosting)
     public init(
         id: String,
@@ -66,6 +69,7 @@ public struct WebPageSchema: Schema {
         url: String,
         inLanguage: String = "en-US",
         description: String? = nil,
+        breadcrumb: SchemaReference? = nil,
         mainEntity: SchemaReference? = nil
     ) {
         self.id = id
@@ -75,6 +79,7 @@ public struct WebPageSchema: Schema {
         self.url = url
         self.inLanguage = inLanguage
         self.description = description
+        self.breadcrumb = breadcrumb
         self.mainEntity = mainEntity
     }
     
@@ -86,6 +91,7 @@ public struct WebPageSchema: Schema {
         case url
         case inLanguage
         case description
+        case breadcrumb
         case mainEntity
     }
     
@@ -98,6 +104,7 @@ public struct WebPageSchema: Schema {
         try container.encodeIfPresent(url, forKey: .url)
         try container.encodeIfPresent(inLanguage, forKey: .inLanguage)
         try container.encodeIfPresent(description, forKey: .description)
+        try container.encodeIfPresent(breadcrumb, forKey: .breadcrumb)
         try container.encodeIfPresent(mainEntity, forKey: .mainEntity)
     }
 }
