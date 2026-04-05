@@ -232,7 +232,10 @@ public enum AgentDirectiveInjector {
         relativePath: String,
         baseURL: URL
     ) throws -> String {
-        let baseURLString = baseURL.absoluteString
+        var baseURLString = baseURL.absoluteString
+        if !baseURLString.hasSuffix("/") {
+            baseURLString += "/"
+        }
 
         // Derive breadcrumbs and page name
         let (breadcrumbItems, pageName) = deriveBreadcrumbs(from: relativePath, baseURL: baseURL)

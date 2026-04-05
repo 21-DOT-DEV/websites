@@ -256,6 +256,20 @@ struct AgentDirectiveTests {
         #expect(!directive.contains("MediaObject"))
     }
 
+    @Test("WebSite @id and url use trailing slash before fragment")
+    func buildDirectiveWebSiteTrailingSlash() throws {
+        let directive = try AgentDirectiveInjector.buildDirective(
+            markdownURL: nil,
+            relativePath: "documentation/p256k/index.html",
+            baseURL: baseURL
+        )
+
+        // @id must be https://docs.21.dev/#website (trailing slash before fragment)
+        #expect(directive.contains("docs.21.dev\\/#website"))
+        // url must be https://docs.21.dev/ (with trailing slash)
+        #expect(directive.contains("\"url\":\"https:\\/\\/docs.21.dev\\/\""))
+    }
+
     @Test("Builds directive with breadcrumbs when path has depth")
     func buildDirectiveWithBreadcrumbs() throws {
         let directive = try AgentDirectiveInjector.buildDirective(
