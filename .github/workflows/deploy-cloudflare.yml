@@ -99,6 +99,14 @@ jobs:
             exit 1
           fi
           echo "✅ _middleware.ts present"
+          
+          if grep -q './logic.js' "./functions/_middleware.ts"; then
+            if [ ! -f "./functions/logic.js" ]; then
+              echo "❌ Error: _middleware.ts imports ./logic.js but file not found in ./functions/"
+              exit 1
+            fi
+            echo "✅ logic.js present (imported by _middleware.ts)"
+          fi
       
       - name: Deploy to Cloudflare Pages
         id: cloudflare

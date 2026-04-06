@@ -100,6 +100,10 @@ let package = Package(
             dependencies: [
                 .product(name: "Subprocess", package: "swift-subprocess")
             ]
+        ),
+        .testTarget(
+            name: "MiddlewareTests",
+            dependencies: []
         )
     ]
 )

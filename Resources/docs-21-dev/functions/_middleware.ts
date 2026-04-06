@@ -1,52 +1,23 @@
-/**
- * Analytics Engine Schema (dataset: "markdown_serves")
- *
- * Blobs:
- *   blob1  — requested path    (e.g. /documentation/p256k or /documentation/p256k/)
- *   blob2  — resolved md path  (e.g. /data/documentation/p256k.md)
- *   blob3  — outcome           ("served" | "miss")
- *   blob4  — accept header     (raw Accept value)
- *   blob5  — user agent        (raw UA string, filter with LIKE at query time)
- *   blob6  — country           (from CF-IPCountry header)
- *
- * Doubles:
- *   double1 — 1                (counter)
- *   double2 — token estimate   (0 on miss)
- *   double3 — content length in chars (0 on miss)
- *
- * Index: requested path
- */
+// Analytics Engine schema: see formatAnalyticsPayload() in logic.js
 
-function estimateTokens(text: string): number {
-  return Math.ceil(text.split(/\s+/).length * 0.75);
-}
+import {
+  CACHE_TTL_SECONDS,
+  resolveCountry,
+  resolveRedirect,
+  resolveMarkdownPath,
+  isValidMarkdownResponse,
+  wantsMarkdown,
+  buildMarkdownHeaders,
+  formatAnalyticsPayload,
+  estimateTokens,
+} from "./logic.js";
 
 function writeAnalytics(
   env: { MD_ANALYTICS?: AnalyticsEngineDataset },
-  data: {
-    requestedPath: string;
-    resolvedPath: string;
-    outcome: string;
-    accept: string;
-    userAgent: string;
-    country: string;
-    tokens: number;
-    chars: number;
-  }
+  data: Parameters<typeof formatAnalyticsPayload>[0]
 ) {
   try {
-    env.MD_ANALYTICS?.writeDataPoint({
-      blobs: [
-        data.requestedPath,
-        data.resolvedPath,
-        data.outcome,
-        data.accept.substring(0, 256),
-        data.userAgent.substring(0, 512),
-        data.country,
-      ],
-      doubles: [1, data.tokens, data.chars],
-      indexes: [data.requestedPath],
-    });
+    env.MD_ANALYTICS?.writeDataPoint(formatAnalyticsPayload(data));
   } catch (e) {
     console.error("Analytics write failed:", e);
   }
@@ -56,8 +27,9 @@ export async function onRequest(context: EventContext<unknown, string, unknown>)
   const url = new URL(context.request.url);
 
   // --- 1. Redirect pages.dev traffic to custom domain ---
-  if (url.hostname === "docs-21-dev.pages.dev") {
-    url.hostname = "docs.21.dev";
+  const redirect = resolveRedirect(url.hostname);
+  if (redirect.redirect) {
+    url.hostname = redirect.target;
     url.port = "";
     return new Response(null, {
       status: 301,
@@ -68,52 +40,42 @@ export async function onRequest(context: EventContext<unknown, string, unknown>)
   // --- 2. Markdown content negotiation for AI agents ---
   const accept = context.request.headers.get("Accept") || "";
   const userAgent = context.request.headers.get("User-Agent") || "";
-  const wantsMarkdown = accept.includes("text/markdown");
-
-  if (wantsMarkdown) {
-    let mdPath: string;
-    if (url.pathname.endsWith("/index.html")) {
-      mdPath = "/data" + url.pathname.replace(/\/index\.html$/, ".md");
-    } else if (url.pathname.endsWith(".html")) {
-      mdPath = "/data" + url.pathname.replace(/\.html$/, ".md");
-    } else {
-      const stripped = url.pathname.endsWith("/") ? url.pathname.slice(0, -1) : url.pathname;
-      mdPath = "/data" + stripped + ".md";
-    }
+  if (wantsMarkdown(accept)) {
+    const mdPath = resolveMarkdownPath(url.pathname);
 
     try {
       const mdUrl = new URL(mdPath, url.origin);
       const mdResponse = await fetch(mdUrl, {
         headers: { "User-Agent": userAgent },
-        cf: { cacheEverything: true, cacheTtl: 3600 },
+        cf: { cacheEverything: true, cacheTtl: CACHE_TTL_SECONDS },
       });
 
       if (mdResponse.ok) {
-        const body = await mdResponse.text();
-        const tokens = estimateTokens(body);
-        const chars = body.length;
+        const contentType = mdResponse.headers.get("Content-Type") || "";
+        if (!isValidMarkdownResponse(contentType)) {
+          // SPA fallback served HTML — not a real markdown file
+          // Fall through to miss logging
+        } else {
+          const body = await mdResponse.text();
+          const tokens = estimateTokens(body);
+          const chars = body.length;
 
-        context.waitUntil(writeAnalytics(context.env as any, {
-          requestedPath: url.pathname,
-          resolvedPath: mdPath,
-          outcome: "served",
-          accept,
-          userAgent,
-          country: context.request.headers.get("CF-IPCountry") || "unknown",
-          tokens,
-          chars,
-        }));
+          context.waitUntil(writeAnalytics(context.env as any, {
+            requestedPath: url.pathname,
+            resolvedPath: mdPath,
+            outcome: "served",
+            accept,
+            userAgent,
+            country: resolveCountry(context.request.headers.get("CF-IPCountry")),
+            tokens,
+            chars,
+          }));
 
-        return new Response(body, {
-          status: 200,
-          headers: {
-            "Content-Type": "text/markdown; charset=utf-8",
-            "X-Markdown-Tokens": String(tokens),
-            "Content-Signal": "ai-input=yes, search=yes, ai-train=yes",
-            "Cache-Control": "public, max-age=3600",
-            "Vary": "Accept",
-          },
-        });
+          return new Response(body, {
+            status: 200,
+            headers: buildMarkdownHeaders(tokens),
+          });
+        }
       }
 
       // Markdown file not found — log miss, fall through to HTML
@@ -123,7 +85,7 @@ export async function onRequest(context: EventContext<unknown, string, unknown>)
         outcome: "miss",
         accept,
         userAgent,
-        country: context.request.headers.get("CF-IPCountry") || "unknown",
+        country: resolveCountry(context.request.headers.get("CF-IPCountry")),
         tokens: 0,
         chars: 0,
       }));

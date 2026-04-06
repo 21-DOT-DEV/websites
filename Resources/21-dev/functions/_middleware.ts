@@ -1,9 +1,11 @@
+import { resolveRedirect } from "./logic.js";
+
 export async function onRequest(context: EventContext<unknown, string, unknown>) {
   const url = new URL(context.request.url);
 
-  // Redirect pages.dev traffic to custom domain
-  if (url.hostname === "21-dev.pages.dev") {
-    url.hostname = "21.dev";
+  const result = resolveRedirect(url.hostname);
+  if (result.redirect) {
+    url.hostname = result.target;
     url.port = "";
     return new Response(null, {
       status: 301,
@@ -11,7 +13,6 @@ export async function onRequest(context: EventContext<unknown, string, unknown>)
     });
   }
 
-  // Serve request with error handling
   try {
     return await context.next();
   } catch (err) {
