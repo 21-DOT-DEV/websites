@@ -80,6 +80,176 @@ public enum AgentDirectiveInjector {
     /// Marker for the `<link rel="alternate">` markdown tag.
     static let alternateMarker = "rel=\"alternate\" type=\"text/markdown\""
 
+    /// The exact noindex robots meta tag injected for non-allowlisted pages.
+    static let noindexTag = "<meta name=\"robots\" content=\"noindex, follow\">"
+
+    /// Marker for detecting existing noindex meta tags in HTML.
+    static let noindexMarker = "name=\"robots\""
+
+    /// Pages that should be indexed by search engines (no noindex tag).
+    ///
+    /// Sources:
+    /// - `Resources/docs-21-dev/data/documentation/p256k/llms.txt` (15 curated entries)
+    /// - One-time audit of pages with `<h2>Discussion</h2>` sections (52 entries)
+    /// - One-time audit of pages with authored Parameters/Return Value/aside sections (29 entries)
+    ///
+    /// ZKP re-exports P256K, so ZKP pages are SEO duplicates and excluded.
+    /// Add ZKP-unique pages (e.g. bulletproofs) when they exist.
+    ///
+    /// When llms.txt or doc comments change, re-audit with:
+    ///   find Websites/docs-21-dev/documentation/p256k -name index.html \( \
+    ///     -exec grep -l '<h2>Discussion</h2>' {} \; -o \
+    ///     -exec grep -l '<h2>Return Value</h2>' {} \; -o \
+    ///     -exec grep -l '<h2>Parameters</h2>' {} \; -o \
+    ///     -exec grep -l 'class="aside' {} \; \
+    ///   \) | sed 's|Websites/docs-21-dev/||; s|/index.html||' | sort -u
+    static let indexablePages: Set<String> = [
+        // --- P256K llms.txt (15 entries) ---
+        // ## Documentation
+        "documentation/p256k/gettingstarted",
+        "documentation/p256k",
+        // ## Symbols
+        "documentation/p256k/p256k/context",
+        "documentation/p256k/p256k/signing",
+        "documentation/p256k/p256k/keyagreement",
+        "documentation/p256k/p256k/schnorr",
+        "documentation/p256k/p256k/recovery",
+        "documentation/p256k/p256k/musig",
+        // ## Optional
+        "documentation/p256k/p256k/signing/privatekey",
+        "documentation/p256k/p256k/signing/publickey",
+        "documentation/p256k/p256k/keyagreement/privatekey",
+        "documentation/p256k/p256k/schnorr/privatekey",
+        "documentation/p256k/p256k/recovery/privatekey",
+        "documentation/p256k/int256",
+        "documentation/p256k/uint256",
+
+        // --- Pages with Discussion sections (52 entries, audit 2025-04-06) ---
+        // Context
+        "documentation/p256k/p256k/context/create()",
+        "documentation/p256k/p256k/context/rawrepresentation",
+        // KeyAgreement
+        "documentation/p256k/p256k/keyagreement/privatekey/init(datarepresentation:format:)",
+        "documentation/p256k/p256k/keyagreement/privatekey/init(format:)",
+        "documentation/p256k/p256k/keyagreement/privatekey/sharedsecretfromkeyagreement(with:format:)",
+        "documentation/p256k/p256k/keyagreement/publickey/init(datarepresentation:format:)",
+        "documentation/p256k/p256k/keyagreement/publickey/init(x963representation:)",
+        // MuSig
+        "documentation/p256k/p256k/musig/aggregate(_:)",
+        "documentation/p256k/p256k/musig/aggregatesignature/init(datarepresentation:)",
+        "documentation/p256k/p256k/musig/aggregatesignatures(_:)",
+        "documentation/p256k/p256k/musig/nonce/generate(secretkey:publickey:msg32:extrainput32:)",
+        "documentation/p256k/p256k/musig/nonce/generate(sessionid:secretkey:publickey:msg32:extrainput32:)",
+        "documentation/p256k/p256k/musig/nonce/init(aggregating:)",
+        "documentation/p256k/p256k/musig/nonce/init(datarepresentation:)",
+        "documentation/p256k/p256k/musig/publickey/add(_:format:)",
+        "documentation/p256k/p256k/musig/publickey/init(datarepresentation:format:cache:)",
+        "documentation/p256k/p256k/musig/publickey/isvalidsignature(_:publickey:nonce:for:)",
+        "documentation/p256k/p256k/musig/xonlykey/add(_:)",
+        // Recovery
+        "documentation/p256k/p256k/recovery/ecdsasignature/init(compactrepresentation:recoveryid:)",
+        "documentation/p256k/p256k/recovery/ecdsasignature/init(datarepresentation:)",
+        "documentation/p256k/p256k/recovery/ecdsasignature/normalize",
+        "documentation/p256k/p256k/recovery/privatekey/init(datarepresentation:format:)",
+        "documentation/p256k/p256k/recovery/privatekey/init(format:)",
+        // Schnorr
+        "documentation/p256k/p256k/schnorr/nonce/init(datarepresentation:)",
+        "documentation/p256k/p256k/schnorr/partialsignature/init(datarepresentation:session:)",
+        "documentation/p256k/p256k/schnorr/privatekey/init()",
+        "documentation/p256k/p256k/schnorr/privatekey/init(datarepresentation:)",
+        "documentation/p256k/p256k/schnorr/privatekey/partialsignature(for:pubnonce:securenonce:publicnonceaggregate:publickeyaggregate:)",
+        "documentation/p256k/p256k/schnorr/privatekey/partialsignature(for:pubnonce:securenonce:publicnonceaggregate:xonlykeyaggregate:)",
+        "documentation/p256k/p256k/schnorr/privatekey/signature(for:)",
+        "documentation/p256k/p256k/schnorr/privatekey/signature(for:auxiliaryrand:)",
+        "documentation/p256k/p256k/schnorr/privatekey/signature(message:auxiliaryrand:strict:)",
+        "documentation/p256k/p256k/schnorr/publickey/init(datarepresentation:format:)",
+        "documentation/p256k/p256k/schnorr/schnorrsignature/init(datarepresentation:)",
+        // Signing
+        "documentation/p256k/p256k/signing/ecdsasignature/init(compactrepresentation:)",
+        "documentation/p256k/p256k/signing/ecdsasignature/init(datarepresentation:)",
+        "documentation/p256k/p256k/signing/ecdsasignature/init(derrepresentation:)",
+        "documentation/p256k/p256k/signing/privatekey/add(_:)",
+        "documentation/p256k/p256k/signing/privatekey/init(_:format:)",
+        "documentation/p256k/p256k/signing/privatekey/init(datarepresentation:format:)",
+        "documentation/p256k/p256k/signing/privatekey/init(format:)",
+        "documentation/p256k/p256k/signing/privatekey/multiply(_:)",
+        "documentation/p256k/p256k/signing/publickey/add(_:format:)",
+        "documentation/p256k/p256k/signing/publickey/combine(_:format:)",
+        "documentation/p256k/p256k/signing/publickey/init(datarepresentation:format:)",
+        "documentation/p256k/p256k/signing/publickey/init(x963representation:)",
+        "documentation/p256k/p256k/signing/publickey/multiply(_:format:)",
+        "documentation/p256k/p256k/signing/xonlykey/parity",
+        // Extensions & utility types
+        "documentation/p256k/sha256/taggedhash(tag:data:)",
+        "documentation/p256k/swift/string/bytes",
+        "documentation/p256k/uint256/addmod(_:modulus:)",
+        "documentation/p256k/uint256/mulmod(_:modulus:)",
+
+        // --- Pages with authored Parameters/Return Value/aside (30 entries, audit 2025-04-06) ---
+        // KeyAgreement
+        "documentation/p256k/p256k/keyagreement/publickey/init(derrepresentation:)",
+        // MuSig
+        "documentation/p256k/p256k/musig/publickey/init(xonlykey:)",
+        "documentation/p256k/p256k/musig/xonlykey/init(datarepresentation:keyparity:cache:)",
+        "documentation/p256k/p256k/musig/xonlykey/isvalid(_:for:)",
+        "documentation/p256k/p256k/musig/xonlykey/isvalidsignature(_:for:)",
+        // Recovery
+        "documentation/p256k/p256k/recovery/privatekey/signature(for:)-1eroz",
+        "documentation/p256k/p256k/recovery/privatekey/signature(for:)-pcnn",
+        "documentation/p256k/p256k/recovery/publickey/init(_:signature:format:)-4311g",
+        "documentation/p256k/p256k/recovery/publickey/init(_:signature:format:)-5frmm",
+        // Schnorr
+        "documentation/p256k/p256k/schnorr/privatekey/add(_:)",
+        "documentation/p256k/p256k/schnorr/publickey/init(xonlykey:)",
+        "documentation/p256k/p256k/schnorr/xonlykey/add(_:)",
+        "documentation/p256k/p256k/schnorr/xonlykey/init(datarepresentation:keyparity:cache:)",
+        "documentation/p256k/p256k/schnorr/xonlykey/isvalid(_:for:)",
+        "documentation/p256k/p256k/schnorr/xonlykey/isvalidsignature(_:for:)",
+        // Signing
+        "documentation/p256k/p256k/signing/privatekey/init(derrepresentation:)",
+        "documentation/p256k/p256k/signing/privatekey/init(pemrepresentation:)",
+        "documentation/p256k/p256k/signing/privatekey/signature(for:)-3h6ut",
+        "documentation/p256k/p256k/signing/privatekey/signature(for:)-4qs1k",
+        "documentation/p256k/p256k/signing/publickey/init(derrepresentation:)",
+        "documentation/p256k/p256k/signing/publickey/init(pemrepresentation:)",
+        "documentation/p256k/p256k/signing/publickey/init(xonlykey:)",
+        "documentation/p256k/p256k/signing/publickey/isvalidsignature(_:for:)-7sttb",
+        "documentation/p256k/p256k/signing/publickey/isvalidsignature(_:for:)-8lxch",
+        "documentation/p256k/p256k/signing/xonlykey/init(datarepresentation:keyparity:)",
+        // Extensions & utility types
+        "documentation/p256k/foundation/data/copytounsafemutablebytes(of:)",
+        "documentation/p256k/sha256/hash(data:)",
+        "documentation/p256k/sharedsecret/==(_:_:)-7g0c5",
+        "documentation/p256k/swift/string/init(bytes:)",
+    ]
+
+    /// Normalizes an HTML file's relative path for allowlist comparison.
+    ///
+    /// Strips trailing `/index.html` or `.html`, lowercases, and removes
+    /// leading/trailing slashes to produce a canonical path fragment.
+    ///
+    /// Examples:
+    /// - `documentation/p256k/p256k/signing/index.html` → `documentation/p256k/p256k/signing`
+    /// - `documentation/p256k/int256.html` → `documentation/p256k/int256`
+    static func normalizePathForAllowlist(_ relativePath: String) -> String {
+        var path = relativePath.lowercased()
+        if path.hasSuffix("/index.html") {
+            path = String(path.dropLast("/index.html".count))
+        } else if path.hasSuffix(".html") {
+            path = String(path.dropLast(".html".count))
+        }
+        while path.hasPrefix("/") { path = String(path.dropFirst()) }
+        while path.hasSuffix("/") { path = String(path.dropLast()) }
+        return path
+    }
+
+    /// Whether a page should be indexed by search engines.
+    ///
+    /// Returns `true` if the page's normalized path is in `indexablePages`.
+    public static func shouldIndex(relativePath: String) -> Bool {
+        indexablePages.contains(normalizePathForAllowlist(relativePath))
+    }
+
     /// Known display names for DocC URL segments.
     ///
     /// Maps lowercased URL segments to their proper-cased display names.
@@ -230,7 +400,8 @@ public enum AgentDirectiveInjector {
     public static func buildDirective(
         markdownURL: URL?,
         relativePath: String,
-        baseURL: URL
+        baseURL: URL,
+        shouldIndex: Bool = true
     ) throws -> String {
         var baseURLString = baseURL.absoluteString
         if !baseURLString.hasSuffix("/") {
@@ -288,6 +459,11 @@ public enum AgentDirectiveInjector {
         // Build output tags
         var parts: [String] = []
 
+        // 0. Robots noindex (for non-allowlisted pages)
+        if !shouldIndex {
+            parts.append(noindexTag)
+        }
+
         // 1. <link rel="llms-txt"> — module-specific when under a module, root otherwise
         let module = extractModule(from: relativePath)
         let llmsTxtURL: String
@@ -337,8 +513,9 @@ public enum AgentDirectiveInjector {
         let hasAlternate = html.contains(alternateMarker)
         let hasLlmsTxt = html.contains(llmsTxtMarker)
         let hasLegacy = html.contains("class=\"\(legacyMarkerClass)\"")
+        let hasNoindex = html.contains(noindexMarker)
 
-        if (hasExisting || hasAlternate || hasLlmsTxt || hasLegacy) && !force {
+        if (hasExisting || hasAlternate || hasLlmsTxt || hasLegacy || hasNoindex) && !force {
             return (html, .skipped)
         }
 
@@ -362,6 +539,12 @@ public enum AgentDirectiveInjector {
         // Remove existing <link rel="llms-txt"> if forcing
         if hasLlmsTxt && force {
             content = removeSelfClosingTag(from: content, marker: llmsTxtMarker)
+        }
+
+        // Remove existing noindex meta tag if forcing — use exact string match,
+        // NOT removeSelfClosingTag (search-order bug for void elements).
+        if hasNoindex && force {
+            content = removeExactTag(from: content, tag: noindexTag)
         }
 
         // Remove legacy <p class="agent-directive"> tag if forcing
@@ -407,6 +590,35 @@ public enum AgentDirectiveInjector {
         var removeEnd = closeRange.upperBound
 
         // Include surrounding newlines
+        if removeStart > result.startIndex {
+            let before = result.index(before: removeStart)
+            if result[before] == "\n" {
+                removeStart = before
+            }
+        }
+        if removeEnd < result.endIndex && result[removeEnd] == "\n" {
+            removeEnd = result.index(after: removeEnd)
+        }
+
+        result.removeSubrange(removeStart..<removeEnd)
+        return result
+    }
+
+    /// Removes an exact tag string from HTML content, including surrounding whitespace/newlines.
+    ///
+    /// Unlike `removeSelfClosingTag` (which parses open/close markers and can mis-match
+    /// void elements), this method matches the exact tag string. Use when the injected
+    /// tag is a known constant.
+    private static func removeExactTag(from content: String, tag: String) -> String {
+        var result = content
+        guard let tagRange = result.range(of: tag) else {
+            return result
+        }
+
+        var removeStart = tagRange.lowerBound
+        var removeEnd = tagRange.upperBound
+
+        // Include surrounding newlines/whitespace
         if removeStart > result.startIndex {
             let before = result.index(before: removeStart)
             if result[before] == "\n" {
@@ -495,7 +707,13 @@ public enum AgentDirectiveInjector {
                 let markdownURL: URL? = FileManager.default.fileExists(atPath: mdLocalPath)
                     ? deriveMarkdownURL(baseURL: baseURL, relativePath: entry.relativePath)
                     : nil
-                let directive = try buildDirective(markdownURL: markdownURL, relativePath: entry.relativePath, baseURL: baseURL)
+                let isIndexable = Self.shouldIndex(relativePath: entry.relativePath)
+                let directive = try buildDirective(
+                    markdownURL: markdownURL,
+                    relativePath: entry.relativePath,
+                    baseURL: baseURL,
+                    shouldIndex: isIndexable
+                )
 
                 let (fixedHTML, action) = inject(html: html, directive: directive, force: force)
 
@@ -507,6 +725,7 @@ public enum AgentDirectiveInjector {
                     filePath: entry.absolutePath,
                     relativePath: entry.relativePath,
                     action: action,
+                    noindexed: !isIndexable,
                     errorMessage: nil
                 ))
             } catch {
@@ -514,6 +733,7 @@ public enum AgentDirectiveInjector {
                     filePath: entry.absolutePath,
                     relativePath: entry.relativePath,
                     action: .failed,
+                    noindexed: !Self.shouldIndex(relativePath: entry.relativePath),
                     errorMessage: error.localizedDescription
                 ))
             }
@@ -522,16 +742,21 @@ public enum AgentDirectiveInjector {
         return InjectionReport(results: results)
     }
 
-    /// Verifies that all documentation HTML files contain an agent directive.
+    /// Verifies that all documentation HTML files contain an agent directive
+    /// and have correct noindex status based on the allowlist.
     ///
     /// Detects the current combined format (JSON-LD marker or alternate link),
     /// and also accepts the legacy `<p class="agent-directive">` format.
     ///
+    /// Noindex assertion rules:
+    /// - If `shouldIndex(relativePath:)` is **false**: file **must** contain `noindexMarker`
+    /// - If `shouldIndex(relativePath:)` is **true**: file **must NOT** contain `noindexMarker`
+    ///
     /// - Parameter directoryPath: Path to the output directory
-    /// - Returns: Tuple of (total files, files with directive, relative paths of files missing directive)
+    /// - Returns: Tuple of (total files, files with directive, missing directive paths, noindex issue descriptions)
     public static func verify(
         at directoryPath: String
-    ) throws -> (total: Int, present: Int, missing: [String]) {
+    ) throws -> (total: Int, present: Int, missing: [String], noindexIssues: [String]) {
         let entries = try HTMLFileWalker.findHTMLFiles(
             in: directoryPath,
             pathPrefix: "documentation/"
@@ -539,6 +764,7 @@ public enum AgentDirectiveInjector {
 
         var present = 0
         var missing: [String] = []
+        var noindexIssues: [String] = []
 
         for entry in entries {
             let html = try String(contentsOfFile: entry.absolutePath, encoding: .utf8)
@@ -551,8 +777,17 @@ public enum AgentDirectiveInjector {
             } else {
                 missing.append(entry.relativePath)
             }
+
+            // Noindex correctness check
+            let isIndexable = shouldIndex(relativePath: entry.relativePath)
+            let hasNoindex = html.contains(noindexMarker)
+            if !isIndexable && !hasNoindex {
+                noindexIssues.append("\(entry.relativePath) (missing noindex)")
+            } else if isIndexable && hasNoindex {
+                noindexIssues.append("\(entry.relativePath) (unexpected noindex)")
+            }
         }
 
-        return (total: entries.count, present: present, missing: missing)
+        return (total: entries.count, present: present, missing: missing, noindexIssues: noindexIssues)
     }
 }

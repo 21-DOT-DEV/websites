@@ -69,13 +69,17 @@ extension AgentDirectiveCommand {
                 print("Checking agent directives in \(path)...")
                 print()
 
-                let (total, present, missing) = try AgentDirectiveInjector.verify(at: path)
+                let (total, present, missing, noindexIssues) = try AgentDirectiveInjector.verify(at: path)
 
                 if verbose {
                     for path in missing {
                         print("❌ Missing: \(path)")
                     }
                     if !missing.isEmpty { print() }
+                    for issue in noindexIssues {
+                        print("🚫 \(issue)")
+                    }
+                    if !noindexIssues.isEmpty { print() }
                 }
 
                 print("✅ \(present) with directive")
@@ -85,12 +89,21 @@ extension AgentDirectiveCommand {
                         for path in missing.prefix(10) { print("  - \(path)") }
                         if missing.count > 10 { print("  ... (\(missing.count - 10) more)") }
                     }
+                }
+                if !noindexIssues.isEmpty {
+                    print("🚫 \(noindexIssues.count) noindex issue\(noindexIssues.count == 1 ? "" : "s")")
+                    if !verbose {
+                        for issue in noindexIssues.prefix(10) { print("  - \(issue)") }
+                        if noindexIssues.count > 10 { print("  ... (\(noindexIssues.count - 10) more)") }
+                    }
+                }
+                if !missing.isEmpty || !noindexIssues.isEmpty {
                     print()
-                    print("Result: \(missing.count) of \(total) file\(total == 1 ? "" : "s") missing directive")
+                    print("Result: \(missing.count + noindexIssues.count) issue\(missing.count + noindexIssues.count == 1 ? "" : "s") in \(total) file\(total == 1 ? "" : "s")")
                     throw ExitCode.failure
                 }
                 print()
-                print("Result: All \(total) documentation file\(total == 1 ? "" : "s") have directive ✓")
+                print("Result: All \(total) documentation file\(total == 1 ? "" : "s") have directive and correct noindex status ✓")
                 return
             }
 
@@ -127,12 +140,16 @@ extension AgentDirectiveCommand {
 
             // Auto-verify after injection (unless dry run)
             if !dryRun {
-                let (_, _, missing) = try AgentDirectiveInjector.verify(at: path)
+                let (_, _, missing, noindexIssues) = try AgentDirectiveInjector.verify(at: path)
                 if !missing.isEmpty {
                     print("❌ Verification failed: \(missing.count) file\(missing.count == 1 ? "" : "s") still missing directive")
                     throw ExitCode.failure
                 }
-                print("✅ Verified: all documentation files have agent directive")
+                if !noindexIssues.isEmpty {
+                    print("❌ Verification failed: \(noindexIssues.count) noindex issue\(noindexIssues.count == 1 ? "" : "s")")
+                    throw ExitCode.failure
+                }
+                print("✅ Verified: all documentation files have agent directive and correct noindex status")
             }
         }
 
@@ -164,6 +181,12 @@ extension AgentDirectiveCommand {
             }
             if report.failedCount > 0 {
                 print("❌ Failed: \(report.failedCount) file\(report.failedCount == 1 ? "" : "s")")
+            }
+            if report.noindexedCount > 0 {
+                print("🚫 Noindexed: \(report.noindexedCount) file\(report.noindexedCount == 1 ? "" : "s")")
+            }
+            if report.indexedCount > 0 {
+                print("✅ Indexed: \(report.indexedCount) file\(report.indexedCount == 1 ? "" : "s")")
             }
         }
     }

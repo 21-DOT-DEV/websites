@@ -451,6 +451,48 @@ jobs:
             --base-url "$BASE_URL" \
             --force
       
+      - name: Generate 404 page
+        run: |
+          project="${{ inputs.project-name }}"
+          output_dir="Websites/${project}"
+          BASE_URL="https://${project//-/.}"
+          source="${output_dir}/index.html"
+          target="${output_dir}/404.html"
+
+          if [ ! -f "$source" ]; then
+            echo "⚠️  Root index.html not found, skipping 404 generation"
+            exit 0
+          fi
+
+          echo "📄 Generating 404.html for ${project}..."
+
+          # Copy SPA shell as 404 page
+          cp "$source" "$target"
+
+          # Remove canonical tag (wrong URL when served as 404)
+          # NOTE: sed -i '' is macOS-specific (macos-26 runner).
+          # GNU sed on Linux treats '' as a filename — use sed -i instead if migrating.
+          sed -i '' '/<link rel="canonical"/d' "$target"
+
+          # Add noindex + llms-txt before </head>
+          sed -i '' "s|</head>|<meta name=\"robots\" content=\"noindex, follow\" />\n <link rel=\"llms-txt\" href=\"${BASE_URL}/llms.txt\" />\n </head>|" "$target"
+
+          # Verify tags were injected
+          if ! grep -q 'name="robots"' "$target"; then
+            echo "❌ Failed to inject robots meta tag"
+            exit 1
+          fi
+          if ! grep -q 'rel="llms-txt"' "$target"; then
+            echo "❌ Failed to inject llms-txt link"
+            exit 1
+          fi
+          if grep -q 'rel="canonical"' "$target"; then
+            echo "❌ Failed to remove canonical tag"
+            exit 1
+          fi
+
+          echo "✅ 404.html generated with noindex + llms-txt, canonical removed"
+      
       - name: Create documentation archive
         run: |
           project="${{ inputs.project-name }}"

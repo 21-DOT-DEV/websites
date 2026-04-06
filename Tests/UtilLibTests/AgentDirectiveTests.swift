@@ -517,6 +517,153 @@ struct AgentDirectiveTests {
 
     // MARK: - knownNames snapshot validation
 
+    // MARK: - noindex allowlist
+
+    @Test("normalizePathForAllowlist strips index.html")
+    func normalizePathIndex() {
+        let result = AgentDirectiveInjector.normalizePathForAllowlist(
+            "documentation/p256k/p256k/signing/index.html"
+        )
+        #expect(result == "documentation/p256k/p256k/signing")
+    }
+
+    @Test("normalizePathForAllowlist strips .html extension")
+    func normalizePathExtension() {
+        let result = AgentDirectiveInjector.normalizePathForAllowlist(
+            "documentation/p256k/int256.html"
+        )
+        #expect(result == "documentation/p256k/int256")
+    }
+
+    @Test("normalizePathForAllowlist lowercases path")
+    func normalizePathLowercase() {
+        let result = AgentDirectiveInjector.normalizePathForAllowlist(
+            "Documentation/P256K/Int256.html"
+        )
+        #expect(result == "documentation/p256k/int256")
+    }
+
+    @Test("shouldIndex returns true for allowlisted page")
+    func shouldIndexAllowlisted() {
+        #expect(AgentDirectiveInjector.shouldIndex(
+            relativePath: "documentation/p256k/p256k/signing/index.html"
+        ))
+    }
+
+    @Test("shouldIndex returns false for non-allowlisted page")
+    func shouldIndexNonAllowlisted() {
+        #expect(!AgentDirectiveInjector.shouldIndex(
+            relativePath: "documentation/p256k/p256k/signing/xonlykey/index.html"
+        ))
+    }
+
+    @Test("shouldIndex returns false for operator pages")
+    func shouldIndexOperatorPage() {
+        #expect(!AgentDirectiveInjector.shouldIndex(
+            relativePath: "documentation/p256k/p256k/signing/publickey/==(_:_:)/index.html"
+        ))
+    }
+
+    @Test("buildDirective includes noindex tag when shouldIndex is false")
+    func buildDirectiveNoindex() throws {
+        let directive = try AgentDirectiveInjector.buildDirective(
+            markdownURL: nil,
+            relativePath: "documentation/p256k/p256k/signing/xonlykey/index.html",
+            baseURL: baseURL,
+            shouldIndex: false
+        )
+        #expect(directive.contains("name=\"robots\""))
+        #expect(directive.contains("noindex, follow"))
+    }
+
+    @Test("buildDirective omits noindex tag when shouldIndex is true")
+    func buildDirectiveIndexable() throws {
+        let directive = try AgentDirectiveInjector.buildDirective(
+            markdownURL: nil,
+            relativePath: "documentation/p256k/p256k/signing/index.html",
+            baseURL: baseURL,
+            shouldIndex: true
+        )
+        #expect(!directive.contains("name=\"robots\""))
+    }
+
+    @Test("inject with force removes existing noindex tag via exact match")
+    func forceReplacesNoindex() {
+        let html = """
+        <html><head>
+        <meta name="robots" content="noindex, follow">
+        <link rel="llms-txt" href="https://docs.21.dev/llms.txt" />
+        </head><body></body></html>
+        """
+        let (result, action) = AgentDirectiveInjector.inject(
+            html: html, directive: "<link rel=\"llms-txt\" href=\"test\" />", force: true
+        )
+        #expect(action == .injected)
+        let noindexCount = result.components(separatedBy: "name=\"robots\"").count - 1
+        #expect(noindexCount == 0)
+    }
+
+    @Test("inject skips file with existing noindex when not forcing")
+    func skipsExistingNoindex() {
+        let html = """
+        <html><head>
+        <meta name="robots" content="noindex, follow">
+        </head><body></body></html>
+        """
+        let (_, action) = AgentDirectiveInjector.inject(
+            html: html, directive: "test", force: false
+        )
+        #expect(action == .skipped)
+    }
+
+    @Test("Allowlist has exactly 96 entries (15 llms.txt + 52 Discussion + 29 authored)")
+    func allowlistCompleteness() {
+        #expect(AgentDirectiveInjector.indexablePages.count == 96)
+
+        // Spot-check P256K llms.txt entries
+        #expect(AgentDirectiveInjector.indexablePages.contains("documentation/p256k"))
+        #expect(AgentDirectiveInjector.indexablePages.contains("documentation/p256k/gettingstarted"))
+        #expect(AgentDirectiveInjector.indexablePages.contains("documentation/p256k/p256k/signing"))
+        #expect(AgentDirectiveInjector.indexablePages.contains("documentation/p256k/p256k/signing/privatekey"))
+
+        // Spot-check Discussion audit entries
+        #expect(AgentDirectiveInjector.indexablePages.contains("documentation/p256k/p256k/context/rawrepresentation"))
+        #expect(AgentDirectiveInjector.indexablePages.contains("documentation/p256k/p256k/schnorr/privatekey/signature(for:)"))
+        #expect(AgentDirectiveInjector.indexablePages.contains("documentation/p256k/sha256/taggedhash(tag:data:)"))
+
+        // Spot-check authored Parameters/Return Value/aside entries
+        #expect(AgentDirectiveInjector.indexablePages.contains("documentation/p256k/p256k/signing/publickey/isvalidsignature(_:for:)-7sttb"))
+        #expect(AgentDirectiveInjector.indexablePages.contains("documentation/p256k/p256k/recovery/publickey/init(_:signature:format:)-4311g"))
+        #expect(AgentDirectiveInjector.indexablePages.contains("documentation/p256k/sha256/hash(data:)"))
+
+        // ZKP re-exports P256K — all ZKP pages are SEO dupes, excluded until unique APIs exist
+        #expect(!AgentDirectiveInjector.indexablePages.contains("documentation/zkp"))
+        #expect(!AgentDirectiveInjector.indexablePages.contains("documentation/zkp/p256k/signing"))
+
+        // Protocol conformance stubs excluded (no authored content)
+        #expect(!AgentDirectiveInjector.indexablePages.contains("documentation/p256k/p256k/signing/privatekey/==(_:_:)"))
+        #expect(!AgentDirectiveInjector.indexablePages.contains("documentation/p256k/p256k/signing/ecdsasignature/withunsafebytes(_:)"))
+    }
+
+    @Test("force-reinject removes existing noindex without over-deleting adjacent tags")
+    func forceReinjectPreservesAdjacentTags() {
+        let html = """
+        <html><head>
+        <meta name="robots" content="noindex, follow">
+        <link rel="llms-txt" href="https://docs.21.dev/llms.txt" />
+        </head><body></body></html>
+        """
+        let newDirective = "<link rel=\"llms-txt\" href=\"https://docs.21.dev/llms.txt\" />"
+        let (result, action) = AgentDirectiveInjector.inject(
+            html: html, directive: newDirective, force: true
+        )
+        #expect(action == .injected)
+        #expect(!result.contains("name=\"robots\""))
+        #expect(result.contains("rel=\"llms-txt\""))
+    }
+
+    // MARK: - knownNames snapshot validation
+
     @Test("Every multi-word compound segment in snapshot has a knownNames entry")
     func knownNamesSnapshotCompleteness() throws {
         // Load the checked-in snapshot of all DocC URL segments

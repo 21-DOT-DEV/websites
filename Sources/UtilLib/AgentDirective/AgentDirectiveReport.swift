@@ -33,6 +33,9 @@ public struct InjectionResult: Sendable {
     /// Action taken
     public let action: InjectionAction
 
+    /// Whether this page was marked noindex (not on allowlist)
+    public let noindexed: Bool
+
     /// Error message if action is .failed
     public let errorMessage: String?
 
@@ -41,16 +44,19 @@ public struct InjectionResult: Sendable {
     ///   - filePath: Absolute path to the HTML file
     ///   - relativePath: Relative path from scan directory
     ///   - action: Action taken
+    ///   - noindexed: Whether the page was marked noindex
     ///   - errorMessage: Error message if action is .failed
     public init(
         filePath: String,
         relativePath: String,
         action: InjectionAction,
+        noindexed: Bool = false,
         errorMessage: String?
     ) {
         self.filePath = filePath
         self.relativePath = relativePath
         self.action = action
+        self.noindexed = noindexed
         self.errorMessage = errorMessage
     }
 }
@@ -73,6 +79,16 @@ public struct InjectionReport: Sendable {
     /// Count of files that failed
     public var failedCount: Int {
         results.filter { $0.action == .failed }.count
+    }
+
+    /// Count of files that were noindexed (not on allowlist)
+    public var noindexedCount: Int {
+        results.filter { $0.noindexed && $0.action == .injected }.count
+    }
+
+    /// Count of files that were indexed (on allowlist)
+    public var indexedCount: Int {
+        results.filter { !$0.noindexed && $0.action == .injected }.count
     }
 
     /// Whether all operations succeeded (no failures)
