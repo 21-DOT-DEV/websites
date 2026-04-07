@@ -165,6 +165,24 @@ struct Docs21DevMiddlewareTests {
         #expect(result.toString() == "/data/llms.txt.md")
     }
 
+    @Test("Mixed-case path normalised to lowercase")
+    func resolvePathCaseNormalization() {
+        let result = ctx.evaluateScript("resolveMarkdownPath('/documentation/P256K/P256K/Signing/PublicKey')")!
+        #expect(result.toString() == "/data/documentation/p256k/p256k/signing/publickey.md")
+    }
+
+    @Test("Mixed-case /Documentation maps to llms.txt")
+    func resolvePathCaseNormalizationIndex() {
+        let result = ctx.evaluateScript("resolveMarkdownPath('/Documentation')")!
+        #expect(result.toString() == "/llms.txt")
+    }
+
+    @Test("Mixed-case .html path normalised to lowercase .md")
+    func resolvePathCaseNormalizationHtml() {
+        let result = ctx.evaluateScript("resolveMarkdownPath('/Documentation/P256K/Signing.html')")!
+        #expect(result.toString() == "/data/documentation/p256k/signing.md")
+    }
+
     // MARK: - isValidMarkdownResponse
 
     @Test("text/html is not valid markdown response")
@@ -268,11 +286,12 @@ struct Docs21DevMiddlewareTests {
 
     // MARK: - formatAnalyticsPayload
 
-    @Test("Formats blobs in correct positional order")
+    @Test("Formats blobs with normalizedPath in position 0")
     func payloadBlobs() {
         let js = """
         JSON.stringify(formatAnalyticsPayload({
-            requestedPath: '/docs/p256k',
+            requestedPath: '/docs/P256K',
+            normalizedPath: '/docs/p256k',
             resolvedPath: '/data/docs/p256k.md',
             outcome: 'served',
             accept: 'text/markdown',
@@ -291,7 +310,7 @@ struct Docs21DevMiddlewareTests {
     func payloadDoubles() {
         let js = """
         JSON.stringify(formatAnalyticsPayload({
-            requestedPath: '/', resolvedPath: '/llms.txt', outcome: 'served',
+            requestedPath: '/', normalizedPath: '/', resolvedPath: '/llms.txt', outcome: 'served',
             accept: '', userAgent: '', country: 'DE',
             tokens: 42, chars: 200
         }).doubles)
@@ -300,17 +319,17 @@ struct Docs21DevMiddlewareTests {
         #expect(result == "[1,42,200]")
     }
 
-    @Test("Formats indexes as [requestedPath]")
+    @Test("Formats indexes as [requestedPath] preserving original case")
     func payloadIndexes() {
         let js = """
         JSON.stringify(formatAnalyticsPayload({
-            requestedPath: '/docs/zkp', resolvedPath: '/data/docs/zkp.md', outcome: 'miss',
+            requestedPath: '/docs/ZKP', normalizedPath: '/docs/zkp', resolvedPath: '/data/docs/zkp.md', outcome: 'miss',
             accept: '', userAgent: '', country: '',
             tokens: 0, chars: 0
         }).indexes)
         """
         let result = ctx.evaluateScript(js)!.toString()!
-        #expect(result == #"["/docs/zkp"]"#)
+        #expect(result == #"["/docs/ZKP"]"#)
     }
 
     @Test("Truncates accept to 256 characters")
@@ -318,7 +337,7 @@ struct Docs21DevMiddlewareTests {
         let longAccept = String(repeating: "a", count: 300)
         let js = """
         formatAnalyticsPayload({
-            requestedPath: '/', resolvedPath: '/', outcome: 'miss',
+            requestedPath: '/', normalizedPath: '/', resolvedPath: '/', outcome: 'miss',
             accept: '\(longAccept)', userAgent: '', country: '',
             tokens: 0, chars: 0
         }).blobs[3].length
@@ -332,7 +351,7 @@ struct Docs21DevMiddlewareTests {
         let longUA = String(repeating: "b", count: 600)
         let js = """
         formatAnalyticsPayload({
-            requestedPath: '/', resolvedPath: '/', outcome: 'miss',
+            requestedPath: '/', normalizedPath: '/', resolvedPath: '/', outcome: 'miss',
             accept: '', userAgent: '\(longUA)', country: '',
             tokens: 0, chars: 0
         }).blobs[4].length

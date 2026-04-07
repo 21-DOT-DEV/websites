@@ -62,6 +62,7 @@ export async function onRequest(context: EventContext<unknown, string, unknown>)
 
           context.waitUntil(writeAnalytics(context.env as any, {
             requestedPath: url.pathname,
+            normalizedPath: url.pathname.toLowerCase(),
             resolvedPath: mdPath,
             outcome: "served",
             accept,
@@ -81,6 +82,7 @@ export async function onRequest(context: EventContext<unknown, string, unknown>)
       // Markdown file not found — log miss, fall through to HTML
       context.waitUntil(writeAnalytics(context.env as any, {
         requestedPath: url.pathname,
+        normalizedPath: url.pathname.toLowerCase(),
         resolvedPath: mdPath,
         outcome: "miss",
         accept,

@@ -30,6 +30,8 @@ export function resolveRedirect(hostname) {
  * @returns {string}
  */
 export function resolveMarkdownPath(pathname) {
+  // DocC generates all-lowercase URL segments; normalise to match on disk
+  pathname = pathname.toLowerCase();
   const indexPaths = new Set(["/", "/documentation", "/documentation/"]);
 
   if (indexPaths.has(pathname)) {
@@ -82,20 +84,20 @@ export function buildMarkdownHeaders(tokens) {
  * Formats analytics data into the Analytics Engine wire format.
  *
  * Schema (dataset: "markdown_serves"):
- *   blob1=requestedPath, blob2=resolvedPath, blob3=outcome,
+ *   blob1=normalizedPath (lowercase), blob2=resolvedPath, blob3=outcome,
  *   blob4=accept (max 256), blob5=userAgent (max 512), blob6=country
  *   double1=1 (counter), double2=tokens, double3=chars
  *   index=requestedPath
  *
- * @param {{ requestedPath: string, resolvedPath: string, outcome: string,
- *           accept: string, userAgent: string, country: string,
- *           tokens: number, chars: number }} data
+ * @param {{ requestedPath: string, normalizedPath: string, resolvedPath: string,
+ *           outcome: string, accept: string, userAgent: string,
+ *           country: string, tokens: number, chars: number }} data
  * @returns {{ blobs: string[], doubles: number[], indexes: string[] }}
  */
 export function formatAnalyticsPayload(data) {
   return {
     blobs: [
-      data.requestedPath,
+      data.normalizedPath,
       data.resolvedPath,
       data.outcome,
       data.accept.substring(0, 256),
