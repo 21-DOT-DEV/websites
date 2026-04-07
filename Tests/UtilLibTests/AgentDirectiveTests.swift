@@ -669,9 +669,7 @@ struct AgentDirectiveTests {
         // Load the checked-in snapshot of all DocC URL segments
         let snapshotPath = URL(fileURLWithPath: #filePath)
             .deletingLastPathComponent() // Tests/UtilLibTests/
-            .deletingLastPathComponent() // Tests/
-            .deletingLastPathComponent() // repo root
-            .appendingPathComponent("Resources/docs-21-dev/known-segments.txt")
+            .appendingPathComponent("Fixtures/known-segments.txt")
             .path
 
         let content = try String(contentsOfFile: snapshotPath, encoding: .utf8)

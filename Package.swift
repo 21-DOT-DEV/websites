@@ -93,7 +93,8 @@ let package = Package(
         ),
         .testTarget(
             name: "UtilLibTests",
-            dependencies: ["UtilLib"]
+            dependencies: ["UtilLib"],
+            resources: [.copy("Fixtures")]
         ),
         .testTarget(
             name: "UtilIntegrationTests",
