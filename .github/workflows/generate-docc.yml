@@ -245,8 +245,8 @@ jobs:
             file_count=0
             for item in "${resources_dir}"/*; do
               name="$(basename "$item")"
-              # Skip _headers files (already handled above) and functions/ (deployed as sibling)
-              if [[ "$name" == _headers* ]] || [[ "$name" == "functions" ]]; then
+              # Skip _headers files (already handled above), functions/ (deployed as sibling), and wrangler.toml (local dev config)
+              if [[ "$name" == _headers* ]] || [[ "$name" == "functions" ]] || [[ "$name" == "wrangler.toml" ]]; then
                 continue
               fi
               if [ -d "$item" ]; then

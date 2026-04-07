@@ -169,6 +169,62 @@ struct DevEnvironmentTests {
     }
 }
 
+@Suite("HeadersValidator Glob Content-Type Warning Tests")
+struct GlobContentTypeWarningTests {
+    
+    @Test("validate warns when glob pattern sets Content-Type")
+    func warnsGlobContentType() throws {
+        let content = """
+        /*.txt
+          Content-Type: text/plain; charset=utf-8
+        /*
+          X-Frame-Options: DENY
+          X-Content-Type-Options: nosniff
+          Referrer-Policy: strict-origin-when-cross-origin
+        """
+        
+        let result = try HeadersValidator.validate(content, environment: .prod)
+        
+        #expect(result.isValid == true)
+        #expect(result.warnings.contains { $0.contains("*.txt") && $0.contains("Content-Type") })
+    }
+    
+    @Test("validate does not warn for explicit path with Content-Type")
+    func noWarningForExplicitPath() throws {
+        let content = """
+        /robots.txt
+          Content-Type: text/plain; charset=utf-8
+        /*
+          X-Frame-Options: DENY
+          X-Content-Type-Options: nosniff
+          Referrer-Policy: strict-origin-when-cross-origin
+        """
+        
+        let result = try HeadersValidator.validate(content, environment: .prod)
+        
+        #expect(result.isValid == true)
+        #expect(!result.warnings.contains { $0.contains("Content-Type") })
+    }
+    
+    @Test("validate does not warn when glob Content-Type is suppressed")
+    func suppressedGlobContentType() throws {
+        let content = """
+        # cfpages-ignore: glob-content-type (DocC markdown files)
+        /data/documentation/**/*.md
+          Content-Type: text/markdown; charset=utf-8
+        /*
+          X-Frame-Options: DENY
+          X-Content-Type-Options: nosniff
+          Referrer-Policy: strict-origin-when-cross-origin
+        """
+        
+        let result = try HeadersValidator.validate(content, environment: .prod)
+        
+        #expect(result.isValid == true)
+        #expect(!result.warnings.contains { $0.contains("Content-Type") })
+    }
+}
+
 @Suite("HeadersRule Tests")
 struct HeadersRuleTests {
     

@@ -13,24 +13,25 @@
   Vary: Accept-Encoding
 
 # Serve plain text files with correct content-type
-/*.txt
+# Using explicit paths instead of /*.txt glob to avoid Content-Type mismatch on 404 pages
+/llms.txt
   Content-Type: text/plain; charset=utf-8
   X-Content-Type-Options: nosniff
 
-# Serve XML files
-/*.xml
-  Content-Type: application/xml; charset=utf-8
+/llms-full.txt
+  Content-Type: text/plain; charset=utf-8
+  X-Content-Type-Options: nosniff
 
-# No-store endpoints (JSON + well-known configs)
-/*.json
-  Cache-Control: no-store
-  Pragma: no-cache
+/robots.txt
+  Content-Type: text/plain; charset=utf-8
+  X-Content-Type-Options: nosniff
 
+# No-store endpoints (well-known configs)
 /.well-known/*
   Cache-Control: no-store
   Pragma: no-cache
 
-# Blog markdown alternates for AI agents
+# cfpages-ignore: glob-content-type (blog posts grow over time; explicit paths impractical)
 /data/blog/*.md
   Content-Type: text/markdown; charset=utf-8
   X-Content-Type-Options: nosniff
@@ -41,6 +42,8 @@
 # Preview HTML pages — security headers without HSTS, noindex to prevent search indexing
 # NOTE: Extend CSP allowlists by appending origins to the existing directive (e.g., add another `connect-src` host) rather than removing defaults.
 /*
+  Link: </llms.txt>; rel="llms-txt"
+  X-Llms-Txt: /llms.txt
   Content-Security-Policy: default-src 'self'; connect-src 'self' https://static.cloudflareinsights.com; font-src 'self'; img-src 'self' data:; script-src 'self' https://static.cloudflareinsights.com; style-src 'self' 'unsafe-inline'; frame-ancestors 'none'; object-src 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests
   X-Frame-Options: DENY
   X-Content-Type-Options: nosniff

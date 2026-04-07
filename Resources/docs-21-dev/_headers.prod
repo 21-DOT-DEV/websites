@@ -26,7 +26,7 @@
   Vary: Accept-Encoding
   X-Robots-Tag: noindex
 
-# DocC markdown output (LLM-optimized symbol docs)
+# cfpages-ignore: glob-content-type (DocC generates hundreds of .md files; explicit paths impractical)
 /data/documentation/**/*.md
   Content-Type: text/markdown; charset=utf-8
   Cache-Control: public, max-age=300, must-revalidate
@@ -40,19 +40,23 @@
   Vary: Accept-Encoding
   X-Robots-Tag: noindex
 
-# Catch-all JSON (linkable-entities, etc.)
-/*.json
-  Cache-Control: public, max-age=300, must-revalidate
-  Vary: Accept-Encoding
-  X-Robots-Tag: noindex
-
+# JSON data (DocC linkable-entities, metadata, symbol JSON)
 /**/*.json
   Cache-Control: public, max-age=300, must-revalidate
   Vary: Accept-Encoding
   X-Robots-Tag: noindex
 
 # Serve plain text files with correct content-type
-/*.txt
+# Using explicit paths instead of /*.txt glob to avoid Content-Type mismatch on 404 pages
+/llms.txt
+  Content-Type: text/plain; charset=utf-8
+  X-Content-Type-Options: nosniff
+
+/llms-full.txt
+  Content-Type: text/plain; charset=utf-8
+  X-Content-Type-Options: nosniff
+
+/robots.txt
   Content-Type: text/plain; charset=utf-8
   X-Content-Type-Options: nosniff
 
@@ -63,6 +67,8 @@
 # Production HTML (DocC) — strict baseline + CSP allowing DocC assets and analytics
 # NOTE: Extend CSP allowlists by appending origins (e.g., extra script host) instead of removing defaults to keep minimum protections intact.
 /*
+  Link: </llms.txt>; rel="llms-txt"
+  X-Llms-Txt: /llms.txt
   Strict-Transport-Security: max-age=63072000; includeSubDomains; preload
   Content-Security-Policy: default-src 'self'; connect-src 'self' https://static.cloudflareinsights.com; font-src 'self' data:; img-src 'self' data:; script-src 'self' https://static.cloudflareinsights.com 'sha256-Tmnua9Q+ofeiLwDiFowbjAxSJRmhO2KE+f0QIsqwNfw='; style-src 'self' 'unsafe-inline'; frame-ancestors 'none'; object-src 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests
   X-Frame-Options: DENY
