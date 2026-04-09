@@ -38,9 +38,14 @@ struct SiteRoutes {
     
     /// All pages for sitemap.xml
     static func indexedPages(posts: [BlogPost]) -> Sitemap {
-        var pages = staticPages
-        pages["blog/index.html"] = BlogListingPage.page(posts: posts)
-        return pages.merging(blogPostPages(from: posts)) { _, new in new }
+        staticPages.merging(blogPostPages(from: posts)) { _, new in new }
+    }
+    
+    // MARK: - Rendered Pages (not in sitemap)
+    
+    /// Pages that are rendered but excluded from sitemap.xml (noindex)
+    static func renderedPages(posts: [BlogPost]) -> Sitemap {
+        ["blog/index.html": BlogListingPage.page(posts: posts)]
     }
     
     // MARK: - Non-Indexed Pages (excluded from sitemap.xml)
@@ -58,6 +63,8 @@ struct SiteRoutes {
     
     /// All pages for rendering
     static func allPages(posts: [BlogPost]) -> Sitemap {
-        indexedPages(posts: posts).merging(notFoundPages) { _, new in new }
+        indexedPages(posts: posts)
+            .merging(renderedPages(posts: posts)) { _, new in new }
+            .merging(notFoundPages) { _, new in new }
     }
 }

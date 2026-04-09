@@ -73,6 +73,23 @@ struct URLDiscoveryTests {
         #expect(files.contains { $0.hasSuffix("about.md") })
     }
     
+    @Test("discoverHTMLFiles excludes 404.html")
+    func excludes404() async throws {
+        let tempDir = FileManager.default.temporaryDirectory
+            .appendingPathComponent("test-404-\(UUID().uuidString)")
+        try FileManager.default.createDirectory(at: tempDir, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: tempDir) }
+        
+        try "<!DOCTYPE html>".write(to: tempDir.appendingPathComponent("index.html"), atomically: true, encoding: .utf8)
+        try "<!DOCTYPE html>".write(to: tempDir.appendingPathComponent("404.html"), atomically: true, encoding: .utf8)
+        
+        let files = try SitemapGenerator.discoverHTMLFiles(in: tempDir.path)
+        
+        #expect(files.count == 1)
+        #expect(files.first?.hasSuffix("index.html") == true)
+        #expect(!files.contains { $0.hasSuffix("404.html") })
+    }
+    
     @Test("discoverHTMLFiles throws for non-existent directory")
     func nonExistentDirectory() async {
         #expect(throws: SitemapError.self) {
@@ -182,33 +199,56 @@ struct GenerationTests {
         #expect(sitemap.contains("<loc>https://21.dev/about.html</loc>"))
     }
     
-    @Test("generate combines HTML and markdown files with htmlAndMarkdownFiles strategy")
-    func combinedHTMLAndMarkdown() async throws {
+    @Test("generate uses HTML-only strategy for docs-21-dev")
+    func docsHTMLOnly() async throws {
         let tempDir = FileManager.default.temporaryDirectory
-            .appendingPathComponent("test-combined-\(UUID().uuidString)")
+            .appendingPathComponent("test-docs-html-\(UUID().uuidString)")
         let htmlDir = tempDir.appendingPathComponent("documentation")
-        let mdDir = tempDir.appendingPathComponent("data/documentation")
         try FileManager.default.createDirectory(at: htmlDir, withIntermediateDirectories: true)
-        try FileManager.default.createDirectory(at: mdDir, withIntermediateDirectories: true)
         defer { try? FileManager.default.removeItem(at: tempDir) }
         
         try "<!DOCTYPE html>".write(to: htmlDir.appendingPathComponent("index.html"), atomically: true, encoding: .utf8)
-        try "# P256K".write(to: mdDir.appendingPathComponent("p256k.md"), atomically: true, encoding: .utf8)
         
         let config = SiteConfiguration(
             name: .docs21dev,
             baseURL: "https://docs.21.dev",
             outputDirectory: tempDir.path,
-            urlDiscoveryStrategy: .htmlAndMarkdownFiles(
-                htmlDirectory: htmlDir.path,
-                markdownDirectory: mdDir.path
-            ),
+            urlDiscoveryStrategy: .htmlFiles(directory: htmlDir.path),
             lastmodStrategy: .currentDate
         )
         
         let sitemap = try await SitemapGenerator.generate(for: config)
         
-        #expect(sitemap.contains("<loc>https://docs.21.dev/data/documentation/p256k.md</loc>"))
         #expect(sitemap.contains("<loc>https://docs.21.dev/documentation/</loc>"))
+        #expect(!sitemap.contains(".md</loc>"))
+    }
+    
+    @Test("generate skips HTML files with noindex meta tag")
+    func skipsNoindexPages() async throws {
+        let tempDir = FileManager.default.temporaryDirectory
+            .appendingPathComponent("test-noindex-\(UUID().uuidString)")
+        try FileManager.default.createDirectory(at: tempDir, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: tempDir) }
+        
+        // Indexable page (no noindex)
+        try "<!DOCTYPE html><html><head><title>Home</title></head><body></body></html>"
+            .write(to: tempDir.appendingPathComponent("index.html"), atomically: true, encoding: .utf8)
+        
+        // Noindex page
+        try "<!DOCTYPE html><html><head><meta name=\"robots\" content=\"noindex, follow\" /></head><body></body></html>"
+            .write(to: tempDir.appendingPathComponent("about.html"), atomically: true, encoding: .utf8)
+        
+        let config = SiteConfiguration(
+            name: .dev21,
+            baseURL: "https://21.dev",
+            outputDirectory: tempDir.path,
+            urlDiscoveryStrategy: .htmlFiles(directory: tempDir.path),
+            lastmodStrategy: .currentDate
+        )
+        
+        let sitemap = try await SitemapGenerator.generate(for: config)
+        
+        #expect(sitemap.contains("<loc>https://21.dev/</loc>"))
+        #expect(!sitemap.contains("about.html"))
     }
 }

@@ -182,39 +182,6 @@ jobs:
             exit 1
           fi
       
-      - name: Generate sitemap
-        run: |
-          project="${{ inputs.project-name }}"
-          echo "🗺️  Generating sitemap for ${project}..."
-          
-          # Use util CLI to generate sitemap (HTML documentation pages)
-          swift run util sitemap generate --site "${project}" --verbose
-          
-          # Validate sitemap was generated and is not empty
-          sitemap_file="Websites/${project}/sitemap.xml"
-          if [ ! -f "$sitemap_file" ]; then
-            echo "❌ Error: Sitemap file not created"
-            exit 1
-          fi
-          
-          url_count=$(grep -c "<loc>" "$sitemap_file" || echo "0")
-          echo "📄 Sitemap location: ${sitemap_file}"
-          echo "📊 HTML URLs in sitemap: ${url_count}"
-          
-          if [ "$url_count" -eq 0 ]; then
-            echo "❌ Error: Sitemap contains no URLs"
-            exit 1
-          fi
-          
-          # Verify co-located markdown output (AI-discoverable via llms.txt, noindex for search)
-          md_count=$(find "Websites/${project}/data/documentation" -name "*.md" 2>/dev/null | wc -l | tr -d ' ')
-          echo "📊 Markdown files (AI-optimized): ${md_count}"
-          
-          if [ "$md_count" -eq 0 ]; then
-            echo "⚠️  Warning: No markdown files found under data/documentation/"
-            echo "   The --enable-experimental-markdown-output flag may not have produced output"
-          fi
-      
       - name: Copy static resources
         run: |
           project="${{ inputs.project-name }}"
@@ -316,109 +283,6 @@ jobs:
             echo "✅ Version stamped in ${stamped} file(s): v${{ env.SECP256K1_VERSION }}"
           fi
       
-      - name: Generate llms-full.txt files
-        run: |
-          project="${{ inputs.project-name }}"
-          sitemap="Websites/${project}/sitemap.xml"
-          
-          # Only proceed if sitemap exists
-          if [ ! -f "$sitemap" ]; then
-            echo "❌ sitemap.xml not found — cannot generate llms-full.txt"
-            exit 1
-          fi
-          
-          # Extract all .md URLs from sitemap into a temp file
-          md_urls=$(mktemp)
-          grep '<loc>.*\.md</loc>' "$sitemap" \
-            | sed 's|.*<loc>\(.*\)</loc>.*|\1|' \
-            | sort > "$md_urls"
-          
-          # --- Global llms-full.txt ---
-          output="Websites/${project}/llms-full.txt"
-          {
-            echo "# docs.21.dev — Full Documentation Index"
-            echo ""
-            echo "> Complete list of all markdown documentation files for the swift-secp256k1 package."
-            echo "> This is the comprehensive companion to llms.txt. See https://docs.21.dev/llms.txt for the curated overview."
-            echo ""
-            echo "## All Documentation (Markdown)"
-            echo ""
-          } > "$output"
-          while read -r url; do
-            path="${url#https://docs.21.dev/data/documentation/}"
-            path="${path%.md}"
-            echo "- [${path}](${url})"
-          done < "$md_urls" >> "$output"
-          global_count=$(grep -c '^\- \[' "$output" || true)
-          echo "📄 llms-full.txt generated with ${global_count} entries"
-          
-          # --- Per-module llms-full.txt ---
-          for module in p256k zkp; do
-            module_output="Websites/${project}/data/documentation/${module}/llms-full.txt"
-            mkdir -p "$(dirname "$module_output")"
-            {
-              echo "# ${module} — Full Documentation Index"
-              echo ""
-              echo "> All markdown files for the ${module} module."
-              echo "> See https://docs.21.dev/data/documentation/${module}/llms.txt for the curated overview."
-              echo ""
-              echo "## Documentation (Markdown)"
-              echo ""
-            } > "$module_output"
-            grep "data/documentation/${module}/" "$md_urls" \
-              | while read -r url; do
-                  path="${url#https://docs.21.dev/data/documentation/}"
-                  path="${path%.md}"
-                  echo "- [${path}](${url})"
-                done >> "$module_output"
-            module_count=$(grep -c '^\- \[' "$module_output" || true)
-            if [ "$module_count" -eq 0 ]; then
-              echo "⚠️  ${module}/llms-full.txt has no entries"
-            else
-              echo "📄 ${module}/llms-full.txt generated with ${module_count} entries"
-            fi
-          done
-          
-          rm -f "$md_urls"
-          
-          # Guard: fail if global has no entries
-          if [ "$global_count" -eq 0 ]; then
-            echo "❌ llms-full.txt has no entries — sitemap .md extraction failed"
-            exit 1
-          fi
-      
-      - name: Validate llms.txt links
-        run: |
-          project="${{ inputs.project-name }}"
-          
-          echo "🔍 Validating llms.txt links against build output..."
-          failed=0
-          checked=0
-          
-          # Validate all llms.txt files (root + per-module)
-          while IFS= read -r llms_file; do
-            while read -r url; do
-              path="${url#https://docs.21.dev/}"
-              if [ ! -f "Websites/${project}/${path}" ]; then
-                echo "❌ Dead link in ${llms_file}: ${path}"
-                failed=$((failed + 1))
-              fi
-              checked=$((checked + 1))
-            done < <(grep -oE 'https://docs\.21\.dev/[^)]+\.md' "$llms_file")
-          done < <(find "Websites/${project}" -name "llms.txt" -type f)
-          
-          if [ "$checked" -eq 0 ]; then
-            echo "ℹ️  No llms.txt files found for ${project}, skipping link validation"
-            exit 0
-          fi
-          
-          if [ "$failed" -gt 0 ]; then
-            echo "❌ ${failed} dead link(s) found across llms.txt files"
-            exit 1
-          fi
-          
-          echo "✅ All ${checked} links verified across llms.txt files"
-      
       - name: Fix canonical URLs
         run: |
           project="${{ inputs.project-name }}"
@@ -492,6 +356,130 @@ jobs:
           fi
 
           echo "✅ 404.html generated with noindex + llms-txt, canonical removed"
+      
+      - name: Generate sitemap
+        run: |
+          project="${{ inputs.project-name }}"
+          echo "🗺️  Generating sitemap for ${project}..."
+          
+          # Use util CLI to generate sitemap (HTML documentation pages only, excludes noindex)
+          swift run util sitemap generate --site "${project}" --verbose
+          
+          # Validate sitemap was generated and is not empty
+          sitemap_file="Websites/${project}/sitemap.xml"
+          if [ ! -f "$sitemap_file" ]; then
+            echo "❌ Error: Sitemap file not created"
+            exit 1
+          fi
+          
+          url_count=$(grep -c "<loc>" "$sitemap_file" || echo "0")
+          echo "📄 Sitemap location: ${sitemap_file}"
+          echo "📊 HTML URLs in sitemap: ${url_count}"
+          
+          if [ "$url_count" -eq 0 ]; then
+            echo "❌ Error: Sitemap contains no URLs"
+            exit 1
+          fi
+      
+      - name: Generate llms-full.txt files
+        run: |
+          project="${{ inputs.project-name }}"
+          BASE_URL="https://${project//-/.}"
+          
+          # Discover markdown files from filesystem (decoupled from sitemap)
+          md_urls=$(mktemp)
+          find "Websites/${project}/data/documentation" -name "*.md" -type f \
+            | sort \
+            | while read -r file; do
+                rel="${file#Websites/${project}/}"
+                echo "${BASE_URL}/${rel}"
+              done > "$md_urls"
+          
+          # --- Global llms-full.txt ---
+          output="Websites/${project}/llms-full.txt"
+          {
+            echo "# docs.21.dev — Full Documentation Index"
+            echo ""
+            echo "> Complete list of all markdown documentation files for the swift-secp256k1 package."
+            echo "> This is the comprehensive companion to llms.txt. See https://docs.21.dev/llms.txt for the curated overview."
+            echo ""
+            echo "## All Documentation (Markdown)"
+            echo ""
+          } > "$output"
+          while read -r url; do
+            path="${url#${BASE_URL}/data/documentation/}"
+            path="${path%.md}"
+            echo "- [${path}](${url})"
+          done < "$md_urls" >> "$output"
+          global_count=$(grep -c '^\- \[' "$output" || true)
+          echo "📄 llms-full.txt generated with ${global_count} entries"
+          
+          # --- Per-module llms-full.txt ---
+          for module in p256k zkp; do
+            module_output="Websites/${project}/data/documentation/${module}/llms-full.txt"
+            mkdir -p "$(dirname "$module_output")"
+            {
+              echo "# ${module} — Full Documentation Index"
+              echo ""
+              echo "> All markdown files for the ${module} module."
+              echo "> See https://docs.21.dev/data/documentation/${module}/llms.txt for the curated overview."
+              echo ""
+              echo "## Documentation (Markdown)"
+              echo ""
+            } > "$module_output"
+            grep "data/documentation/${module}/" "$md_urls" \
+              | while read -r url; do
+                  path="${url#${BASE_URL}/data/documentation/}"
+                  path="${path%.md}"
+                  echo "- [${path}](${url})"
+                done >> "$module_output"
+            module_count=$(grep -c '^\- \[' "$module_output" || true)
+            if [ "$module_count" -eq 0 ]; then
+              echo "⚠️  ${module}/llms-full.txt has no entries"
+            else
+              echo "📄 ${module}/llms-full.txt generated with ${module_count} entries"
+            fi
+          done
+          
+          rm -f "$md_urls"
+          
+          # Guard: fail if global has no entries
+          if [ "$global_count" -eq 0 ]; then
+            echo "❌ llms-full.txt has no entries — no markdown files found"
+            exit 1
+          fi
+      
+      - name: Validate llms.txt links
+        run: |
+          project="${{ inputs.project-name }}"
+          
+          echo "🔍 Validating llms.txt links against build output..."
+          failed=0
+          checked=0
+          
+          # Validate all llms.txt files (root + per-module)
+          while IFS= read -r llms_file; do
+            while read -r url; do
+              path="${url#https://docs.21.dev/}"
+              if [ ! -f "Websites/${project}/${path}" ]; then
+                echo "❌ Dead link in ${llms_file}: ${path}"
+                failed=$((failed + 1))
+              fi
+              checked=$((checked + 1))
+            done < <(grep -oE 'https://docs\.21\.dev/[^)]+\.md' "$llms_file")
+          done < <(find "Websites/${project}" -name "llms.txt" -type f)
+          
+          if [ "$checked" -eq 0 ]; then
+            echo "ℹ️  No llms.txt files found for ${project}, skipping link validation"
+            exit 0
+          fi
+          
+          if [ "$failed" -gt 0 ]; then
+            echo "❌ ${failed} dead link(s) found across llms.txt files"
+            exit 1
+          fi
+          
+          echo "✅ All ${checked} links verified across llms.txt files"
       
       - name: Create documentation archive
         run: |
