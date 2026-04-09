@@ -35,8 +35,6 @@ public enum URLDiscoveryStrategy: Sendable {
     case htmlFiles(directory: String)
     /// Scan for .md files in the specified directory
     case markdownFiles(directory: String)
-    /// Scan for .html files in one directory and .md files in another
-    case htmlAndMarkdownFiles(htmlDirectory: String, markdownDirectory: String)
     /// Use Slipstream's Sitemap dictionary (build-time tracking)
     case sitemapDictionary
 }
@@ -99,9 +97,8 @@ public struct SiteConfiguration: Sendable {
                 name: .docs21dev,
                 baseURL: SiteName.docs21dev.baseURL,
                 outputDirectory: SiteName.docs21dev.outputDirectory,
-                urlDiscoveryStrategy: .htmlAndMarkdownFiles(
-                    htmlDirectory: "\(SiteName.docs21dev.outputDirectory)/documentation",
-                    markdownDirectory: "\(SiteName.docs21dev.outputDirectory)/data/documentation"
+                urlDiscoveryStrategy: .htmlFiles(
+                    directory: "\(SiteName.docs21dev.outputDirectory)/documentation"
                 ),
                 lastmodStrategy: .packageVersionState
             )

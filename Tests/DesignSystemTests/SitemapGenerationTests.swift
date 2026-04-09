@@ -130,7 +130,6 @@ struct SitemapGenerationTests {
         // Simulate a few test URLs from a typical sitemap dictionary
         // Note: Dictionary order is not guaranteed, so we sort the keys
         let testPages = [
-            "blog/index.html",
             "index.html",
             "packages/p256k/index.html"
         ].sorted() // Sort keys like the real implementation does

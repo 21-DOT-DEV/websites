@@ -45,7 +45,7 @@ public enum SitemapGenerator {
         
         var files: [String] = []
         while let file = enumerator.nextObject() as? String {
-            if file.hasSuffix(".\(ext)") {
+            if file.hasSuffix(".\(ext)") && !file.hasSuffix("404.html") {
                 files.append(file)
             }
         }
@@ -130,6 +130,21 @@ public enum SitemapGenerator {
         return formatter.string(from: Date())
     }
     
+    // MARK: - Noindex Detection
+    
+    /// Checks if an HTML file contains a noindex robots directive.
+    /// - Parameter filePath: Absolute path to the HTML file
+    /// - Returns: `true` if the file contains a noindex meta tag
+    static func hasNoindexDirective(at filePath: String) -> Bool {
+        guard let content = try? String(contentsOfFile: filePath, encoding: .utf8) else {
+            return false
+        }
+        return content.range(
+            of: #"<meta[^>]*name="robots"[^>]*noindex"#,
+            options: .regularExpression
+        ) != nil
+    }
+    
     // MARK: - Sitemap Generation
     
     /// Generates a complete sitemap.xml for the given configuration.
@@ -147,12 +162,6 @@ public enum SitemapGenerator {
         case .markdownFiles(let dir):
             fullPaths = try discoverMarkdownFiles(in: dir)
                 .map { dir.hasSuffix("/") ? dir + $0 : dir + "/" + $0 }
-        case .htmlAndMarkdownFiles(let htmlDir, let mdDir):
-            let htmlPaths = try discoverHTMLFiles(in: htmlDir)
-                .map { htmlDir.hasSuffix("/") ? htmlDir + $0 : htmlDir + "/" + $0 }
-            let mdPaths = try discoverMarkdownFiles(in: mdDir)
-                .map { mdDir.hasSuffix("/") ? mdDir + $0 : mdDir + "/" + $0 }
-            fullPaths = (htmlPaths + mdPaths).sorted()
         case .sitemapDictionary:
             // This strategy is handled at the call site (Slipstream integration)
             throw SitemapError.discoveryFailed("sitemapDictionary strategy must be handled by caller")
@@ -162,6 +171,11 @@ public enum SitemapGenerator {
         var entries: [SitemapEntry] = []
         
         for fullPath in fullPaths {
+            // Skip HTML pages with noindex robots directive
+            if fullPath.hasSuffix(".html") && hasNoindexDirective(at: fullPath) {
+                continue
+            }
+            
             let url = pathToURL(filePath: fullPath, baseURL: config.baseURL, outputDirectory: config.outputDirectory)
             
             let lastmod: Date
