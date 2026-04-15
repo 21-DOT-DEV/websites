@@ -22,14 +22,13 @@
 # search answers).
 # ai-train: training or fine-tuning AI models.
 
+# Apply to all crawlers
 User-Agent: *
+# Grant permission for search indexing, AI input (RAG/grounding), and AI training
 Content-Signal: search=yes, ai-input=yes, ai-train=yes
 
-# Allow all documentation (canonical HTML via sitemap + 301 redirects)
-Allow: /documentation/
-
-# Allow LLM-optimized markdown (noindex via _headers, not for search results)
-Allow: /data/documentation/
+# Allow all paths (canonical HTML via sitemap + 301 redirects, LLM markdown via _headers noindex)
+Allow: /
 
 # Tell crawlers where to find your sitemap
 Sitemap: https://docs.21.dev/sitemap.xml
