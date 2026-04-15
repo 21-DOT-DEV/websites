@@ -12,6 +12,10 @@
   Cache-Control: public, max-age=86400
   Vary: Accept-Encoding
 
+/images/*
+  Cache-Control: public, max-age=86400
+  Vary: Accept-Encoding
+
 # Serve plain text files with correct content-type
 # Using explicit paths instead of /*.txt glob to avoid Content-Type mismatch on 404 pages
 /llms.txt

@@ -98,13 +98,20 @@ struct BlogPostPage {
     }
     
     var body: some View {
-        BasePage(
-            title: post.metadata.seoTitle ?? "\(post.metadata.title) | 21.dev Blog",
-            description: generateDescription(),
+        let pageTitle = post.metadata.seoTitle ?? "\(post.metadata.title) | 21.dev Blog"
+        let pageDescription = generateDescription()
+        return BasePage(
+            title: pageTitle,
+            description: pageDescription,
             canonicalURL: URL(string: postURL),
             articleMetadata: post.metadata.toArticleMetadata(),
             schemas: buildSchemas(),
             favicon: SiteDefaults.faviconConfig,
+            openGraph: SiteDefaults.openGraphConfig(
+                title: pageTitle,
+                type: .article,
+                url: postURL
+            ),
             llmsTxtURL: SiteIdentity.llmsTxtURL,
             alternateMarkdownURL: URL(string: "\(SiteIdentity.url)data/blog/\(post.metadata.slug).md")
         ) {

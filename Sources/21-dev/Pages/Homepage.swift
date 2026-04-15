@@ -33,6 +33,10 @@ struct Homepage {
                 )
             ],
             favicon: SiteDefaults.faviconConfig,
+            openGraph: SiteDefaults.openGraphConfig(
+                title: pageTitle,
+                url: SiteIdentity.url
+            ),
             llmsTxtURL: SiteIdentity.llmsTxtURL
         ) {
             SiteDefaults.header
