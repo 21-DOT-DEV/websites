@@ -104,6 +104,7 @@ struct BlogPostPage {
             canonicalURL: URL(string: postURL),
             articleMetadata: post.metadata.toArticleMetadata(),
             schemas: buildSchemas(),
+            favicon: SiteDefaults.faviconConfig,
             llmsTxtURL: SiteIdentity.llmsTxtURL,
             alternateMarkdownURL: URL(string: "\(SiteIdentity.url)data/blog/\(post.metadata.slug).md")
         ) {

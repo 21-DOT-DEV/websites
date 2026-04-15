@@ -240,6 +240,49 @@ struct BasePageTests {
         #expect(!html.contains("article:tag"))
     }
     
+    @Test("BasePage renders favicon links when FaviconConfig provided")
+    func testBasePageFaviconRendered() throws {
+        let page = BasePage(
+            title: "Favicon Test",
+            favicon: FaviconConfig(version: "20260413")
+        ) {
+            Text("Content")
+        }
+        let html = try TestUtils.renderHTML(page)
+        
+        // ICO icon (modernized: rel="icon" with sizes="32x32")
+        #expect(html.contains("rel=\"icon\""))
+        #expect(html.contains("href=\"/favicon.ico?v=20260413\""))
+        #expect(html.contains("sizes=\"32x32\""))
+        #expect(html.contains("type=\"image/x-icon\""))
+        
+        // PNG icon (96x96)
+        #expect(html.contains("href=\"/favicon-96x96.png?v=20260413\""))
+        #expect(html.contains("sizes=\"96x96\""))
+        #expect(html.contains("type=\"image/png\""))
+        
+        // Apple touch icon
+        #expect(html.contains("rel=\"apple-touch-icon\""))
+        #expect(html.contains("href=\"/apple-touch-icon.png?v=20260413\""))
+        #expect(html.contains("sizes=\"180x180\""))
+        
+        // Web manifest
+        #expect(html.contains("rel=\"manifest\""))
+        #expect(html.contains("href=\"/site.webmanifest?v=20260413\""))
+    }
+    
+    @Test("BasePage omits favicon links when FaviconConfig is nil")
+    func testBasePageNoFavicon() throws {
+        let page = BasePage(title: "No Favicon") {
+            Text("Content")
+        }
+        let html = try TestUtils.renderHTML(page)
+        
+        #expect(!html.contains("favicon"))
+        #expect(!html.contains("apple-touch-icon"))
+        #expect(!html.contains("webmanifest"))
+    }
+    
     @Test("BasePage complete HTML snapshot")
     func testBasePageSnapshot() throws {
         let page = BasePage(title: "Snapshot Test") {

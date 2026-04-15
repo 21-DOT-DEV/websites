@@ -21,6 +21,7 @@ struct BlogNotFoundPage {
             title: "404: Post not found | 21.dev Blog",
             description: "The blog post you're looking for doesn't exist.",
             robotsDirective: "noindex, nofollow",
+            favicon: SiteDefaults.faviconConfig,
             llmsTxtURL: SiteIdentity.llmsTxtURL
         ) {
             SiteDefaults.header

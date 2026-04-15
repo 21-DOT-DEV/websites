@@ -332,6 +332,7 @@ struct P256KPage {
                     BreadcrumbItemSchema(position: 3, name: "P256K")
                 ])
             ],
+            favicon: SiteDefaults.faviconConfig,
             llmsTxtURL: SiteIdentity.llmsTxtURL
         ) {
             SiteDefaults.header

@@ -48,6 +48,7 @@ struct BlogListingPage {
                     BreadcrumbItemSchema(position: 2, name: "Blog")
                 ])
             ],
+            favicon: SiteDefaults.faviconConfig,
             llmsTxtURL: SiteIdentity.llmsTxtURL
         ) {
             SiteDefaults.header

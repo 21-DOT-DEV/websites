@@ -32,6 +32,7 @@ struct Homepage {
                     description: pageDescription
                 )
             ],
+            favicon: SiteDefaults.faviconConfig,
             llmsTxtURL: SiteIdentity.llmsTxtURL
         ) {
             SiteDefaults.header

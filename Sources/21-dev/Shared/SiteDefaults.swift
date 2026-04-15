@@ -12,6 +12,9 @@ import DesignSystem
 /// Centralized site configuration with shared header and footer defaults
 public struct SiteDefaults {
     
+    /// Favicon configuration with cache-busting version string
+    public static let faviconConfig = FaviconConfig(version: "20260413")
+    
     /// Default site header with logo and navigation links
     public static let header = SiteHeader(
         logoText: SiteIdentity.name,

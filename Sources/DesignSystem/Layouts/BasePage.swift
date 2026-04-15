@@ -21,6 +21,7 @@ public struct BasePage: View {
     let articleMetadata: ArticleMetadata?
     let schemas: [any Schema]?
     let llmsTxtURL: URL?
+    let favicon: FaviconConfig?
     let alternateMarkdownURL: URL?
     let bodyContent: any View
     
@@ -38,6 +39,7 @@ public struct BasePage: View {
         robotsDirective: String? = nil,
         articleMetadata: ArticleMetadata? = nil,
         schemas: [any Schema]? = nil,
+        favicon: FaviconConfig? = nil,
         llmsTxtURL: URL? = nil,
         alternateMarkdownURL: URL? = nil,
         @ViewBuilder bodyContent: () -> Content
@@ -49,6 +51,7 @@ public struct BasePage: View {
         self.robotsDirective = robotsDirective
         self.articleMetadata = articleMetadata
         self.schemas = schemas
+        self.favicon = favicon
         self.llmsTxtURL = llmsTxtURL
         self.alternateMarkdownURL = alternateMarkdownURL
         self.bodyContent = bodyContent()
@@ -67,6 +70,7 @@ public struct BasePage: View {
         robotsDirective: String? = nil,
         articleMetadata: ArticleMetadata? = nil,
         schemas: [any Schema]? = nil,
+        favicon: FaviconConfig? = nil,
         llmsTxtURL: URL? = nil,
         alternateMarkdownURL: URL? = nil,
         text: String = "Initial Website"
@@ -78,6 +82,7 @@ public struct BasePage: View {
         self.robotsDirective = robotsDirective
         self.articleMetadata = articleMetadata
         self.schemas = schemas
+        self.favicon = favicon
         self.llmsTxtURL = llmsTxtURL
         self.alternateMarkdownURL = alternateMarkdownURL
         self.bodyContent = PlaceholderView(text: text)
@@ -120,6 +125,13 @@ public struct BasePage: View {
                 }
                 if let alternateMarkdownURL {
                     Alternate(alternateMarkdownURL, type: "text/markdown")
+                }
+                if let favicon {
+                    Icon(URL(string: "/favicon.ico?v=\(favicon.version)"), sizes: "32x32", type: "image/x-icon")
+                    Icon(URL(string: "/favicon-96x96.png?v=\(favicon.version)"), sizes: "96x96", type: "image/png")
+                    // Slipstream Icon only supports rel="icon"; apple-touch-icon requires a different rel value
+                    RawHTML("<link rel=\"apple-touch-icon\" sizes=\"180x180\" href=\"/apple-touch-icon.png?v=\(favicon.version)\">")
+                    Manifest(URL(string: "/site.webmanifest?v=\(favicon.version)"))
                 }
                 Stylesheet(URL(string: stylesheet))
                 if let json = structuredDataJSON {
