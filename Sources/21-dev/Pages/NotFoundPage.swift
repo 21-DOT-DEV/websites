@@ -21,6 +21,7 @@ struct NotFoundPage {
             title: "404: Page not found | 21.dev",
             description: "The page you're looking for doesn't exist.",
             robotsDirective: "noindex, nofollow",
+            favicon: SiteDefaults.faviconConfig,
             llmsTxtURL: SiteIdentity.llmsTxtURL
         ) {
             SiteDefaults.header

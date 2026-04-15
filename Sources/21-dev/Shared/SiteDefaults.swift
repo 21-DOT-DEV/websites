@@ -12,6 +12,40 @@ import DesignSystem
 /// Centralized site configuration with shared header and footer defaults
 public struct SiteDefaults {
     
+    /// Favicon configuration with cache-busting version string
+    public static let faviconConfig = FaviconConfig(version: "20260413", appTitle: SiteIdentity.name, themeColor: "#ffffff")
+    
+    /// Absolute URL of the default Open Graph share image.
+    private static let ogImageURL = "\(SiteIdentity.url)images/og-image.png"
+    
+    /// Creates an Open Graph configuration with site-wide defaults.
+    ///
+    /// `og:description` is auto-populated by `BasePage` from its own `description`
+    /// when `openGraph.description` is nil, so it is not needed here.
+    ///
+    /// - Parameters:
+    ///   - title: The page title for `og:title`.
+    ///   - type: The OG object type (defaults to `.website`).
+    ///   - url: The absolute canonical URL for `og:url`.
+    static func openGraphConfig(
+        title: String,
+        type: OpenGraphConfig.OGType = .website,
+        url: String
+    ) -> OpenGraphConfig {
+        OpenGraphConfig(
+            title: title,
+            type: type,
+            url: url,
+            siteName: SiteIdentity.name,
+            twitterCard: "summary_large_image",
+            twitterSite: SiteIdentity.twitterHandle,
+            image: ogImageURL,
+            imageWidth: 1200,
+            imageHeight: 600,
+            imageAlt: "21.dev — Open-source tools for Bitcoin developers"
+        )
+    }
+    
     /// Default site header with logo and navigation links
     public static let header = SiteHeader(
         logoText: SiteIdentity.name,

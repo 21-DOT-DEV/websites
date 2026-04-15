@@ -21,6 +21,8 @@ public struct BasePage: View {
     let articleMetadata: ArticleMetadata?
     let schemas: [any Schema]?
     let llmsTxtURL: URL?
+    let favicon: FaviconConfig?
+    let openGraph: OpenGraphConfig?
     let alternateMarkdownURL: URL?
     let bodyContent: any View
     
@@ -38,6 +40,8 @@ public struct BasePage: View {
         robotsDirective: String? = nil,
         articleMetadata: ArticleMetadata? = nil,
         schemas: [any Schema]? = nil,
+        favicon: FaviconConfig? = nil,
+        openGraph: OpenGraphConfig? = nil,
         llmsTxtURL: URL? = nil,
         alternateMarkdownURL: URL? = nil,
         @ViewBuilder bodyContent: () -> Content
@@ -49,6 +53,8 @@ public struct BasePage: View {
         self.robotsDirective = robotsDirective
         self.articleMetadata = articleMetadata
         self.schemas = schemas
+        self.favicon = favicon
+        self.openGraph = openGraph
         self.llmsTxtURL = llmsTxtURL
         self.alternateMarkdownURL = alternateMarkdownURL
         self.bodyContent = bodyContent()
@@ -67,6 +73,8 @@ public struct BasePage: View {
         robotsDirective: String? = nil,
         articleMetadata: ArticleMetadata? = nil,
         schemas: [any Schema]? = nil,
+        favicon: FaviconConfig? = nil,
+        openGraph: OpenGraphConfig? = nil,
         llmsTxtURL: URL? = nil,
         alternateMarkdownURL: URL? = nil,
         text: String = "Initial Website"
@@ -78,6 +86,8 @@ public struct BasePage: View {
         self.robotsDirective = robotsDirective
         self.articleMetadata = articleMetadata
         self.schemas = schemas
+        self.favicon = favicon
+        self.openGraph = openGraph
         self.llmsTxtURL = llmsTxtURL
         self.alternateMarkdownURL = alternateMarkdownURL
         self.bodyContent = PlaceholderView(text: text)
@@ -120,6 +130,43 @@ public struct BasePage: View {
                 }
                 if let alternateMarkdownURL {
                     Alternate(alternateMarkdownURL, type: "text/markdown")
+                }
+                if let favicon {
+                    Icon(URL(string: "/favicon.ico?v=\(favicon.version)"), sizes: "32x32", type: "image/x-icon")
+                    Icon(URL(string: "/favicon-96x96.png?v=\(favicon.version)"), sizes: "96x96", type: "image/png")
+                    // Slipstream Icon only supports rel="icon"; apple-touch-icon requires a different rel value
+                    RawHTML("<link rel=\"apple-touch-icon\" sizes=\"180x180\" href=\"/apple-touch-icon.png?v=\(favicon.version)\">")
+                    // Slipstream has no API for apple-mobile-web-app-title meta name
+                    RawHTML("<meta name=\"apple-mobile-web-app-title\" content=\"\(favicon.appTitle.replacingOccurrences(of: "&", with: "&amp;").replacingOccurrences(of: "<", with: "&lt;").replacingOccurrences(of: "\"", with: "&quot;"))\">")
+                    Meta(.themeColor, content: favicon.themeColor)
+                    Manifest(URL(string: "/site.webmanifest?v=\(favicon.version)"))
+                }
+                if let og = openGraph {
+                    Meta("og:title", content: og.title)
+                    if let ogDescription = og.description ?? description {
+                        Meta("og:description", content: ogDescription)
+                    }
+                    Meta("og:type", content: og.type.rawValue)
+                    Meta("og:url", content: og.url)
+                    Meta("og:site_name", content: og.siteName)
+                    if let image = og.image {
+                        Meta("og:image", content: image)
+                        Meta("twitter:image", content: image)
+                        if let width = og.imageWidth {
+                            Meta("og:image:width", content: String(width))
+                        }
+                        if let height = og.imageHeight {
+                            Meta("og:image:height", content: String(height))
+                        }
+                        if let alt = og.imageAlt {
+                            Meta("og:image:alt", content: alt)
+                            Meta("twitter:image:alt", content: alt)
+                        }
+                    }
+                    Meta("twitter:card", content: og.twitterCard)
+                    if let twitterSite = og.twitterSite {
+                        Meta("twitter:site", content: twitterSite)
+                    }
                 }
                 Stylesheet(URL(string: stylesheet))
                 if let json = structuredDataJSON {

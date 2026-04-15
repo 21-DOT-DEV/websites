@@ -75,6 +75,11 @@ struct PackagesListingPage {
                     BreadcrumbItemSchema(position: 2, name: "Packages")
                 ])
             ],
+            favicon: SiteDefaults.faviconConfig,
+            openGraph: SiteDefaults.openGraphConfig(
+                title: pageTitle,
+                url: pageURL
+            ),
             llmsTxtURL: SiteIdentity.llmsTxtURL
         ) {
             SiteDefaults.header

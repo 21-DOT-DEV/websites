@@ -240,6 +240,154 @@ struct BasePageTests {
         #expect(!html.contains("article:tag"))
     }
     
+    @Test("BasePage renders favicon links when FaviconConfig provided")
+    func testBasePageFaviconRendered() throws {
+        let page = BasePage(
+            title: "Favicon Test",
+            favicon: FaviconConfig(version: "20260413", appTitle: "21.dev", themeColor: "#ffffff")
+        ) {
+            Text("Content")
+        }
+        let html = try TestUtils.renderHTML(page)
+        
+        // ICO icon (modernized: rel="icon" with sizes="32x32")
+        #expect(html.contains("rel=\"icon\""))
+        #expect(html.contains("href=\"/favicon.ico?v=20260413\""))
+        #expect(html.contains("sizes=\"32x32\""))
+        #expect(html.contains("type=\"image/x-icon\""))
+        
+        // PNG icon (96x96)
+        #expect(html.contains("href=\"/favicon-96x96.png?v=20260413\""))
+        #expect(html.contains("sizes=\"96x96\""))
+        #expect(html.contains("type=\"image/png\""))
+        
+        // Apple touch icon
+        #expect(html.contains("rel=\"apple-touch-icon\""))
+        #expect(html.contains("href=\"/apple-touch-icon.png?v=20260413\""))
+        #expect(html.contains("sizes=\"180x180\""))
+        
+        // Apple mobile web app title
+        #expect(html.contains("<meta name=\"apple-mobile-web-app-title\" content=\"21.dev\">"))
+        
+        // Theme color
+        #expect(html.contains("name=\"theme-color\" content=\"#ffffff\""))
+        
+        // Web manifest
+        #expect(html.contains("rel=\"manifest\""))
+        #expect(html.contains("href=\"/site.webmanifest?v=20260413\""))
+    }
+    
+    @Test("BasePage omits favicon links when FaviconConfig is nil")
+    func testBasePageNoFavicon() throws {
+        let page = BasePage(title: "No Favicon") {
+            Text("Content")
+        }
+        let html = try TestUtils.renderHTML(page)
+        
+        #expect(!html.contains("favicon"))
+        #expect(!html.contains("apple-touch-icon"))
+        #expect(!html.contains("apple-mobile-web-app-title"))
+        #expect(!html.contains("theme-color"))
+        #expect(!html.contains("webmanifest"))
+    }
+    
+    @Test("BasePage renders Open Graph and Twitter meta tags when OpenGraphConfig provided")
+    func testBasePageOpenGraphRendered() throws {
+        let page = BasePage(
+            title: "OG Test",
+            openGraph: OpenGraphConfig(
+                title: "OG Title",
+                description: "OG Description",
+                type: .website,
+                url: "https://21.dev/",
+                siteName: "21.dev",
+                twitterCard: "summary_large_image",
+                twitterSite: "@21_DOT_DEV",
+                image: "https://21.dev/images/og-image.png",
+                imageWidth: 1200,
+                imageHeight: 600,
+                imageAlt: "21.dev share image"
+            )
+        ) {
+            Text("Content")
+        }
+        let html = try TestUtils.renderHTML(page)
+        
+        // Open Graph tags
+        #expect(html.contains("property=\"og:title\" content=\"OG Title\""))
+        #expect(html.contains("property=\"og:description\" content=\"OG Description\""))
+        #expect(html.contains("property=\"og:type\" content=\"website\""))
+        #expect(html.contains("property=\"og:url\" content=\"https://21.dev/\""))
+        #expect(html.contains("property=\"og:site_name\" content=\"21.dev\""))
+        
+        // OG image tags
+        #expect(html.contains("property=\"og:image\" content=\"https://21.dev/images/og-image.png\""))
+        #expect(html.contains("property=\"og:image:width\" content=\"1200\""))
+        #expect(html.contains("property=\"og:image:height\" content=\"600\""))
+        #expect(html.contains("property=\"og:image:alt\" content=\"21.dev share image\""))
+        
+        // Twitter Card tags
+        #expect(html.contains("name=\"twitter:card\" content=\"summary_large_image\""))
+        #expect(html.contains("name=\"twitter:site\" content=\"@21_DOT_DEV\""))
+        #expect(html.contains("name=\"twitter:image\" content=\"https://21.dev/images/og-image.png\""))
+        #expect(html.contains("name=\"twitter:image:alt\" content=\"21.dev share image\""))
+    }
+    
+    @Test("BasePage renders og:type article for blog posts")
+    func testBasePageOpenGraphArticle() throws {
+        let page = BasePage(
+            title: "Article Test",
+            openGraph: OpenGraphConfig(
+                title: "Blog Post Title",
+                description: nil,
+                type: .article,
+                url: "https://21.dev/blog/test/",
+                siteName: "21.dev",
+                twitterCard: "summary",
+                twitterSite: nil
+            )
+        ) {
+            Text("Content")
+        }
+        let html = try TestUtils.renderHTML(page)
+        
+        #expect(html.contains("property=\"og:type\" content=\"article\""))
+        #expect(!html.contains("og:description"))
+        #expect(!html.contains("twitter:site"))
+    }
+    
+    @Test("BasePage auto-populates og:description from its own description when OG description is nil")
+    func testBasePageOGDescriptionFallback() throws {
+        let page = BasePage(
+            title: "Fallback Test",
+            description: "Page SEO description",
+            openGraph: OpenGraphConfig(
+                title: "OG Title",
+                url: "https://21.dev/test/",
+                siteName: "21.dev"
+            )
+        ) {
+            Text("Content")
+        }
+        let html = try TestUtils.renderHTML(page)
+        
+        #expect(html.contains("property=\"og:description\" content=\"Page SEO description\""))
+    }
+    
+    @Test("BasePage omits Open Graph tags when OpenGraphConfig is nil")
+    func testBasePageNoOpenGraph() throws {
+        let page = BasePage(title: "No OG") {
+            Text("Content")
+        }
+        let html = try TestUtils.renderHTML(page)
+        
+        #expect(!html.contains("og:title"))
+        #expect(!html.contains("og:type"))
+        #expect(!html.contains("og:url"))
+        #expect(!html.contains("og:site_name"))
+        #expect(!html.contains("twitter:card"))
+    }
+    
     @Test("BasePage complete HTML snapshot")
     func testBasePageSnapshot() throws {
         let page = BasePage(title: "Snapshot Test") {

@@ -20,6 +20,7 @@ public struct SiteIdentity {
     // Social URLs
     public static let githubURL = "https://github.com/21-DOT-DEV"
     public static let twitterURL = "https://x.com/21_DOT_DEV"
+    public static let twitterHandle = "@21_DOT_DEV"
     public static let nostrURL = "https://primal.net/21"
     
     // Documentation URLs

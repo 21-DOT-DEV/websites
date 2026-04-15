@@ -12,6 +12,10 @@
   Cache-Control: public, max-age=86400
   Vary: Accept-Encoding
 
+/images/*
+  Cache-Control: public, max-age=86400
+  Vary: Accept-Encoding
+
 # Serve plain text files with correct content-type
 # Using explicit paths instead of /*.txt glob to avoid Content-Type mismatch on 404 pages
 /llms.txt
@@ -37,6 +41,31 @@
   X-Content-Type-Options: nosniff
   X-Robots-Tag: noindex
   Cache-Control: public, max-age=300, must-revalidate
+  Vary: Accept-Encoding
+
+# Favicon and PWA assets — daily caching (cache-busted via ?v= in HTML link tags)
+/favicon.ico
+  Cache-Control: public, max-age=86400
+  Vary: Accept-Encoding
+
+/favicon-96x96.png
+  Cache-Control: public, max-age=86400
+  Vary: Accept-Encoding
+
+/apple-touch-icon.png
+  Cache-Control: public, max-age=86400
+  Vary: Accept-Encoding
+
+/site.webmanifest
+  Cache-Control: public, max-age=86400
+  Vary: Accept-Encoding
+
+/web-app-manifest-192x192.png
+  Cache-Control: public, max-age=86400
+  Vary: Accept-Encoding
+
+/web-app-manifest-512x512.png
+  Cache-Control: public, max-age=86400
   Vary: Accept-Encoding
 
 # Production HTML pages — include strict security headers + HSTS
