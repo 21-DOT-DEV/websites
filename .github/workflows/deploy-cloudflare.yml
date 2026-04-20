@@ -25,6 +25,9 @@ on:
         required: true
       cloudflare-account-id:
         required: true
+      cloudflare-zone-id:
+        description: 'Cloudflare zone ID (21.dev) for edge cache purge on production deploys'
+        required: false
       google-service-account-json:
         required: false
     outputs:
@@ -195,6 +198,35 @@ jobs:
           echo "✅ /api → 301"
           
           echo "✓ All 21.dev redirects verified on preview"
+      
+      - name: Purge Cloudflare cache (production only)
+        if: inputs.deploy-to-production == true
+        continue-on-error: true
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.cloudflare-api-token }}
+          CLOUDFLARE_ZONE_ID: ${{ secrets.cloudflare-zone-id }}
+        run: |
+          if [ -z "$CLOUDFLARE_ZONE_ID" ]; then
+            echo "⚠️  CLOUDFLARE_ZONE_ID secret not set; skipping cache purge"
+            echo "   Add the secret to enable automatic edge cache invalidation on production deploys"
+            exit 0
+          fi
+
+          echo "🧹 Purging Cloudflare edge cache for zone $CLOUDFLARE_ZONE_ID..."
+          response=$(curl -sS -X POST \
+            "https://api.cloudflare.com/client/v4/zones/${CLOUDFLARE_ZONE_ID}/purge_cache" \
+            -H "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}" \
+            -H "Content-Type: application/json" \
+            --data '{"purge_everything":true}')
+
+          success=$(echo "$response" | jq -r '.success')
+          if [ "$success" = "true" ]; then
+            echo "✅ Cache purge successful"
+          else
+            echo "❌ Cache purge failed"
+            echo "$response" | jq .
+            exit 1
+          fi
       
       - name: Submit sitemap to Google Search Console
         if: inputs.deploy-to-production == true
