@@ -30,6 +30,11 @@
   Content-Type: text/plain; charset=utf-8
   X-Content-Type-Options: nosniff
 
+/sitemap.xml
+  Content-Type: application/xml; charset=utf-8
+  X-Content-Type-Options: nosniff
+  X-Robots-Tag: noindex
+
 # No-store endpoints (well-known configs)
 /.well-known/*
   Cache-Control: no-store
@@ -40,7 +45,7 @@
   Content-Type: text/markdown; charset=utf-8
   X-Content-Type-Options: nosniff
   X-Robots-Tag: noindex
-  Cache-Control: public, max-age=300, must-revalidate
+  Cache-Control: public, max-age=300, stale-while-revalidate=86400
   Vary: Accept-Encoding
 
 # Favicon and PWA assets — daily caching (cache-busted via ?v= in HTML link tags)
@@ -72,6 +77,8 @@
 # NOTE: Extend CSP allowlists by appending origins to the existing directive (e.g., add another `connect-src` host) rather than removing defaults.
 /*
   Link: </llms.txt>; rel="llms-txt"
+  Link: </sitemap.xml>; rel="sitemap"
+  Link: <https://docs.21.dev/documentation/>; rel="service-doc"
   X-Llms-Txt: /llms.txt
   Content-Security-Policy: default-src 'self'; connect-src 'self' https://static.cloudflareinsights.com; font-src 'self'; img-src 'self' data:; script-src 'self' https://static.cloudflareinsights.com; style-src 'self' 'unsafe-inline'; frame-ancestors 'none'; object-src 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests
   X-Frame-Options: DENY
@@ -82,5 +89,5 @@
   Cross-Origin-Opener-Policy: same-origin
   Cross-Origin-Resource-Policy: same-origin
   X-Robots-Tag: noindex, nofollow
-  Cache-Control: public, max-age=300, must-revalidate
+  Cache-Control: public, max-age=300, stale-while-revalidate=86400
   Vary: Accept-Encoding

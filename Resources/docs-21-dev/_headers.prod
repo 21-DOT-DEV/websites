@@ -3,46 +3,60 @@
 
 # Cloudflare Pages matches top-to-bottom; keep specific asset/JSON patterns above the catch-all HTML sections below.
 
-# Static assets inside DocC bundle
-/documentation/**/static/*
-  Cache-Control: public, max-age=86400
-  Vary: Accept-Encoding
-
-# JavaScript bundle (DocC search)
+# JavaScript bundle (DocC search) — content-hashed filenames, safe to mark immutable
 /js/*
-  Cache-Control: public, max-age=86400
+  Cache-Control: public, max-age=31536000, immutable
   Vary: Accept-Encoding
   X-Robots-Tag: noindex
 
-# CSS stylesheets (DocC theme)
+# CSS stylesheets (DocC theme) — content-hashed filenames, safe to mark immutable
 /css/*
-  Cache-Control: public, max-age=86400
+  Cache-Control: public, max-age=31536000, immutable
   Vary: Accept-Encoding
   X-Robots-Tag: noindex
+
+# DocC renderer UI icons — webpack content-hashed, safe to mark immutable
+/img/*
+  Cache-Control: public, max-age=31536000, immutable
+  Vary: Accept-Encoding
+  X-Robots-Tag: noindex
+
+# Author-provided assets (@Image, @Video, @Download) — filenames not hashed, daily TTL
+/images/*
+  Cache-Control: public, max-age=86400
+  Vary: Accept-Encoding
+
+/videos/*
+  Cache-Control: public, max-age=86400
+  Vary: Accept-Encoding
+
+/downloads/*
+  Cache-Control: public, max-age=86400
+  Vary: Accept-Encoding
 
 # No-store zones (well-known + JSON)
 /.well-known/*
-  Cache-Control: public, max-age=300, must-revalidate
+  Cache-Control: public, max-age=300, stale-while-revalidate=86400
   Vary: Accept-Encoding
   X-Robots-Tag: noindex
 
 # cfpages-ignore: glob-content-type (DocC generates hundreds of .md files; explicit paths impractical)
 /data/documentation/**/*.md
   Content-Type: text/markdown; charset=utf-8
-  Cache-Control: public, max-age=300, must-revalidate
+  Cache-Control: public, max-age=300, stale-while-revalidate=86400
   Vary: Accept-Encoding
   X-Content-Type-Options: nosniff
   X-Robots-Tag: noindex
 
 # DocC data directory (symbol JSON)
 /data/*
-  Cache-Control: public, max-age=300, must-revalidate
+  Cache-Control: public, max-age=300, stale-while-revalidate=86400
   Vary: Accept-Encoding
   X-Robots-Tag: noindex
 
 # JSON data (DocC linkable-entities, metadata, symbol JSON)
 /**/*.json
-  Cache-Control: public, max-age=300, must-revalidate
+  Cache-Control: public, max-age=300, stale-while-revalidate=86400
   Vary: Accept-Encoding
   X-Robots-Tag: noindex
 
@@ -60,6 +74,11 @@
   Content-Type: text/plain; charset=utf-8
   X-Content-Type-Options: nosniff
 
+/sitemap.xml
+  Content-Type: application/xml; charset=utf-8
+  X-Content-Type-Options: nosniff
+  X-Robots-Tag: noindex
+
 # Content negotiation: markdown alternate for AI agents
 /documentation/*
   Vary: Accept
@@ -68,6 +87,7 @@
 # NOTE: Extend CSP allowlists by appending origins (e.g., extra script host) instead of removing defaults to keep minimum protections intact.
 /*
   Link: </llms.txt>; rel="llms-txt"
+  Link: </sitemap.xml>; rel="sitemap"
   X-Llms-Txt: /llms.txt
   Strict-Transport-Security: max-age=63072000; includeSubDomains; preload
   Content-Security-Policy: default-src 'self'; connect-src 'self' https://static.cloudflareinsights.com; font-src 'self' data:; img-src 'self' data:; script-src 'self' https://static.cloudflareinsights.com 'sha256-Tmnua9Q+ofeiLwDiFowbjAxSJRmhO2KE+f0QIsqwNfw='; style-src 'self' 'unsafe-inline'; frame-ancestors 'none'; object-src 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests
@@ -78,5 +98,5 @@
   Permissions-Policy: geolocation=(), microphone=(), camera=(), payment=(), fullscreen=(self)
   Cross-Origin-Opener-Policy: same-origin
   Cross-Origin-Resource-Policy: same-origin
-  Cache-Control: public, max-age=300, must-revalidate
+  Cache-Control: public, max-age=300, stale-while-revalidate=86400
   Vary: Accept-Encoding
