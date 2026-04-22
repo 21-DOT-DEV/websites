@@ -167,7 +167,9 @@ jobs:
             echo "${sha}  ${dest}" | shasum -a 256 -c -
 
             echo "📦 Unzipping ${key}..."
-            (cd /tmp/archives && unzip -q "${artifact}" && rm "${artifact}")
+            # -o: overwrite without prompting (archives ship with top-level LICENSE/README
+            # that collide across packages; we only consume the *.doccarchive directories).
+            (cd /tmp/archives && unzip -o -q "${artifact}" && rm "${artifact}")
           done
 
           echo "✅ All external archives downloaded, verified, and unzipped"
