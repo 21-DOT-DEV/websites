@@ -1,6 +1,6 @@
 # OpenSSL — Modern Swift bindings for OpenSSL 3.x
 
->> DRAFT: review before merge — authored from swift-openssl README + OpenSSL.doccarchive metadata at v{{OPENSSL_VERSION}}.
+>> DRAFT: review before merge — authored from swift-openssl README + OpenSSL.doccarchive markdown index at v{{OPENSSL_VERSION}}.
 
 > Part of the [swift-openssl](https://docs.21.dev/llms.txt) package (v{{OPENSSL_VERSION}}).
 > For all markdown files in this module, see [OpenSSL llms-full.txt](https://docs.21.dev/data/documentation/openssl/llms-full.txt).
@@ -18,16 +18,19 @@ OpenSSL wraps [OpenSSL 3.6.2](https://github.com/openssl/openssl) with a type-sa
 
 - [Getting Started](https://docs.21.dev/data/documentation/openssl/gettingstarted.md): Compute SHA-256 digests, encode/decode Base64URL, parse RSA PEM keys
 - [Security Considerations](https://docs.21.dev/data/documentation/openssl/securityconsiderations.md): MVP gaps, disabled algorithms, constant-time-comparison rules, runtime CVE auditing
-- [OpenSSL Module](https://docs.21.dev/data/documentation/openssl.md): Module overview — SHA-256, Base64URL, RSA PEM, product-selection guide
+- [Choosing libcrypto vs OpenSSL](https://docs.21.dev/data/documentation/openssl/choosinglibcryptovsopenssl.md): Product-selection guide — when to link raw `libcrypto`/`libssl` instead of the high-level `OpenSSL` Swift API
+- [OpenSSL Module](https://docs.21.dev/data/documentation/openssl.md): Module overview — SHA-256, Base64URL, RSA PEM, runtime version auditing
 
 ## Symbols
 
-- [SHA256](https://docs.21.dev/data/documentation/openssl/openssl/sha256.md): FIPS 180-4 SHA-256 — `SHA256.hash(string:)`, `SHA256.hash(data:)`, `SHA256.Digest`
-- [Base64URL](https://docs.21.dev/data/documentation/openssl/openssl/base64url.md): RFC 4648 §5 Base64URL with the JOSE alphabet — encoding and decoding with optional padding
-- [RSA](https://docs.21.dev/data/documentation/openssl/openssl/rsa.md): RSA PEM ingestion — parse PKCS#1 and PKCS#8 encoded keys
+- [SHA256](https://docs.21.dev/data/documentation/openssl/sha256.md): FIPS 180-4 SHA-256 — `SHA256.hash(string:)`, `SHA256.hash(data:)`
+- [Base64URL](https://docs.21.dev/data/documentation/openssl/base64url.md): RFC 4648 §5 Base64URL with the JOSE alphabet — `encode(_:)`, `decode(_:)`
+- [RSA](https://docs.21.dev/data/documentation/openssl/rsa.md): RSA PEM ingestion namespace — `RSA.PrivateKey`, `RSA.PublicKey` via `init(pemRepresentation:)`
+- [SSL](https://docs.21.dev/data/documentation/openssl/ssl.md): OpenSSL runtime metadata — `SSL.versionString` for auditing the statically linked OpenSSL version
 
 ## Optional
 
-- [SHA256.Digest](https://docs.21.dev/data/documentation/openssl/openssl/sha256/digest.md): 32-byte SHA-256 output — `.hexString`, `.data`, equality, `Sendable`
-- [libcrypto (raw C binding)](https://docs.21.dev/data/documentation/libcrypto.md): Raw `libcrypto` product exposing OpenSSL's `EVP_*`, `BN_*`, and related C APIs; used by swift-tor; not part of the `OpenSSL` high-level API
-- [libssl (raw C binding)](https://docs.21.dev/data/documentation/libssl.md): Raw `libssl` product exposing OpenSSL's `SSL_*` / `TLS_*` C APIs; used by swift-tor; not part of the `OpenSSL` high-level API
+- [SHA256.SHA256Digest](https://docs.21.dev/data/documentation/openssl/sha256/sha256digest.md): 32-byte SHA-256 output — `.hexString`, `.rawValue`, equality, `init(rawValue:)`
+- [RSA.PrivateKey](https://docs.21.dev/data/documentation/openssl/rsa/privatekey.md): RSA private key — `init(pemRepresentation:)`, `.pemData`
+- [RSA.PublicKey](https://docs.21.dev/data/documentation/openssl/rsa/publickey.md): RSA public key — `init(pemRepresentation:)`, `.pemData`
+- [OpenSSLError](https://docs.21.dev/data/documentation/openssl/opensslerror.md): Typed OpenSSL errors — `invalidInput`, `invalidKey`, `invalidSignature`, `signingFailed`, `verificationFailed`, `underlyingError`; conforms to `LocalizedError`
