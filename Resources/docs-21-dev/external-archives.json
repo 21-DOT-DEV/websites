@@ -3,16 +3,16 @@
   "archives": {
     "swift-event": {
       "repo": "21-DOT-DEV/swift-event",
-      "tag": "0.1.2",
+      "tag": "0.1.3",
       "artifact": "Event.doccarchive.zip",
-      "sha256": "76b3da9c8df49acd57a40992dc2e834923eeaecef9729a8faf0158e758053bd0",
+      "sha256": "e9d621482f846e7c4a314491433d88ae617e475305e8faaf2ea5fd102410098c",
       "bundleID": "Event"
     },
     "swift-openssl": {
       "repo": "21-DOT-DEV/swift-openssl",
-      "tag": "0.1.2",
+      "tag": "0.1.3",
       "artifact": "OpenSSL.doccarchive.zip",
-      "sha256": "8c0eef4e82a6b674e0a48bfc970c43e2b668aa703429869a45b427634b0f41b5",
+      "sha256": "416842cdc4f1dce0f46edf90394ba22253e248c874c7d6d224f66c53c581f9ba",
       "bundleID": "OpenSSL"
     }
   }
