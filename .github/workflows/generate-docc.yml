@@ -130,6 +130,8 @@ jobs:
             ${{ steps.build-targets.outputs.target-args }} \
             --enable-experimental-combined-documentation \
             --enable-experimental-markdown-output \
+            --transform-for-static-hosting \
+            --experimental-transform-for-static-hosting-with-content \
             --source-service github \
             --source-service-base-url https://github.com/21-DOT-DEV/swift-secp256k1/blob/${{ env.SECP256K1_VERSION }} \
             --checkout-path .build/checkouts/swift-secp256k1 \
