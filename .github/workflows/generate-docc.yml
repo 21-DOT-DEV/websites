@@ -96,29 +96,122 @@ jobs:
           echo "📚 Target arguments: $target_args"
           echo "📚 Generating documentation for targets: ${{ inputs.targets }}"
       
-      - name: Generate documentation
+      - name: Extract external archive versions
         run: |
           set -e
-          echo "📚 Generating documentation for targets: ${{ inputs.targets }}"
+          ARCHIVES_FILE="Resources/${{ inputs.project-name }}/external-archives.json"
+
+          if [ ! -f "$ARCHIVES_FILE" ]; then
+            echo "ℹ️  No external-archives.json found at $ARCHIVES_FILE; skipping"
+            exit 0
+          fi
+
+          EVENT_VERSION=$(jq -r '.archives["swift-event"].tag' "$ARCHIVES_FILE")
+          OPENSSL_VERSION=$(jq -r '.archives["swift-openssl"].tag' "$ARCHIVES_FILE")
+
+          echo "EVENT_VERSION=$EVENT_VERSION" >> $GITHUB_ENV
+          echo "OPENSSL_VERSION=$OPENSSL_VERSION" >> $GITHUB_ENV
+
+          echo "� swift-event: $EVENT_VERSION"
+          echo "📦 swift-openssl: $OPENSSL_VERSION"
+
+      - name: Build secp256k1 DocC archive
+        run: |
+          set -e
+          echo "📚 Building secp256k1 archive (combined, markdown, no transform)..."
           echo "📦 Package version: ${{ env.SECP256K1_VERSION }}"
-          echo "📂 Output path: ./Websites/${{ inputs.project-name }}"
-          
-          # Ensure output directory exists
-          mkdir -p ./Websites/${{ inputs.project-name }}
-          
+          echo "🏷️  Targets: ${{ inputs.targets }}"
+
+          mkdir -p /tmp/archives
+
           swift package \
-            --allow-writing-to-directory ./Websites/${{ inputs.project-name }} \
+            --allow-writing-to-directory /tmp/archives \
             generate-documentation \
             ${{ steps.build-targets.outputs.target-args }} \
             --enable-experimental-combined-documentation \
             --enable-experimental-markdown-output \
-            --transform-for-static-hosting \
-            --experimental-transform-for-static-hosting-with-content \
             --source-service github \
             --source-service-base-url https://github.com/21-DOT-DEV/swift-secp256k1/blob/${{ env.SECP256K1_VERSION }} \
             --checkout-path .build/checkouts/swift-secp256k1 \
-            --output-path ./Websites/${{ inputs.project-name }}
-          
+            --output-path /tmp/archives/Secp256k1.doccarchive
+
+          echo "✅ secp256k1 archive built"
+          ls -la /tmp/archives/
+
+      - name: Download external DocC archives
+        run: |
+          set -e
+          ARCHIVES_FILE="Resources/${{ inputs.project-name }}/external-archives.json"
+
+          if [ ! -f "$ARCHIVES_FILE" ]; then
+            echo "ℹ️  No external-archives.json found; skipping external archive downloads"
+            exit 0
+          fi
+
+          mkdir -p /tmp/archives
+
+          for key in $(jq -r '.archives | keys[]' "$ARCHIVES_FILE"); do
+            repo=$(jq -r ".archives[\"$key\"].repo" "$ARCHIVES_FILE")
+            tag=$(jq -r ".archives[\"$key\"].tag" "$ARCHIVES_FILE")
+            artifact=$(jq -r ".archives[\"$key\"].artifact" "$ARCHIVES_FILE")
+            sha=$(jq -r ".archives[\"$key\"].sha256" "$ARCHIVES_FILE")
+
+            url="https://github.com/${repo}/releases/download/${tag}/${artifact}"
+            dest="/tmp/archives/${artifact}"
+
+            echo "📥 Downloading ${key}@${tag}..."
+            echo "   URL: $url"
+            curl -L --retry 3 --fail -o "$dest" "$url"
+
+            echo "🔐 Verifying SHA-256 for ${key}..."
+            echo "${sha}  ${dest}" | shasum -a 256 -c -
+
+            echo "📦 Unzipping ${key}..."
+            (cd /tmp/archives && unzip -q "${artifact}" && rm "${artifact}")
+          done
+
+          echo "✅ All external archives downloaded, verified, and unzipped"
+          ls -la /tmp/archives/
+
+      - name: Merge DocC archives
+        run: |
+          set -e
+          echo "🔀 Merging DocC archives..."
+
+          shopt -s nullglob
+          archives=(/tmp/archives/*.doccarchive)
+          shopt -u nullglob
+
+          if [ ${#archives[@]} -eq 0 ]; then
+            echo "❌ No .doccarchive directories found in /tmp/archives/"
+            exit 1
+          fi
+
+          echo "Archives to merge:"
+          printf '  - %s\n' "${archives[@]}"
+
+          rm -rf /tmp/merged.doccarchive
+          xcrun docc merge \
+            "${archives[@]}" \
+            --output-path /tmp/merged.doccarchive
+
+          echo "✅ Merge complete: /tmp/merged.doccarchive"
+
+      - name: Transform merged archive for static hosting
+        run: |
+          set -e
+          project="${{ inputs.project-name }}"
+          output_dir="./Websites/${project}"
+
+          mkdir -p "$output_dir"
+
+          echo "🌐 Transforming merged archive for static hosting..."
+          echo "📂 Output path: $output_dir"
+
+          xcrun docc process-archive transform-for-static-hosting \
+            /tmp/merged.doccarchive \
+            --output-path "$output_dir"
+
           echo "✅ Documentation generation complete"
       
       - name: Verify documentation output
@@ -257,30 +350,39 @@ jobs:
           fi
           echo "✅ All Cloudflare platform files present"
       
-      - name: Stamp version in llms.txt files
+      - name: Stamp versions in llms.txt files
         run: |
           project="${{ inputs.project-name }}"
-          
-          # Find all llms.txt files (root + per-module)
+
+          # Find all llms.txt files (root + per-module) and substitute per-package version placeholders.
+          # Placeholders: {{SECP256K1_VERSION}}, {{EVENT_VERSION}}, {{OPENSSL_VERSION}}.
           stamped=0
           while IFS= read -r llms_file; do
-            # NOTE: sed -i '' is macOS-specific (macos-15 runner).
+            # NOTE: sed -i '' is macOS-specific (macos-26 runner).
             # GNU sed on Linux treats '' as a filename — use sed -i instead if migrating.
-            sed -i '' "s/{{VERSION}}/${{ env.SECP256K1_VERSION }}/g" "$llms_file"
-            
-            # Guard: fail if placeholder wasn't substituted (empty SECP256K1_VERSION)
-            if grep -q '{{VERSION}}' "$llms_file"; then
+            sed -i '' \
+              -e "s/{{SECP256K1_VERSION}}/${{ env.SECP256K1_VERSION }}/g" \
+              -e "s/{{EVENT_VERSION}}/${EVENT_VERSION:-MISSING_EVENT_VERSION}/g" \
+              -e "s/{{OPENSSL_VERSION}}/${OPENSSL_VERSION:-MISSING_OPENSSL_VERSION}/g" \
+              "$llms_file"
+
+            # Guard: fail if any known placeholder wasn't substituted.
+            if grep -qE '\{\{(SECP256K1_VERSION|EVENT_VERSION|OPENSSL_VERSION)\}\}' "$llms_file"; then
               echo "❌ Version placeholder was not substituted in ${llms_file}"
+              grep -nE '\{\{(SECP256K1_VERSION|EVENT_VERSION|OPENSSL_VERSION)\}\}' "$llms_file"
               exit 1
             fi
             stamped=$((stamped + 1))
             echo "  ✅ ${llms_file}"
           done < <(find "Websites/${project}" -name "llms.txt" -type f)
-          
+
           if [ "$stamped" -eq 0 ]; then
             echo "ℹ️  No llms.txt files found for ${project}, skipping version stamp"
           else
-            echo "✅ Version stamped in ${stamped} file(s): v${{ env.SECP256K1_VERSION }}"
+            echo "✅ Versions stamped in ${stamped} file(s)"
+            echo "   swift-secp256k1: v${{ env.SECP256K1_VERSION }}"
+            echo "   swift-event: v${EVENT_VERSION:-MISSING}"
+            echo "   swift-openssl: v${OPENSSL_VERSION:-MISSING}"
           fi
       
       - name: Fix canonical URLs
@@ -415,8 +517,12 @@ jobs:
           echo "📄 llms-full.txt generated with ${global_count} entries"
           
           # --- Per-module llms-full.txt ---
-          for module in p256k zkp; do
-            module_output="Websites/${project}/data/documentation/${module}/llms-full.txt"
+          # Dynamically discover modules from the generated documentation tree
+          # (adapts automatically as pinned external archives are added/removed).
+          for module_dir in "Websites/${project}/data/documentation/"*/; do
+            [ -d "$module_dir" ] || continue
+            module=$(basename "$module_dir")
+            module_output="${module_dir}llms-full.txt"
             mkdir -p "$(dirname "$module_output")"
             {
               echo "# ${module} — Full Documentation Index"

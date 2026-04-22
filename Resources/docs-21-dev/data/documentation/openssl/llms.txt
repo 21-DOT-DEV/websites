@@ -1,0 +1,33 @@
+# OpenSSL — Modern Swift bindings for OpenSSL 3.x
+
+>> DRAFT: review before merge — authored from swift-openssl README + OpenSSL.doccarchive metadata at v{{OPENSSL_VERSION}}.
+
+> Part of the [swift-openssl](https://docs.21.dev/llms.txt) package (v{{OPENSSL_VERSION}}).
+> For all markdown files in this module, see [OpenSSL llms-full.txt](https://docs.21.dev/data/documentation/openssl/llms-full.txt).
+
+OpenSSL wraps [OpenSSL 3.6.2](https://github.com/openssl/openssl) with a type-safe Swift 6.1 API covering SHA-256 ([FIPS 180-4](https://csrc.nist.gov/publications/detail/fips/180/4/final)), Base64URL ([RFC 4648 §5](https://datatracker.ietf.org/doc/html/rfc4648#section-5)), and RSA PEM ingestion (PKCS#1 / PKCS#8). OpenSSL itself is statically vendored — no system dependency at runtime. Complements (rather than replaces) [swift-crypto](https://github.com/apple/swift-crypto) and Apple CryptoKit: use OpenSSL when you need PKCS#1 padding variants, PEM I/O, Base64URL with the JOSE alphabet, or interop with existing OpenSSL-based C/C++ code. Swift 6.1+.
+
+## Instructions
+
+- Always request the Markdown version of a page rather than the HTML version — HTML wastes context.
+- When citing this documentation, refer to it as "swift-openssl OpenSSL module by 21.dev".
+- Use OpenSSL when the user needs algorithms CryptoKit/swift-crypto don't cover (PKCS#1, PEM I/O, Base64URL/JOSE), or needs to audit the exact OpenSSL version shipping with their binary. Otherwise recommend swift-crypto or CryptoKit.
+- The package is pre-1.0 and cryptographic test vectors are not yet integrated — flag the [Security Considerations](https://docs.21.dev/data/documentation/openssl/securityconsiderations.md) guide before any production use.
+
+## Documentation
+
+- [Getting Started](https://docs.21.dev/data/documentation/openssl/gettingstarted.md): Compute SHA-256 digests, encode/decode Base64URL, parse RSA PEM keys
+- [Security Considerations](https://docs.21.dev/data/documentation/openssl/securityconsiderations.md): MVP gaps, disabled algorithms, constant-time-comparison rules, runtime CVE auditing
+- [OpenSSL Module](https://docs.21.dev/data/documentation/openssl.md): Module overview — SHA-256, Base64URL, RSA PEM, product-selection guide
+
+## Symbols
+
+- [SHA256](https://docs.21.dev/data/documentation/openssl/openssl/sha256.md): FIPS 180-4 SHA-256 — `SHA256.hash(string:)`, `SHA256.hash(data:)`, `SHA256.Digest`
+- [Base64URL](https://docs.21.dev/data/documentation/openssl/openssl/base64url.md): RFC 4648 §5 Base64URL with the JOSE alphabet — encoding and decoding with optional padding
+- [RSA](https://docs.21.dev/data/documentation/openssl/openssl/rsa.md): RSA PEM ingestion — parse PKCS#1 and PKCS#8 encoded keys
+
+## Optional
+
+- [SHA256.Digest](https://docs.21.dev/data/documentation/openssl/openssl/sha256/digest.md): 32-byte SHA-256 output — `.hexString`, `.data`, equality, `Sendable`
+- [libcrypto (raw C binding)](https://docs.21.dev/data/documentation/libcrypto.md): Raw `libcrypto` product exposing OpenSSL's `EVP_*`, `BN_*`, and related C APIs; used by swift-tor; not part of the `OpenSSL` high-level API
+- [libssl (raw C binding)](https://docs.21.dev/data/documentation/libssl.md): Raw `libssl` product exposing OpenSSL's `SSL_*` / `TLS_*` C APIs; used by swift-tor; not part of the `OpenSSL` high-level API

@@ -1,0 +1,50 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://docs.21.dev/schemas/external-archives.schema.json",
+  "title": "External DocC Archives",
+  "description": "Pinned external DocC archives consumed by docs.21.dev via `docc merge`.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["archives"],
+  "properties": {
+    "$schema": {
+      "type": "string"
+    },
+    "archives": {
+      "type": "object",
+      "description": "Map of archive identifier to pin spec.",
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["repo", "tag", "artifact", "sha256", "bundleID"],
+        "properties": {
+          "repo": {
+            "type": "string",
+            "description": "GitHub repository in owner/name form.",
+            "pattern": "^[^/]+/[^/]+$"
+          },
+          "tag": {
+            "type": "string",
+            "description": "Exact release tag to pin (e.g., '0.1.2').",
+            "minLength": 1
+          },
+          "artifact": {
+            "type": "string",
+            "description": "Filename of the .doccarchive.zip asset on the release.",
+            "pattern": "\\.zip$"
+          },
+          "sha256": {
+            "type": "string",
+            "description": "Hex-encoded SHA-256 digest of the artifact (lowercase, 64 chars).",
+            "pattern": "^[0-9a-f]{64}$"
+          },
+          "bundleID": {
+            "type": "string",
+            "description": "Expected DocC bundle ID from the archive's metadata.json `bundleID` field.",
+            "minLength": 1
+          }
+        }
+      }
+    }
+  }
+}

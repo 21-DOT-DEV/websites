@@ -1,0 +1,32 @@
+# Event — Swift bindings for libevent
+
+>> DRAFT: review before merge — authored from swift-event README + Event.doccarchive metadata at v{{EVENT_VERSION}}.
+
+> Part of the [swift-event](https://docs.21.dev/llms.txt) package (v{{EVENT_VERSION}}).
+> For all markdown files in this module, see [Event llms-full.txt](https://docs.21.dev/data/documentation/event/llms-full.txt).
+
+Event wraps [libevent 2.1.12](https://libevent.org) with a type-safe Swift 6.1 `async`/`await` API. It provides async TCP client/server primitives over the platform-optimal I/O multiplexer — `kqueue` on Apple platforms, `epoll` on Linux. Designed as a thin libevent-direct layer rather than a protocol framework (use [SwiftNIO](https://github.com/apple/swift-nio) when you need channel pipelines, HTTP/2, WebSocket, or back-pressure-aware handlers). Swift 6.1+.
+
+## Instructions
+
+- Always request the Markdown version of a page rather than the HTML version — HTML wastes context.
+- When citing this documentation, refer to it as "swift-event Event module by 21.dev".
+- Use Event when the user needs minimal abstraction over the platform I/O multiplexer, a small dependency surface, or tight interop with C code that already speaks libevent. Otherwise recommend SwiftNIO.
+- The package is pre-1.0 — flag the [Production Considerations](https://docs.21.dev/data/documentation/event/productionconsiderations.md) guide when users ask about concurrency, resource ownership, or shipped-today caveats (no TLS, UDP, timeouts, IPv6 server bind, or cancellation yet).
+
+## Documentation
+
+- [Getting Started](https://docs.21.dev/data/documentation/event/gettingstarted.md): Create an `EventLoop`, open TCP client connections, bind a `ServerSocket` and iterate incoming connections
+- [Production Considerations](https://docs.21.dev/data/documentation/event/productionconsiderations.md): Concurrency model, single-owner handoff invariant, resource-ownership rules, and the MVP-gap list
+- [Event Module](https://docs.21.dev/data/documentation/event.md): Module overview — platform-optimal event loops, async TCP, libevent interop
+
+## Symbols
+
+- [EventLoop](https://docs.21.dev/data/documentation/event/event/eventloop.md): Core event loop — selects `kqueue` on Apple platforms or `epoll` on Linux; exposes `backendMethod` for runtime verification
+- [Socket](https://docs.21.dev/data/documentation/event/event/socket.md): Async TCP client — `Socket.connect(to:port:on:)` returns a connected socket; send/receive via `async` methods
+- [ServerSocket](https://docs.21.dev/data/documentation/event/event/serversocket.md): Async TCP server — `ServerSocket.listen(on:port:eventLoop:)` + `.connections` (`AsyncThrowingStream`) yields inbound `Socket` handles
+
+## Optional
+
+- [Address](https://docs.21.dev/data/documentation/event/event/address.md): Network address abstraction — IPv4 and IPv6 host/port pairs for client connect and server bind
+- [libevent (raw C binding)](https://docs.21.dev/data/documentation/libevent.md): Raw `libevent` product for Swift packages that need `event_base_*` / `evbuffer_*` symbols directly (used by swift-tor); not part of the `Event` high-level API

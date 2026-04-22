@@ -1,6 +1,6 @@
 # ZKP — Zero-Knowledge Proofs on secp256k1
 
-> Part of the [swift-secp256k1](https://docs.21.dev/llms.txt) package (v{{VERSION}}).
+> Part of the [swift-secp256k1](https://docs.21.dev/llms.txt) package (v{{SECP256K1_VERSION}}).
 > For all markdown files in this module, see [ZKP llms-full.txt](https://docs.21.dev/data/documentation/zkp/llms-full.txt).
 
 ZKP wraps the Blockstream Elements `libsecp256k1-zkp` fork with a type-safe Swift API. It extends the P256K module with zero-knowledge proof primitives: Pedersen commitments, range proofs, surjection proofs, ECDSA adaptors, Schnorr half-aggregation, and whitelist signatures. Use ZKP instead of P256K when you need these capabilities. Swift 6.1+.

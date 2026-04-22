@@ -1,0 +1,19 @@
+{
+  "$schema": "./external-archives.schema.json",
+  "archives": {
+    "swift-event": {
+      "repo": "21-DOT-DEV/swift-event",
+      "tag": "0.1.2",
+      "artifact": "Event.doccarchive.zip",
+      "sha256": "76b3da9c8df49acd57a40992dc2e834923eeaecef9729a8faf0158e758053bd0",
+      "bundleID": "Event"
+    },
+    "swift-openssl": {
+      "repo": "21-DOT-DEV/swift-openssl",
+      "tag": "0.1.2",
+      "artifact": "OpenSSL.doccarchive.zip",
+      "sha256": "8c0eef4e82a6b674e0a48bfc970c43e2b668aa703429869a45b427634b0f41b5",
+      "bundleID": "OpenSSL"
+    }
+  }
+}

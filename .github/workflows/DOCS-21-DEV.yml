@@ -47,8 +47,8 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-spm-
       
-      - name: Run middleware tests
-        run: swift test --filter MiddlewareTests --parallel
+      - name: Run middleware and config tests
+        run: swift test --filter MiddlewareTests --filter ExternalArchivesConfigTests --parallel
 
   generate:
     name: Generate Documentation
