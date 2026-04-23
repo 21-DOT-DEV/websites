@@ -180,6 +180,9 @@ jobs:
       - name: Merge DocC archives
         run: |
           set -e
+          project="${{ inputs.project-name }}"
+          output_dir="./Websites/${project}"
+
           echo "🔀 Merging DocC archives..."
 
           shopt -s nullglob
@@ -194,29 +197,17 @@ jobs:
           echo "Archives to merge:"
           printf '  - %s\n' "${archives[@]}"
 
-          rm -rf /tmp/merged.doccarchive
+          # Inputs are already --transform-for-static-hosting --experimental-transform-for-static-hosting-with-content
+          # archives; `docc merge` preserves their per-page <noscript> HTML verbatim. Do NOT follow this with
+          # `docc process-archive transform-for-static-hosting` — that subcommand has no --with-content option
+          # and regenerates empty-shell index.html files, silently stripping the embedded per-page content.
+          rm -rf "$output_dir"
+          mkdir -p "$(dirname "$output_dir")"
           xcrun docc merge \
             "${archives[@]}" \
-            --output-path /tmp/merged.doccarchive
-
-          echo "✅ Merge complete: /tmp/merged.doccarchive"
-
-      - name: Transform merged archive for static hosting
-        run: |
-          set -e
-          project="${{ inputs.project-name }}"
-          output_dir="./Websites/${project}"
-
-          mkdir -p "$output_dir"
-
-          echo "🌐 Transforming merged archive for static hosting..."
-          echo "📂 Output path: $output_dir"
-
-          xcrun docc process-archive transform-for-static-hosting \
-            /tmp/merged.doccarchive \
             --output-path "$output_dir"
 
-          echo "✅ Documentation generation complete"
+          echo "✅ Merge complete: $output_dir"
       
       - name: Verify documentation output
         run: |
@@ -260,8 +251,13 @@ jobs:
           
       - name: Verify noscript content
         run: |
+          set -e
           project="${{ inputs.project-name }}"
-          # Spot-check a documentation page for <noscript> content
+          # Spot-check a documentation page for real per-page <noscript> content.
+          # An archive produced without --experimental-transform-for-static-hosting-with-content
+          # (or re-transformed by `docc process-archive transform-for-static-hosting`, which lacks
+          # a --with-content option) ships a ~1573-byte empty-shell index.html containing the literal
+          # phrase "This page requires JavaScript."  Fail on that string so a silent regression cannot recur.
           sample_page=$(find "Websites/${project}/documentation" \
             -name "index.html" -not -path "*/documentation/index.html" | head -1)
 
@@ -270,14 +266,24 @@ jobs:
             exit 0
           fi
 
-          if grep -q '<noscript>' "$sample_page"; then
-            echo "✅ <noscript> content present in: $sample_page"
-            # Show a preview of what crawlers will see
-            sed -n '/<noscript>/,/<\/noscript>/p' "$sample_page" | head -20
-          else
-            echo "❌ <noscript> content missing from: $sample_page"
+          if ! grep -q '<noscript>' "$sample_page"; then
+            echo "❌ <noscript> tag missing from: $sample_page"
             exit 1
           fi
+
+          if grep -q 'This page requires JavaScript\.' "$sample_page"; then
+            echo "❌ <noscript> block is the empty-shell fallback (missing per-page content)"
+            echo "   Page: $sample_page"
+            echo "   Size: $(wc -c < "$sample_page" | tr -d ' ') bytes (expected >> 1573)"
+            echo "   Cause: input archive was built without --experimental-transform-for-static-hosting-with-content,"
+            echo "          or a downstream step re-ran \`docc process-archive transform-for-static-hosting\` and stripped content."
+            exit 1
+          fi
+
+          page_size=$(wc -c < "$sample_page" | tr -d ' ')
+          echo "✅ <noscript> contains per-page content in: $sample_page (${page_size} bytes)"
+          # Show a preview of what crawlers will see
+          sed -n '/<noscript>/,/<\/noscript>/p' "$sample_page" | head -20
       
       - name: Copy static resources
         run: |
