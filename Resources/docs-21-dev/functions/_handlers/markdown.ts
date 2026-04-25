@@ -73,10 +73,14 @@ function writeAnalytics(
  * headers (see `buildNotModifiedHeaders`).
  *
  * Cloudflare's edge cache key does NOT include the `Accept` request
- * header by default, so this handler is paired with the HTML handler's
- * `CDN-Cache-Control: no-store` directive — without it a single cached
- * HTML response would be served regardless of `Accept`, breaking
- * negotiation. See `_handlers/html.ts` for the full reasoning.
+ * header by default. Cache-key separation between the HTML and markdown
+ * variants is now expected to come from a Cloudflare Transform Rule
+ * (configured in the dashboard) that rewrites the query string when
+ * `Accept: text/markdown` is present, producing distinct cache keys for
+ * each variant. If that rule is removed, a single cached HTML response
+ * would be served regardless of `Accept` and negotiation would silently
+ * break — see `_handlers/html.ts` for the fallback to re-introduce
+ * `CDN-Cache-Control: no-store`.
  */
 export async function handleMarkdownNegotiation(
   context: EventContext<unknown, string, unknown>
