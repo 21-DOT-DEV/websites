@@ -719,8 +719,8 @@ struct SchemaTests {
             id: "https://21.dev/#organization",
             name: "21.dev",
             url: "https://21.dev",
-            logo: "https://github.com/21-DOT-DEV.png",
-            foundingDate: "2024",
+            logo: "https://21.dev/web-app-manifest-512x512.png",
+            foundingDate: "2026",
             description: "Open-source tools for Bitcoin developers",
             sameAs: ["https://github.com/21-DOT-DEV"]
         )
@@ -730,8 +730,8 @@ struct SchemaTests {
         let data = json.data(using: .utf8)!
         let parsed = try JSONSerialization.jsonObject(with: data) as! [String: Any]
         
-        #expect(parsed["foundingDate"] as? String == "2024")
-        #expect(parsed["logo"] as? String == "https://github.com/21-DOT-DEV.png")
+        #expect(parsed["foundingDate"] as? String == "2026")
+        #expect(parsed["logo"] as? String == "https://21.dev/web-app-manifest-512x512.png")
         #expect(parsed["description"] as? String == "Open-source tools for Bitcoin developers")
     }
     

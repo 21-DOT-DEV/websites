@@ -30,7 +30,7 @@ public struct OrganizationSchema: Schema {
     ///   - name: Organization name
     ///   - url: Organization website URL
     ///   - logo: URL to organization logo
-    ///   - foundingDate: ISO 8601 founding date (e.g., "2024")
+    ///   - foundingDate: ISO 8601 founding date (e.g., "2026")
     ///   - description: Brief description of the organization
     ///   - sameAs: Array of social profile URLs
     public init(
