@@ -199,19 +199,29 @@ jobs:
           
           echo "✓ All 21.dev redirects verified on preview"
       
-      - name: Verify ETag + 304 revalidation (HTML pages)
+      - name: Verify ETag + 304 revalidation
         if: inputs.deploy-to-production == false
         run: |
           PREVIEW_URL="${{ steps.cloudflare.outputs.deployment-url }}"
+          TEST_PATH="/sitemap.xml"
           
-          # Both site middlewares emit a weak ETag for text/html 200 responses.
-          # Pick a per-site path that returns HTML (NOT a redirect), then round-trip
-          # the ETag with If-None-Match to confirm 304 Not Modified.
-          if [[ "${{ inputs.project-name }}" == "docs-21-dev" ]]; then
-            TEST_PATH="/documentation/"
-          else
-            TEST_PATH="/"
-          fi
+          # We probe /sitemap.xml because it is the most stable per-site
+          # endpoint that genuinely emits an ETag:
+          #   - Both sites generate one at build time, deploy it as a static
+          #     asset, and Cloudflare Pages auto-emits a strong ETag for
+          #     cacheable non-HTML 200s.
+          #   - CF natively handles If-None-Match → 304 for its own ETags
+          #     (verified against production 21.dev / docs.21.dev).
+          #
+          # We deliberately do NOT probe HTML pages here. CF Pages does not
+          # auto-emit ETags for HTML on Pages projects that have a
+          # `_middleware.ts` file — our production probe confirmed every
+          # `text/html` response ships without an `ETag` header on both sites.
+          # The docs markdown content-negotiation ETag (Accept: text/markdown
+          # → middleware-emitted weak ETag) is covered by JSContext unit
+          # tests in Tests/MiddlewareTests/ and is too dependent on the .md
+          # alternate files being present in the deployed asset tree to be a
+          # reliable preview-deploy gate.
           
           echo "🔍 Verifying ETag round-trip on ${PREVIEW_URL}${TEST_PATH}"
           
@@ -227,15 +237,27 @@ jobs:
           fi
           echo "✅ ETag present: $etag"
           
-          # Step 2: confirm If-None-Match returns 304 for the same etag
-          status=$(curl -sI -o /dev/null -w "%{http_code}" \
+          # Step 2: matching If-None-Match → 304
+          code304=$(curl -sI -o /dev/null -w "%{http_code}" \
             -H "If-None-Match: $etag" \
             "${PREVIEW_URL}${TEST_PATH}")
-          if [ "$status" != "304" ]; then
-            echo "❌ ERROR: If-None-Match expected 304, got $status"
+          if [ "$code304" != "304" ]; then
+            echo "❌ ERROR: matching If-None-Match expected 304, got $code304"
             exit 1
           fi
-          echo "✅ If-None-Match → 304 Not Modified"
+          echo "✅ matching If-None-Match → 304 Not Modified"
+          
+          # Step 3: bogus If-None-Match → 200 (sanity check that the 304
+          # above was caused by the etag actually matching, not by always-304
+          # behavior somewhere in the stack)
+          code200=$(curl -sI -o /dev/null -w "%{http_code}" \
+            -H 'If-None-Match: "deliberately-wrong-hash-value"' \
+            "${PREVIEW_URL}${TEST_PATH}")
+          if [ "$code200" != "200" ]; then
+            echo "❌ ERROR: bogus If-None-Match expected 200, got $code200"
+            exit 1
+          fi
+          echo "✅ bogus If-None-Match → 200 OK"
       
       - name: Purge Cloudflare cache (production only)
         if: inputs.deploy-to-production == true
