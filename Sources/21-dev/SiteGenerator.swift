@@ -30,17 +30,21 @@ struct SiteGenerator {
         "llms.txt"             // Generated with blog section by generateBlogMarkdownAlternates
     ]
     
-    /// Generate sitemap XML file from the sitemap dictionary
+    /// Generate sitemap XML file from the sitemap dictionary.
+    ///
+    /// Emits `<url><loc>...</loc></url>` entries without `<lastmod>` per
+    /// sitemap protocol 0.9 (lastmod is optional). Previously this used a
+    /// single git commit date from `Sources/21-dev/SiteGenerator.swift`
+    /// applied uniformly to every URL — that signal was unreliable (every
+    /// edit to this file changed all timestamps; edits to individual pages
+    /// did not), so it has been removed.
+    ///
     /// - Parameters:
     ///   - sitemap: The sitemap dictionary mapping paths to pages
     ///   - outputURL: The output directory URL
     ///   - filename: The sitemap filename (default: "sitemap.xml")
     ///   - baseURL: The base URL for the site (default: "https://21.dev/")
-    private static func generateSitemapXML(from sitemap: Sitemap, to outputURL: URL, filename: String = "sitemap.xml", baseURL: String = SiteIdentity.url) async throws {
-        // Get lastmod date from git history of the site generator file
-        // This represents "when was the site code last updated"
-        let lastModDate = await SitemapGenerator.getGitLastmod(for: "Sources/21-dev/SiteGenerator.swift")
-        
+    private static func generateSitemapXML(from sitemap: Sitemap, to outputURL: URL, filename: String = "sitemap.xml", baseURL: String = SiteIdentity.url) throws {
         // Start with standard sitemap header
         var xmlContent = sitemapXMLHeader()
         
@@ -58,8 +62,8 @@ struct SiteGenerator {
                 absoluteURL += "/"
             }
             
-            // Add URL entry using utility function
-            xmlContent += sitemapURLEntry(url: absoluteURL, lastmod: lastModDate)
+            // Add URL entry using utility function (no <lastmod> emitted)
+            xmlContent += sitemapURLEntry(url: absoluteURL)
         }
         
         // Close with standard footer
@@ -259,7 +263,7 @@ struct SiteGenerator {
         )
         
         // Generate sitemap.xml
-        try await generateSitemapXML(from: sitemap, to: outputURL)
+        try generateSitemapXML(from: sitemap, to: outputURL)
         
         // Generate blog markdown alternates and llms.txt blog section
         try generateBlogMarkdownAlternates(

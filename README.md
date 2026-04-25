@@ -20,32 +20,3 @@ Each subdomain maintains its own `sitemap.xml` and `robots.txt`, with automated 
 | **docs.21.dev** | Prod DocC HTML matches security baseline + 5-minute cache; preview omits HSTS. Markdown files at `/data/documentation/**/*.md` served with `text/markdown` content type. | `/documentation/**/static/*` + `/js/*` use long-lived immutable cache. | `/.well-known/*` and JSON outputs set `Cache-Control: no-store`. | [Resources/docs-21-dev/_headers](Resources/docs-21-dev/_headers) |
 
 **Verification**: Run the curl matrix in [specs/002-cloudflare-headers/quickstart.md](specs/002-cloudflare-headers/quickstart.md#verification-commands-curl) for each deployment (HTML, asset, download per site). Preview builds must always exclude HSTS, while production must include it for 21.dev and docs.21.dev HTML routes.
-
-## Setup
-
-### Lefthook (Git Hooks)
-
-This project uses [Lefthook](https://github.com/evilmartians/lefthook) via the [lefthook-plugin](https://github.com/csjones/lefthook-plugin) Swift package to automatically manage the sitemap state file.
-
-**Installation**:
-
-```bash
-swift package --disable-sandbox lefthook install
-```
-
-**What it does**:
-- Automatically updates `Resources/sitemap-state.json` when `Package.resolved` changes
-- Tracks the `swift-secp256k1` package version for sitemap lastmod dates
-- Ensures docs subdomain sitemap only updates when the dependency version changes
-
-**Manual verification**:
-
-```bash
-# Check if hooks are installed
-swift package --disable-sandbox lefthook check-install
-
-# Validate configuration
-swift package --disable-sandbox lefthook validate
-```
-
-**Note**: The `--disable-sandbox` flag is required because the plugin needs file system access to manage git hooks.

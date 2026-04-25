@@ -14,18 +14,11 @@ let package = Package(
         // .package(path: "../slipstream"),
         .package(url: "https://github.com/21-DOT-DEV/slipstream", branch: "develop"),
         .package(url: "https://github.com/21-DOT-DEV/swift-plugin-tailwindcss", exact: "3.4.17"),
-        .package(
-            url: "https://github.com/21-DOT-DEV/swift-secp256k1", 
-            exact: "0.23.0", 
-            traits: ["ecdh", "musig", "recovery", "schnorrsig", "uint256"]
-        ),
-        .package(url: "https://github.com/swiftlang/swift-docc-plugin", exact: "1.4.6"),
         .package(url: "https://github.com/swiftlang/swift-subprocess.git", exact: "0.2.1"),
-        .package(url: "https://github.com/csjones/lefthook-plugin", exact: "2.0.4"),
         .package(url: "https://github.com/apple/swift-argument-parser", from: "1.5.0"),
         .package(url: "https://github.com/scinfu/SwiftSoup.git", from: "2.8.8"),
     ],
-    targets: makeDocumentationTargets() + [
+    targets: [
         // Targets are the basic building blocks of a package, defining a module or a test suite.
         // Targets can depend on other targets in this package and products from dependencies.
         .executableTarget(
@@ -108,20 +101,3 @@ let package = Package(
         )
     ]
 )
-
-// MARK: - Documentation Targets
-
-/// Creates documentation targets for external packages.
-/// These targets exist solely to allow swift-docc-plugin to generate combined documentation.
-func makeDocumentationTargets() -> [Target] {
-    return [
-       .executableTarget(
-           name: "docs-21-dev-P256K",
-           dependencies: [ .product(name: "P256K", package: "swift-secp256k1"), ]
-       ),
-       .executableTarget(
-           name: "docs-21-dev-ZKP",
-           dependencies: [ .product(name: "ZKP", package: "swift-secp256k1"), ]
-       ),
-    ]
-}

@@ -14,7 +14,7 @@ import UtilLib
 /// CLI utilities for 21.dev websites.
 ///
 /// Provides commands for sitemap generation, headers validation,
-/// and state file management.
+/// canonical URL management, and related CI/CD tooling.
 @main
 struct Util: AsyncParsableCommand {
     static let configuration = CommandConfiguration(
@@ -24,7 +24,6 @@ struct Util: AsyncParsableCommand {
         subcommands: [
             SitemapCommand.self,
             HeadersCommand.self,
-            StateCommand.self,
             CanonicalCommand.self,
             CommentCommand.self,
             SearchConsoleCommand.self,

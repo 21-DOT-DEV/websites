@@ -84,17 +84,18 @@ struct SitemapXMLTests {
     
     @Test("sitemapURLEntry formats URL entry correctly")
     func urlEntry() {
-        let entry = sitemapURLEntry(url: "https://21.dev/", lastmod: "2025-12-15")
+        let entry = sitemapURLEntry(url: "https://21.dev/")
         
         #expect(entry.contains("<url>"))
         #expect(entry.contains("<loc>https://21.dev/</loc>"))
-        #expect(entry.contains("<lastmod>2025-12-15</lastmod>"))
         #expect(entry.contains("</url>"))
+        // <lastmod> is intentionally never emitted
+        #expect(!entry.contains("<lastmod>"))
     }
     
     @Test("sitemapURLEntry escapes special characters in URL")
     func urlEntryWithSpecialChars() {
-        let entry = sitemapURLEntry(url: "https://21.dev/?a=1&b=2", lastmod: "2025-12-15")
+        let entry = sitemapURLEntry(url: "https://21.dev/?a=1&b=2")
         
         #expect(entry.contains("<loc>https://21.dev/?a=1&amp;b=2</loc>"))
     }

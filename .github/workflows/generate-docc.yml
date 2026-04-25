@@ -7,17 +7,10 @@ on:
         description: 'Documentation project name (e.g., docs-21-dev)'
         required: true
         type: string
-      targets:
-        description: 'Space-separated list of targets to document (e.g., "P256K ZKP libsecp256k1 libsecp256k1_zkp")'
-        required: true
-        type: string
     outputs:
       artifact-name:
         description: 'Name of the uploaded documentation artifact'
         value: ${{ jobs.generate.outputs.artifact-name }}
-      version:
-        description: 'Extracted package version from Package.resolved'
-        value: ${{ jobs.generate.outputs.version }}
 
 jobs:
   generate:
@@ -29,7 +22,6 @@ jobs:
       DEVELOPER_DIR: "/Applications/Xcode_26.4.app/Contents/Developer"
     outputs:
       artifact-name: ${{ inputs.project-name }}
-      version: ${{ steps.extract-version.outputs.version }}
     
     steps:
       - name: Checkout repository
@@ -38,65 +30,7 @@ jobs:
       - name: Resolve dependencies
         run: swift package resolve
       
-      - name: Extract swift-secp256k1 version
-        id: extract-version
-        run: |
-          SECP256K1_VERSION=$(jq -r '.pins[] | select(.identity == "swift-secp256k1") | .state.version' Package.resolved)
-          echo "version=$SECP256K1_VERSION" >> $GITHUB_OUTPUT
-          echo "SECP256K1_VERSION=$SECP256K1_VERSION" >> $GITHUB_ENV
-          echo "📦 swift-secp256k1 version: $SECP256K1_VERSION"
-      
-      - name: Verify state file version matches Package.resolved
-        run: |
-          STATE_FILE="Resources/sitemap-state.json"
-          
-          if [ ! -f "$STATE_FILE" ]; then
-            echo "❌ Error: State file not found at $STATE_FILE"
-            echo "Please run 'lefthook install' to set up automatic state file management"
-            exit 1
-          fi
-          
-          STATE_VERSION=$(jq -r '.package_version' "$STATE_FILE")
-          RESOLVED_VERSION="${{ env.SECP256K1_VERSION }}"
-          
-          echo "📄 State file version: $STATE_VERSION"
-          echo "📦 Package.resolved version: $RESOLVED_VERSION"
-          
-          if [ "$STATE_VERSION" != "$RESOLVED_VERSION" ]; then
-            echo ""
-            echo "❌ ERROR: Version mismatch detected!"
-            echo ""
-            echo "State file version:        $STATE_VERSION"
-            echo "Package.resolved version:  $RESOLVED_VERSION"
-            echo ""
-            echo "The sitemap state file is out of sync with Package.resolved."
-            echo "This means the package version changed but the state file was not updated."
-            echo ""
-            echo "To fix this:"
-            echo "1. Ensure lefthook is installed: 'lefthook install'"
-            echo "2. The lefthook post-checkout hook will automatically update the state file"
-            echo "3. Commit the updated Resources/sitemap-state.json file"
-            echo ""
-            exit 1
-          fi
-          
-          echo "✅ Version match confirmed: $STATE_VERSION"
-      
-      - name: Build target array for documentation generation
-        id: build-targets
-        run: |
-          targets="${{ inputs.targets }}"
-          target_args=""
-          
-          for target in $targets; do
-            target_args="$target_args --target $target"
-          done
-          
-          echo "target-args=$target_args" >> $GITHUB_OUTPUT
-          echo "📚 Target arguments: $target_args"
-          echo "📚 Generating documentation for targets: ${{ inputs.targets }}"
-      
-      - name: Extract external archive versions
+      - name: Extract docs-site archive versions
         run: |
           set -e
           ARCHIVES_FILE="Resources/${{ inputs.project-name }}/external-archives.json"
@@ -106,39 +40,19 @@ jobs:
             exit 0
           fi
 
+          # SECP256K1_VERSION is the docs-site pin (may be a prerelease), used for llms.txt stamping.
+          # It is sourced from the P256K archive entry; the ZKP entry is expected to share the same tag.
+          SECP256K1_VERSION=$(jq -r '.archives["swift-secp256k1-p256k"].tag' "$ARCHIVES_FILE")
           EVENT_VERSION=$(jq -r '.archives["swift-event"].tag' "$ARCHIVES_FILE")
           OPENSSL_VERSION=$(jq -r '.archives["swift-openssl"].tag' "$ARCHIVES_FILE")
 
+          echo "SECP256K1_VERSION=$SECP256K1_VERSION" >> $GITHUB_ENV
           echo "EVENT_VERSION=$EVENT_VERSION" >> $GITHUB_ENV
           echo "OPENSSL_VERSION=$OPENSSL_VERSION" >> $GITHUB_ENV
 
-          echo "� swift-event: $EVENT_VERSION"
-          echo "📦 swift-openssl: $OPENSSL_VERSION"
-
-      - name: Build secp256k1 DocC archive
-        run: |
-          set -e
-          echo "📚 Building secp256k1 archive (combined, markdown, no transform)..."
-          echo "📦 Package version: ${{ env.SECP256K1_VERSION }}"
-          echo "🏷️  Targets: ${{ inputs.targets }}"
-
-          mkdir -p /tmp/archives
-
-          swift package \
-            --allow-writing-to-directory /tmp/archives \
-            generate-documentation \
-            ${{ steps.build-targets.outputs.target-args }} \
-            --enable-experimental-combined-documentation \
-            --enable-experimental-markdown-output \
-            --transform-for-static-hosting \
-            --experimental-transform-for-static-hosting-with-content \
-            --source-service github \
-            --source-service-base-url https://github.com/21-DOT-DEV/swift-secp256k1/blob/${{ env.SECP256K1_VERSION }} \
-            --checkout-path .build/checkouts/swift-secp256k1 \
-            --output-path /tmp/archives/Secp256k1.doccarchive
-
-          echo "✅ secp256k1 archive built"
-          ls -la /tmp/archives/
+          echo "� swift-secp256k1 (docs): $SECP256K1_VERSION"
+          echo "📦 swift-event:             $EVENT_VERSION"
+          echo "📦 swift-openssl:           $OPENSSL_VERSION"
 
       - name: Download external DocC archives
         run: |

@@ -61,7 +61,6 @@ struct SitemapXMLValidationTests {
         <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
         <url>
           <loc>https://21.dev/</loc>
-          <lastmod>2025-12-15T12:00:00Z</lastmod>
         </url>
         </urlset>
         """
@@ -106,7 +105,6 @@ struct SitemapXMLValidationTests {
         <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
         <url>
           <loc>not-a-valid-url</loc>
-          <lastmod>2025-12-15T12:00:00Z</lastmod>
         </url>
         </urlset>
         """
@@ -155,7 +153,6 @@ struct SitemapFileValidationTests {
         <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
         <url>
           <loc>https://21.dev/</loc>
-          <lastmod>2025-12-15T12:00:00Z</lastmod>
         </url>
         </urlset>
         """

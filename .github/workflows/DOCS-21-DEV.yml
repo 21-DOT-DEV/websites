@@ -9,8 +9,6 @@ on:
       - '.github/workflows/deploy-cloudflare.yml'
       - '.github/workflows/DOCS-21-DEV.yml'
       - 'Resources/docs-21-dev/**'
-      - 'Sources/docs-21-dev-P256K/**'
-      - 'Sources/docs-21-dev-ZKP/**'
       - 'Sources/UtilLib/**'
       - 'Sources/util/**'
       - 'Package.swift'
@@ -57,7 +55,6 @@ jobs:
     uses: ./.github/workflows/generate-docc.yml
     with:
       project-name: docs-21-dev
-      targets: "P256K ZKP"
   
   deploy:
     name: Deploy Documentation

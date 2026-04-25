@@ -9,9 +9,12 @@
 //
 
 import Foundation
-import Subprocess
 
 /// Generates sitemap.xml files for configured sites.
+///
+/// Sitemaps emit only `<url><loc>...</loc></url>` entries — the optional
+/// `<lastmod>` element is intentionally omitted (see `SitemapEntry` doc).
+
 public enum SitemapGenerator {
     
     // MARK: - URL Discovery
@@ -86,50 +89,6 @@ public enum SitemapGenerator {
         return baseURL + relativePath
     }
     
-    // MARK: - Lastmod Strategies
-    
-    /// Gets the last modification date for a file using git commit history.
-    /// - Parameter filePath: Path to the file
-    /// - Returns: ISO8601 formatted date string
-    public static func getGitLastmod(for filePath: String) async -> String {
-        do {
-            let result = try await Subprocess.run(
-                .name("git"),
-                arguments: .init([
-                    "log",
-                    "-1",
-                    "--format=%cI",
-                    "--",
-                    filePath
-                ]),
-                output: .string(limit: 4096),
-                error: .string(limit: 1024)
-            )
-            
-            guard case .exited(0) = result.terminationStatus else {
-                return currentDateString()
-            }
-            
-            guard let dateString = result.standardOutput?
-                .trimmingCharacters(in: .whitespacesAndNewlines),
-                  !dateString.isEmpty else {
-                return currentDateString()
-            }
-            
-            return dateString
-            
-        } catch {
-            return currentDateString()
-        }
-    }
-    
-    /// Returns the current date as an ISO8601 string.
-    public static func currentDateString() -> String {
-        let formatter = ISO8601DateFormatter()
-        formatter.formatOptions = [.withInternetDateTime]
-        return formatter.string(from: Date())
-    }
-    
     // MARK: - Noindex Detection
     
     /// Checks if an HTML file contains a noindex robots directive.
@@ -151,7 +110,7 @@ public enum SitemapGenerator {
     /// - Parameter config: The site configuration
     /// - Returns: The complete sitemap XML as a string
     /// - Throws: `SitemapError` if generation fails
-    public static func generate(for config: SiteConfiguration) async throws -> String {
+    public static func generate(for config: SiteConfiguration) throws -> String {
         // Discover files based on strategy — collect full paths
         let fullPaths: [String]
         
@@ -178,19 +137,7 @@ public enum SitemapGenerator {
             
             let url = pathToURL(filePath: fullPath, baseURL: config.baseURL, outputDirectory: config.outputDirectory)
             
-            let lastmod: Date
-            switch config.lastmodStrategy {
-            case .gitCommitDate:
-                let dateString = await getGitLastmod(for: fullPath)
-                lastmod = ISO8601DateFormatter().date(from: dateString) ?? Date()
-            case .packageVersionState:
-                // This would be read from state file - for now use current date
-                lastmod = Date()
-            case .currentDate:
-                lastmod = Date()
-            }
-            
-            if let entry = try? SitemapEntry(url: url, lastmod: lastmod) {
+            if let entry = try? SitemapEntry(url: url) {
                 entries.append(entry)
             }
         }

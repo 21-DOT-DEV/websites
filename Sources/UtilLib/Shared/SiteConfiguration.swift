@@ -39,16 +39,6 @@ public enum URLDiscoveryStrategy: Sendable {
     case sitemapDictionary
 }
 
-/// Strategy for determining lastmod dates for sitemap entries.
-public enum LastmodStrategy: Sendable {
-    /// Use git log for file's last commit date
-    case gitCommitDate
-    /// Use state file's generated_date based on package version
-    case packageVersionState
-    /// Fallback to current date/time
-    case currentDate
-}
-
 /// Configuration for sitemap generation and validation operations.
 public struct SiteConfiguration: Sendable {
     /// The site identifier
@@ -63,22 +53,17 @@ public struct SiteConfiguration: Sendable {
     /// How to discover URLs in the output directory
     public let urlDiscoveryStrategy: URLDiscoveryStrategy
     
-    /// How to determine lastmod dates
-    public let lastmodStrategy: LastmodStrategy
-    
     /// Creates a configuration for the specified site.
     public init(
         name: SiteName,
         baseURL: String,
         outputDirectory: String,
-        urlDiscoveryStrategy: URLDiscoveryStrategy,
-        lastmodStrategy: LastmodStrategy
+        urlDiscoveryStrategy: URLDiscoveryStrategy
     ) {
         self.name = name
         self.baseURL = baseURL
         self.outputDirectory = outputDirectory
         self.urlDiscoveryStrategy = urlDiscoveryStrategy
-        self.lastmodStrategy = lastmodStrategy
     }
     
     /// Returns the default configuration for the specified site.
@@ -89,8 +74,7 @@ public struct SiteConfiguration: Sendable {
                 name: .dev21,
                 baseURL: SiteName.dev21.baseURL,
                 outputDirectory: SiteName.dev21.outputDirectory,
-                urlDiscoveryStrategy: .htmlFiles(directory: SiteName.dev21.outputDirectory),
-                lastmodStrategy: .gitCommitDate
+                urlDiscoveryStrategy: .htmlFiles(directory: SiteName.dev21.outputDirectory)
             )
         case .docs21dev:
             return SiteConfiguration(
@@ -99,8 +83,7 @@ public struct SiteConfiguration: Sendable {
                 outputDirectory: SiteName.docs21dev.outputDirectory,
                 urlDiscoveryStrategy: .htmlFiles(
                     directory: "\(SiteName.docs21dev.outputDirectory)/documentation"
-                ),
-                lastmodStrategy: .packageVersionState
+                )
             )
         }
     }

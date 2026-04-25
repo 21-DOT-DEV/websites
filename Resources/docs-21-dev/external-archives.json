@@ -1,14 +1,28 @@
 {
   "$schema": "./external-archives.schema.json",
   "archives": {
-    "swift-event": {
+    "p256k": {
+      "repo": "21-DOT-DEV/swift-secp256k1",
+      "tag": "0.23.1-prerelease-0",
+      "artifact": "P256K.doccarchive.zip",
+      "sha256": "201e51f8d9d991862d8a6d2a0d966c9ec0a13e90c3508002697a305e7b8ed7ae",
+      "bundleID": "P256K"
+    },
+    "zkp": {
+      "repo": "21-DOT-DEV/swift-secp256k1",
+      "tag": "0.23.1-prerelease-0",
+      "artifact": "ZKP.doccarchive.zip",
+      "sha256": "09d8134db9531bb480bb3653ce8b0e5b6d7cceff9f5db16f2588ab5e8eed337d",
+      "bundleID": "ZKP"
+    },
+    "event": {
       "repo": "21-DOT-DEV/swift-event",
       "tag": "0.1.3",
       "artifact": "Event.doccarchive.zip",
       "sha256": "e9d621482f846e7c4a314491433d88ae617e475305e8faaf2ea5fd102410098c",
       "bundleID": "Event"
     },
-    "swift-openssl": {
+    "openssl": {
       "repo": "21-DOT-DEV/swift-openssl",
       "tag": "0.1.3",
       "artifact": "OpenSSL.doccarchive.zip",
