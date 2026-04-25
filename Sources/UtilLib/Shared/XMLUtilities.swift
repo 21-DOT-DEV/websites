@@ -45,16 +45,20 @@ public func sitemapXMLFooter() -> String {
 }
 
 /// Generates a complete URL entry for a sitemap.
-/// - Parameters:
-///   - url: The absolute URL for the page
-///   - lastmod: ISO 8601 formatted last modification date
+///
+/// Emits `<url><loc>...</loc></url>`. The `<lastmod>` element is optional in
+/// sitemap protocol 0.9 and is intentionally omitted across all sites in this
+/// repo — emitting inaccurate lastmod values (e.g., uniform build-time stamps
+/// or a single source-file commit date applied to every URL) degrades sitemap
+/// trust because Google de-prioritizes unreliable lastmod signals.
+///
+/// - Parameter url: The absolute URL for the page
 /// - Returns: Complete `<url>` XML element
-public func sitemapURLEntry(url: String, lastmod: String) -> String {
+public func sitemapURLEntry(url: String) -> String {
     let escapedURL = xmlEscape(url)
     return """
     <url>
       <loc>\(escapedURL)</loc>
-      <lastmod>\(lastmod)</lastmod>
     </url>
     
     """

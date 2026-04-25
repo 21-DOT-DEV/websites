@@ -45,6 +45,21 @@ extension AgentDirectiveCommand {
         @Flag(name: .shortAndLong, help: "Show detailed output for each file")
         var verbose: Bool = false
 
+        @Option(
+            name: .long,
+            help: ArgumentHelp(
+                "Maximum acceptable DocC sidecar parse-failure rate (0.0–1.0).",
+                discussion: """
+                The sidecar failure rate is computed as failed / (loaded + failed),
+                excluding pages where no sidecar exists (e.g., top-level landing
+                pages). The injection step succeeds even when individual sidecars
+                fail to parse — it then exits non-zero only if the rate strictly
+                exceeds this threshold. Defaults to 0.05 (5%).
+                """
+            )
+        )
+        var sidecarFailureThreshold: Double = 0.05
+
         mutating func validate() throws {
             var isDirectory: ObjCBool = false
             guard FileManager.default.fileExists(atPath: path, isDirectory: &isDirectory),
@@ -128,14 +143,27 @@ extension AgentDirectiveCommand {
                 print()
                 print("Result: \(report.failedCount) file\(report.failedCount == 1 ? "" : "s") failed")
                 throw ExitCode.failure
-            } else {
-                let modifiedCount = report.injectedCount
+            }
+
+            // DocC sidecar failure-rate gate. Sidecar failures don't fail
+            // individual injections (the directive still gets emitted with
+            // slug-derived fallbacks), but a high enough rate signals a
+            // systemic regression and should fail the build.
+            if report.exceedsSidecarFailureThreshold(sidecarFailureThreshold) {
                 print()
-                if dryRun {
-                    print("No files were modified (dry run)")
-                } else {
-                    print("Result: \(modifiedCount) file\(modifiedCount == 1 ? "" : "s") injected")
-                }
+                let percent = String(format: "%.2f%%", report.sidecarFailureRate * 100)
+                let limit = String(format: "%.2f%%", sidecarFailureThreshold * 100)
+                print("❌ DocC sidecar failure rate \(percent) exceeds threshold \(limit)")
+                print("   loaded: \(report.sidecarLoadedCount), failed: \(report.sidecarFailedCount), missing: \(report.sidecarMissingCount)")
+                throw ExitCode.failure
+            }
+
+            let modifiedCount = report.injectedCount
+            print()
+            if dryRun {
+                print("No files were modified (dry run)")
+            } else {
+                print("Result: \(modifiedCount) file\(modifiedCount == 1 ? "" : "s") injected")
             }
 
             // Auto-verify after injection (unless dry run)
@@ -167,6 +195,9 @@ extension AgentDirectiveCommand {
                         print("   Error: \(error)")
                     }
                 }
+                if result.sidecarStatus == .failed, let message = result.sidecarFailureMessage {
+                    print("   ⚠️  Sidecar parse failure: \(message)")
+                }
             }
             print()
         }
@@ -187,6 +218,16 @@ extension AgentDirectiveCommand {
             }
             if report.indexedCount > 0 {
                 print("✅ Indexed: \(report.indexedCount) file\(report.indexedCount == 1 ? "" : "s")")
+            }
+
+            // DocC sidecar diagnostics — only print when at least one page
+            // had a sidecar attempt resolve (loaded or failed). Pages with
+            // status `.missing` are expected and would otherwise drown out
+            // the signal.
+            let sidecarTotal = report.sidecarLoadedCount + report.sidecarFailedCount
+            if sidecarTotal > 0 {
+                let percent = String(format: "%.2f%%", report.sidecarFailureRate * 100)
+                print("📄 DocC sidecars: \(report.sidecarLoadedCount) loaded, \(report.sidecarFailedCount) failed (\(percent))")
             }
         }
     }

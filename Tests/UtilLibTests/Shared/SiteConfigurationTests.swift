@@ -89,20 +89,6 @@ struct URLDiscoveryStrategyTests {
     }
 }
 
-@Suite("LastmodStrategy Tests")
-struct LastmodStrategyTests {
-    
-    @Test("All lastmod strategies are defined")
-    func allStrategies() {
-        let strategies: [LastmodStrategy] = [
-            .gitCommitDate,
-            .packageVersionState,
-            .currentDate
-        ]
-        #expect(strategies.count == 3)
-    }
-}
-
 @Suite("SiteConfiguration Tests")
 struct SiteConfigurationTests {
     
@@ -119,12 +105,6 @@ struct SiteConfigurationTests {
         } else {
             Issue.record("Expected htmlFiles strategy for dev21")
         }
-        
-        if case .gitCommitDate = config.lastmodStrategy {
-            // Pass - 21.dev uses git commit dates
-        } else {
-            Issue.record("Expected gitCommitDate strategy for dev21")
-        }
     }
     
     @Test("SiteConfiguration.for returns correct config for docs21dev")
@@ -139,12 +119,6 @@ struct SiteConfigurationTests {
             #expect(dir == "Websites/docs-21-dev/documentation")
         } else {
             Issue.record("Expected htmlFiles strategy for docs21dev")
-        }
-        
-        if case .packageVersionState = config.lastmodStrategy {
-            // Pass - docs uses package version state
-        } else {
-            Issue.record("Expected packageVersionState strategy for docs21dev")
         }
     }
     

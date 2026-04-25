@@ -41,9 +41,8 @@ struct SitemapGenerationTests {
         #expect(xml.contains("<loc>"))
         #expect(xml.contains("</loc>"))
         
-        // Verify <lastmod> tags
-        #expect(xml.contains("<lastmod>"))
-        #expect(xml.contains("</lastmod>"))
+        // <lastmod> is intentionally omitted (sitemap protocol 0.9 optional element)
+        #expect(!xml.contains("<lastmod>"))
     }
     
     @Test("Sitemap URLs use absolute HTTPS URLs")
@@ -87,25 +86,6 @@ struct SitemapGenerationTests {
         #expect(urlCount >= 1) // At least homepage
     }
     
-    @Test("Sitemap lastmod uses ISO 8601 date format")
-    func testLastModDateFormat() throws {
-        let xml = generateTestSitemap()
-        
-        // Extract lastmod value
-        let lastmodPattern = #/<lastmod>(.*?)<\/lastmod>/#
-        let matches = xml.matches(of: lastmodPattern)
-        
-        #expect(matches.count >= 1)
-        
-        if let firstMatch = matches.first {
-            let dateString = String(firstMatch.1)
-            
-            // Verify ISO 8601 date format (YYYY-MM-DD)
-            let isoDatePattern = /^\d{4}-\d{2}-\d{2}$/
-            #expect(dateString.contains(isoDatePattern))
-        }
-    }
-    
     @Test("Sitemap escapes XML special characters in URLs")
     func testXMLEscaping() throws {
         // This test verifies that xmlEscape utility is used
@@ -134,10 +114,6 @@ struct SitemapGenerationTests {
             "packages/p256k/index.html"
         ].sorted() // Sort keys like the real implementation does
         
-        let dateFormatter = ISO8601DateFormatter()
-        dateFormatter.formatOptions = [.withFullDate]
-        let lastMod = dateFormatter.string(from: Date())
-        
         for page in testPages {
             let cleanPath = page.replacingOccurrences(of: "index.html", with: "")
             var url = "https://21.dev"
@@ -150,7 +126,7 @@ struct SitemapGenerationTests {
                 url += "/"
             }
             
-            xml += sitemapURLEntry(url: url, lastmod: lastMod)
+            xml += sitemapURLEntry(url: url)
         }
         
         xml += sitemapXMLFooter()

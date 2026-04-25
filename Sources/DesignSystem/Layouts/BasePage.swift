@@ -105,6 +105,15 @@ public struct BasePage: View {
             Head {
                 Charset(.utf8)
                 Title(title)
+                // Preconnect + DNS prefetch hints for site-wide external destinations
+                // (nav "Docs" link -> docs.21.dev; footer GitHub social link -> github.com).
+                // Reduces click-to-next-paint latency on outbound CTAs by warming DNS + TCP + TLS
+                // before the user interacts. DNSPrefetch serves as a fallback for UAs that
+                // ignore preconnect. crossorigin attribute not needed for navigational preconnect.
+                Preconnect(URL(string: "https://docs.21.dev"))
+                Preconnect(URL(string: "https://github.com"))
+                DNSPrefetch(URL(string: "https://docs.21.dev"))
+                DNSPrefetch(URL(string: "https://github.com"))
                 if let description {
                     Meta(.description, content: description)
                 }

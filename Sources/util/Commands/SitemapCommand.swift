@@ -62,8 +62,7 @@ extension SitemapCommand {
                     name: siteName,
                     baseURL: config.baseURL,
                     outputDirectory: inputDir,
-                    urlDiscoveryStrategy: strategy,
-                    lastmodStrategy: config.lastmodStrategy
+                    urlDiscoveryStrategy: strategy
                 )
             }
             
@@ -73,7 +72,7 @@ extension SitemapCommand {
             }
             
             // Generate sitemap
-            let sitemap = try await SitemapGenerator.generate(for: config)
+            let sitemap = try SitemapGenerator.generate(for: config)
             
             if dryRun {
                 print(sitemap)

@@ -7,17 +7,10 @@ on:
         description: 'Documentation project name (e.g., docs-21-dev)'
         required: true
         type: string
-      targets:
-        description: 'Space-separated list of targets to document (e.g., "P256K ZKP libsecp256k1 libsecp256k1_zkp")'
-        required: true
-        type: string
     outputs:
       artifact-name:
         description: 'Name of the uploaded documentation artifact'
         value: ${{ jobs.generate.outputs.artifact-name }}
-      version:
-        description: 'Extracted package version from Package.resolved'
-        value: ${{ jobs.generate.outputs.version }}
 
 jobs:
   generate:
@@ -29,7 +22,6 @@ jobs:
       DEVELOPER_DIR: "/Applications/Xcode_26.4.app/Contents/Developer"
     outputs:
       artifact-name: ${{ inputs.project-name }}
-      version: ${{ steps.extract-version.outputs.version }}
     
     steps:
       - name: Checkout repository
@@ -38,88 +30,98 @@ jobs:
       - name: Resolve dependencies
         run: swift package resolve
       
-      - name: Extract swift-secp256k1 version
-        id: extract-version
-        run: |
-          SECP256K1_VERSION=$(jq -r '.pins[] | select(.identity == "swift-secp256k1") | .state.version' Package.resolved)
-          echo "version=$SECP256K1_VERSION" >> $GITHUB_OUTPUT
-          echo "SECP256K1_VERSION=$SECP256K1_VERSION" >> $GITHUB_ENV
-          echo "📦 swift-secp256k1 version: $SECP256K1_VERSION"
-      
-      - name: Verify state file version matches Package.resolved
-        run: |
-          STATE_FILE="Resources/sitemap-state.json"
-          
-          if [ ! -f "$STATE_FILE" ]; then
-            echo "❌ Error: State file not found at $STATE_FILE"
-            echo "Please run 'lefthook install' to set up automatic state file management"
-            exit 1
-          fi
-          
-          STATE_VERSION=$(jq -r '.package_version' "$STATE_FILE")
-          RESOLVED_VERSION="${{ env.SECP256K1_VERSION }}"
-          
-          echo "📄 State file version: $STATE_VERSION"
-          echo "📦 Package.resolved version: $RESOLVED_VERSION"
-          
-          if [ "$STATE_VERSION" != "$RESOLVED_VERSION" ]; then
-            echo ""
-            echo "❌ ERROR: Version mismatch detected!"
-            echo ""
-            echo "State file version:        $STATE_VERSION"
-            echo "Package.resolved version:  $RESOLVED_VERSION"
-            echo ""
-            echo "The sitemap state file is out of sync with Package.resolved."
-            echo "This means the package version changed but the state file was not updated."
-            echo ""
-            echo "To fix this:"
-            echo "1. Ensure lefthook is installed: 'lefthook install'"
-            echo "2. The lefthook post-checkout hook will automatically update the state file"
-            echo "3. Commit the updated Resources/sitemap-state.json file"
-            echo ""
-            exit 1
-          fi
-          
-          echo "✅ Version match confirmed: $STATE_VERSION"
-      
-      - name: Build target array for documentation generation
-        id: build-targets
-        run: |
-          targets="${{ inputs.targets }}"
-          target_args=""
-          
-          for target in $targets; do
-            target_args="$target_args --target $target"
-          done
-          
-          echo "target-args=$target_args" >> $GITHUB_OUTPUT
-          echo "📚 Target arguments: $target_args"
-          echo "📚 Generating documentation for targets: ${{ inputs.targets }}"
-      
-      - name: Generate documentation
+      - name: Extract docs-site archive versions
         run: |
           set -e
-          echo "📚 Generating documentation for targets: ${{ inputs.targets }}"
-          echo "📦 Package version: ${{ env.SECP256K1_VERSION }}"
-          echo "📂 Output path: ./Websites/${{ inputs.project-name }}"
-          
-          # Ensure output directory exists
-          mkdir -p ./Websites/${{ inputs.project-name }}
-          
-          swift package \
-            --allow-writing-to-directory ./Websites/${{ inputs.project-name }} \
-            generate-documentation \
-            ${{ steps.build-targets.outputs.target-args }} \
-            --enable-experimental-combined-documentation \
-            --enable-experimental-markdown-output \
-            --transform-for-static-hosting \
-            --experimental-transform-for-static-hosting-with-content \
-            --source-service github \
-            --source-service-base-url https://github.com/21-DOT-DEV/swift-secp256k1/blob/${{ env.SECP256K1_VERSION }} \
-            --checkout-path .build/checkouts/swift-secp256k1 \
-            --output-path ./Websites/${{ inputs.project-name }}
-          
-          echo "✅ Documentation generation complete"
+          ARCHIVES_FILE="Resources/${{ inputs.project-name }}/external-archives.json"
+
+          if [ ! -f "$ARCHIVES_FILE" ]; then
+            echo "ℹ️  No external-archives.json found at $ARCHIVES_FILE; skipping"
+            exit 0
+          fi
+
+          # SECP256K1_VERSION is the docs-site pin (may be a prerelease), used for llms.txt stamping.
+          # It is sourced from the P256K archive entry; the ZKP entry is expected to share the same tag.
+          SECP256K1_VERSION=$(jq -r '.archives["swift-secp256k1-p256k"].tag' "$ARCHIVES_FILE")
+          EVENT_VERSION=$(jq -r '.archives["swift-event"].tag' "$ARCHIVES_FILE")
+          OPENSSL_VERSION=$(jq -r '.archives["swift-openssl"].tag' "$ARCHIVES_FILE")
+
+          echo "SECP256K1_VERSION=$SECP256K1_VERSION" >> $GITHUB_ENV
+          echo "EVENT_VERSION=$EVENT_VERSION" >> $GITHUB_ENV
+          echo "OPENSSL_VERSION=$OPENSSL_VERSION" >> $GITHUB_ENV
+
+          echo "� swift-secp256k1 (docs): $SECP256K1_VERSION"
+          echo "📦 swift-event:             $EVENT_VERSION"
+          echo "📦 swift-openssl:           $OPENSSL_VERSION"
+
+      - name: Download external DocC archives
+        run: |
+          set -e
+          ARCHIVES_FILE="Resources/${{ inputs.project-name }}/external-archives.json"
+
+          if [ ! -f "$ARCHIVES_FILE" ]; then
+            echo "ℹ️  No external-archives.json found; skipping external archive downloads"
+            exit 0
+          fi
+
+          mkdir -p /tmp/archives
+
+          for key in $(jq -r '.archives | keys[]' "$ARCHIVES_FILE"); do
+            repo=$(jq -r ".archives[\"$key\"].repo" "$ARCHIVES_FILE")
+            tag=$(jq -r ".archives[\"$key\"].tag" "$ARCHIVES_FILE")
+            artifact=$(jq -r ".archives[\"$key\"].artifact" "$ARCHIVES_FILE")
+            sha=$(jq -r ".archives[\"$key\"].sha256" "$ARCHIVES_FILE")
+
+            url="https://github.com/${repo}/releases/download/${tag}/${artifact}"
+            dest="/tmp/archives/${artifact}"
+
+            echo "📥 Downloading ${key}@${tag}..."
+            echo "   URL: $url"
+            curl -L --retry 3 --fail -o "$dest" "$url"
+
+            echo "🔐 Verifying SHA-256 for ${key}..."
+            echo "${sha}  ${dest}" | shasum -a 256 -c -
+
+            echo "📦 Unzipping ${key}..."
+            # -o: overwrite without prompting (archives ship with top-level LICENSE/README
+            # that collide across packages; we only consume the *.doccarchive directories).
+            (cd /tmp/archives && unzip -o -q "${artifact}" && rm "${artifact}")
+          done
+
+          echo "✅ All external archives downloaded, verified, and unzipped"
+          ls -la /tmp/archives/
+
+      - name: Merge DocC archives
+        run: |
+          set -e
+          project="${{ inputs.project-name }}"
+          output_dir="./Websites/${project}"
+
+          echo "🔀 Merging DocC archives..."
+
+          shopt -s nullglob
+          archives=(/tmp/archives/*.doccarchive)
+          shopt -u nullglob
+
+          if [ ${#archives[@]} -eq 0 ]; then
+            echo "❌ No .doccarchive directories found in /tmp/archives/"
+            exit 1
+          fi
+
+          echo "Archives to merge:"
+          printf '  - %s\n' "${archives[@]}"
+
+          # Inputs are already --transform-for-static-hosting --experimental-transform-for-static-hosting-with-content
+          # archives; `docc merge` preserves their per-page <noscript> HTML verbatim. Do NOT follow this with
+          # `docc process-archive transform-for-static-hosting` — that subcommand has no --with-content option
+          # and regenerates empty-shell index.html files, silently stripping the embedded per-page content.
+          rm -rf "$output_dir"
+          mkdir -p "$(dirname "$output_dir")"
+          xcrun docc merge \
+            "${archives[@]}" \
+            --output-path "$output_dir"
+
+          echo "✅ Merge complete: $output_dir"
       
       - name: Verify documentation output
         run: |
@@ -163,8 +165,13 @@ jobs:
           
       - name: Verify noscript content
         run: |
+          set -e
           project="${{ inputs.project-name }}"
-          # Spot-check a documentation page for <noscript> content
+          # Spot-check a documentation page for real per-page <noscript> content.
+          # An archive produced without --experimental-transform-for-static-hosting-with-content
+          # (or re-transformed by `docc process-archive transform-for-static-hosting`, which lacks
+          # a --with-content option) ships a ~1573-byte empty-shell index.html containing the literal
+          # phrase "This page requires JavaScript."  Fail on that string so a silent regression cannot recur.
           sample_page=$(find "Websites/${project}/documentation" \
             -name "index.html" -not -path "*/documentation/index.html" | head -1)
 
@@ -173,14 +180,24 @@ jobs:
             exit 0
           fi
 
-          if grep -q '<noscript>' "$sample_page"; then
-            echo "✅ <noscript> content present in: $sample_page"
-            # Show a preview of what crawlers will see
-            sed -n '/<noscript>/,/<\/noscript>/p' "$sample_page" | head -20
-          else
-            echo "❌ <noscript> content missing from: $sample_page"
+          if ! grep -q '<noscript>' "$sample_page"; then
+            echo "❌ <noscript> tag missing from: $sample_page"
             exit 1
           fi
+
+          if grep -q 'This page requires JavaScript\.' "$sample_page"; then
+            echo "❌ <noscript> block is the empty-shell fallback (missing per-page content)"
+            echo "   Page: $sample_page"
+            echo "   Size: $(wc -c < "$sample_page" | tr -d ' ') bytes (expected >> 1573)"
+            echo "   Cause: input archive was built without --experimental-transform-for-static-hosting-with-content,"
+            echo "          or a downstream step re-ran \`docc process-archive transform-for-static-hosting\` and stripped content."
+            exit 1
+          fi
+
+          page_size=$(wc -c < "$sample_page" | tr -d ' ')
+          echo "✅ <noscript> contains per-page content in: $sample_page (${page_size} bytes)"
+          # Show a preview of what crawlers will see
+          sed -n '/<noscript>/,/<\/noscript>/p' "$sample_page" | head -20
       
       - name: Copy static resources
         run: |
@@ -257,30 +274,39 @@ jobs:
           fi
           echo "✅ All Cloudflare platform files present"
       
-      - name: Stamp version in llms.txt files
+      - name: Stamp versions in llms.txt files
         run: |
           project="${{ inputs.project-name }}"
-          
-          # Find all llms.txt files (root + per-module)
+
+          # Find all llms.txt files (root + per-module) and substitute per-package version placeholders.
+          # Placeholders: {{SECP256K1_VERSION}}, {{EVENT_VERSION}}, {{OPENSSL_VERSION}}.
           stamped=0
           while IFS= read -r llms_file; do
-            # NOTE: sed -i '' is macOS-specific (macos-15 runner).
+            # NOTE: sed -i '' is macOS-specific (macos-26 runner).
             # GNU sed on Linux treats '' as a filename — use sed -i instead if migrating.
-            sed -i '' "s/{{VERSION}}/${{ env.SECP256K1_VERSION }}/g" "$llms_file"
-            
-            # Guard: fail if placeholder wasn't substituted (empty SECP256K1_VERSION)
-            if grep -q '{{VERSION}}' "$llms_file"; then
+            sed -i '' \
+              -e "s/{{SECP256K1_VERSION}}/${{ env.SECP256K1_VERSION }}/g" \
+              -e "s/{{EVENT_VERSION}}/${EVENT_VERSION:-MISSING_EVENT_VERSION}/g" \
+              -e "s/{{OPENSSL_VERSION}}/${OPENSSL_VERSION:-MISSING_OPENSSL_VERSION}/g" \
+              "$llms_file"
+
+            # Guard: fail if any known placeholder wasn't substituted.
+            if grep -qE '\{\{(SECP256K1_VERSION|EVENT_VERSION|OPENSSL_VERSION)\}\}' "$llms_file"; then
               echo "❌ Version placeholder was not substituted in ${llms_file}"
+              grep -nE '\{\{(SECP256K1_VERSION|EVENT_VERSION|OPENSSL_VERSION)\}\}' "$llms_file"
               exit 1
             fi
             stamped=$((stamped + 1))
             echo "  ✅ ${llms_file}"
           done < <(find "Websites/${project}" -name "llms.txt" -type f)
-          
+
           if [ "$stamped" -eq 0 ]; then
             echo "ℹ️  No llms.txt files found for ${project}, skipping version stamp"
           else
-            echo "✅ Version stamped in ${stamped} file(s): v${{ env.SECP256K1_VERSION }}"
+            echo "✅ Versions stamped in ${stamped} file(s)"
+            echo "   swift-secp256k1: v${{ env.SECP256K1_VERSION }}"
+            echo "   swift-event: v${EVENT_VERSION:-MISSING}"
+            echo "   swift-openssl: v${OPENSSL_VERSION:-MISSING}"
           fi
       
       - name: Fix canonical URLs
@@ -415,8 +441,12 @@ jobs:
           echo "📄 llms-full.txt generated with ${global_count} entries"
           
           # --- Per-module llms-full.txt ---
-          for module in p256k zkp; do
-            module_output="Websites/${project}/data/documentation/${module}/llms-full.txt"
+          # Dynamically discover modules from the generated documentation tree
+          # (adapts automatically as pinned external archives are added/removed).
+          for module_dir in "Websites/${project}/data/documentation/"*/; do
+            [ -d "$module_dir" ] || continue
+            module=$(basename "$module_dir")
+            module_output="${module_dir}llms-full.txt"
             mkdir -p "$(dirname "$module_output")"
             {
               echo "# ${module} — Full Documentation Index"

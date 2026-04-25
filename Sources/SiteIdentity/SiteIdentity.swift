@@ -6,7 +6,6 @@
 //
 
 import Foundation
-import DesignSystem
 import SchemaLib
 
 /// Centralized site identity information - single source of truth for all site-wide data
@@ -38,9 +37,15 @@ public struct SiteIdentity {
     public static let contactEmail = "hello@21.dev"
     
     // Branding
-    public static let logoURL = "https://github.com/21-DOT-DEV.png"
+    // Logo points at the site-controlled 512x512 PNG shipped from
+    // Resources/21-dev/. Schema.org's Organization.logo / Google's
+    // Knowledge Graph guidance both prefer a square, near-source image
+    // ≥112×112 px; 512×512 satisfies that with headroom for richer
+    // result thumbnails. Avoid the GitHub avatar URL—that's GitHub-
+    // controlled, not site-controlled.
+    public static let logoURL = "\(url)web-app-manifest-512x512.png"
     public static let orgDescription = "Open-source tools for Bitcoin developers — Swift cryptography libraries, documentation, and developer resources."
-    public static let foundingDate = "2024"
+    public static let foundingDate = "2026"
     
     // Social links array for sameAs schema.org property
     public static let sameAs: [String] = [githubURL, twitterURL, nostrURL]

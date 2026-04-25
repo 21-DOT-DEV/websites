@@ -1,6 +1,6 @@
 # P256K — secp256k1 Elliptic Curve Cryptography
 
-> Part of the [swift-secp256k1](https://docs.21.dev/llms.txt) package (v{{VERSION}}).
+> Part of the [swift-secp256k1](https://docs.21.dev/llms.txt) package (v{{SECP256K1_VERSION}}).
 > For all markdown files in this module, see [P256K llms-full.txt](https://docs.21.dev/data/documentation/p256k/llms-full.txt).
 
 P256K wraps the Bitcoin Core `libsecp256k1` C library with a type-safe Swift API modeled after Apple's `swift-crypto`. It provides ECDSA signing/verification, Schnorr signatures (BIP-340), MuSig2 multi-signatures, ECDH key agreement, and public key recovery on the secp256k1 curve. Swift 6.1+.

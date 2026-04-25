@@ -8,6 +8,7 @@
 import Foundation
 import Slipstream
 import DesignSystem
+import SiteIdentity
 
 /// Centralized site configuration with shared header and footer defaults
 public struct SiteDefaults {

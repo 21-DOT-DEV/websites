@@ -1,15 +1,6 @@
 {
-  "originHash" : "bf64da8b9980bb16d93ddb77b2c15f04ffaac1f220b57b8d70c3c87bf8de57a3",
+  "originHash" : "5491d54b807ffcd4e46551fc4b6489721c62ad6cab44decdf6aa936313b943d4",
   "pins" : [
-    {
-      "identity" : "lefthook-plugin",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/csjones/lefthook-plugin",
-      "state" : {
-        "revision" : "a314af230eadad35bb6d59928d84b905184b3f38",
-        "version" : "2.0.4"
-      }
-    },
     {
       "identity" : "lrucache",
       "kind" : "remoteSourceControl",
@@ -65,24 +56,6 @@
       }
     },
     {
-      "identity" : "swift-docc-plugin",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/swiftlang/swift-docc-plugin",
-      "state" : {
-        "revision" : "e977f65879f82b375a044c8837597f690c067da6",
-        "version" : "1.4.6"
-      }
-    },
-    {
-      "identity" : "swift-docc-symbolkit",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/swiftlang/swift-docc-symbolkit",
-      "state" : {
-        "revision" : "b45d1f2ed151d057b54504d653e0da5552844e34",
-        "version" : "1.0.0"
-      }
-    },
-    {
       "identity" : "swift-markdown",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/apple/swift-markdown.git",
@@ -98,15 +71,6 @@
       "state" : {
         "revision" : "c0862f33b06b2b56a55f8623839968a36e7e4b4d",
         "version" : "3.4.17"
-      }
-    },
-    {
-      "identity" : "swift-secp256k1",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/21-DOT-DEV/swift-secp256k1",
-      "state" : {
-        "revision" : "21d46dd1d11737b77d15bd23468f989b24bc7f40",
-        "version" : "0.23.0"
       }
     },
     {

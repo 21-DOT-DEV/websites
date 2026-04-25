@@ -26,11 +26,11 @@ Extract sitemap utilities and reusable workflow logic into a dedicated `Utilitie
 - **Purpose & user value:** Extract sitemap utilities and reusable workflow logic from DesignSystem into a dedicated `Utilities` library target, following industry-standard library + executable pattern, reducing code duplication across workflows and enabling type-safe CLI tooling for CI/CD automation.
 - **Completed:**
   - ✅ `Utilities` library target created in Package.swift with all sitemap utilities migrated
-  - ✅ `util` CLI executable provides type-safe commands for sitemap generation, state management, URL validation
+  - ✅ `util` CLI executable provides type-safe commands for sitemap generation and URL validation
   - ✅ HeadersValidator CLI and environment-aware `_headers` generation commands ship inside `util`
   - ✅ Type-safe sitemap models with compile-time validation
-  - ✅ Unified lastmod tracking logic (git, package version, fallback) across all subdomain types
-  - ✅ Single Swift executable generates sitemaps for all subdomain types (21.dev, docs, md)
+  - ✅ Lastmod tracking via git commit date (`.gitCommitDate`) for 21.dev; explicit `<lastmod>` omission (`.none`) for docs.21.dev aggregated content
+  - ✅ Single Swift executable generates sitemaps for all subdomain types (21.dev, docs)
   - ✅ 100% test coverage maintained for migrated utilities (18+ existing tests pass)
   - ✅ Sitemap generation runs in < 2 seconds for all subdomains combined
   - ✅ Build time remains under 2 minutes (no performance regression)
@@ -38,13 +38,14 @@ Extract sitemap utilities and reusable workflow logic into a dedicated `Utilitie
 - **Notes:** Extracted from 001-sitemap-infrastructure T057. Follows subtree pattern (library + executable).
 
 ### Feature 2 — Workflow Migration to Utilities CLI 🚧
-- **Status:** In Progress (4/9 commands implemented)
+- **Status:** In Progress (3/9 commands implemented)
 - **Purpose & user value:** Replace inline bash scripts in workflows with type-safe `swift run util` commands, providing consistent error handling, better debugging, and reduced maintenance burden through centralized logic.
 - **Implemented:**
   - ✅ `util sitemap generate --site docs-21-dev` (generate-docc.yml migrated)
   - ✅ `util sitemap generate --site md-21-dev` (generate-markdown.yml migrated)
   - ✅ `util headers validate --site <site> --env <env>`
-  - ✅ `util state validate` and `util state update`
+- **Retired:**
+  - 🗑️ `util state validate` and `util state update` — retired alongside the removal of `Resources/sitemap-state.json` and the lefthook post-checkout automation. The state file was never read by sitemap generation (the `.packageVersionState` strategy was a stub that fell through to `Date()`). docs.21.dev now emits sitemap entries without `<lastmod>` via the `.none` strategy; a future reintroduction (if warranted) should use content-hashing or a git commit date anchored to `Resources/docs-21-dev/external-archives.json`.
 - **Remaining:**
   - *Sitemap:*
     - ❌ `util sitemap submit --site <site>` — submit sitemap to Google/Bing

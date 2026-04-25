@@ -150,7 +150,7 @@ struct PathToURLTests {
 struct GenerationTests {
     
     @Test("generate creates valid sitemap XML")
-    func generateSitemap() async throws {
+    func generateSitemap() throws {
         let tempDir = FileManager.default.temporaryDirectory
             .appendingPathComponent("test-gen-\(UUID().uuidString)")
         try FileManager.default.createDirectory(at: tempDir, withIntermediateDirectories: true)
@@ -163,11 +163,10 @@ struct GenerationTests {
             name: .dev21,
             baseURL: "https://21.dev",
             outputDirectory: tempDir.path,
-            urlDiscoveryStrategy: .htmlFiles(directory: tempDir.path),
-            lastmodStrategy: .currentDate
+            urlDiscoveryStrategy: .htmlFiles(directory: tempDir.path)
         )
         
-        let sitemap = try await SitemapGenerator.generate(for: config)
+        let sitemap = try SitemapGenerator.generate(for: config)
         
         #expect(sitemap.contains("<?xml version=\"1.0\" encoding=\"UTF-8\"?>"))
         #expect(sitemap.contains("<urlset xmlns=\"http://www.sitemaps.org/schemas/sitemap/0.9\">"))
@@ -176,7 +175,7 @@ struct GenerationTests {
     }
     
     @Test("generate includes all discovered URLs")
-    func multipleURLs() async throws {
+    func multipleURLs() throws {
         let tempDir = FileManager.default.temporaryDirectory
             .appendingPathComponent("test-multi-\(UUID().uuidString)")
         try FileManager.default.createDirectory(at: tempDir, withIntermediateDirectories: true)
@@ -189,18 +188,17 @@ struct GenerationTests {
             name: .dev21,
             baseURL: "https://21.dev",
             outputDirectory: tempDir.path,
-            urlDiscoveryStrategy: .htmlFiles(directory: tempDir.path),
-            lastmodStrategy: .currentDate
+            urlDiscoveryStrategy: .htmlFiles(directory: tempDir.path)
         )
         
-        let sitemap = try await SitemapGenerator.generate(for: config)
+        let sitemap = try SitemapGenerator.generate(for: config)
         
         #expect(sitemap.contains("<loc>https://21.dev/</loc>"))
         #expect(sitemap.contains("<loc>https://21.dev/about.html</loc>"))
     }
     
     @Test("generate uses HTML-only strategy for docs-21-dev")
-    func docsHTMLOnly() async throws {
+    func docsHTMLOnly() throws {
         let tempDir = FileManager.default.temporaryDirectory
             .appendingPathComponent("test-docs-html-\(UUID().uuidString)")
         let htmlDir = tempDir.appendingPathComponent("documentation")
@@ -213,18 +211,51 @@ struct GenerationTests {
             name: .docs21dev,
             baseURL: "https://docs.21.dev",
             outputDirectory: tempDir.path,
-            urlDiscoveryStrategy: .htmlFiles(directory: htmlDir.path),
-            lastmodStrategy: .currentDate
+            urlDiscoveryStrategy: .htmlFiles(directory: htmlDir.path)
         )
         
-        let sitemap = try await SitemapGenerator.generate(for: config)
+        let sitemap = try SitemapGenerator.generate(for: config)
         
         #expect(sitemap.contains("<loc>https://docs.21.dev/documentation/</loc>"))
         #expect(!sitemap.contains(".md</loc>"))
     }
     
+    @Test("generate never emits <lastmod> elements")
+    func sitemapsNeverContainLastmod() throws {
+        // Regression test: <lastmod> was previously emitted via uniform timestamps
+        // (a single git commit date applied to every URL on 21-dev, or build-time
+        // Date() values on docs-21-dev). Both signals were unreliable. The library
+        // now omits <lastmod> entirely. This test exercises both site configs and
+        // multi-URL fixtures to lock in that contract.
+        for siteName in [SiteName.dev21, SiteName.docs21dev] {
+            let tempDir = FileManager.default.temporaryDirectory
+                .appendingPathComponent("test-no-lastmod-\(siteName.rawValue)-\(UUID().uuidString)")
+            try FileManager.default.createDirectory(at: tempDir, withIntermediateDirectories: true)
+            defer { try? FileManager.default.removeItem(at: tempDir) }
+            
+            try "<!DOCTYPE html>".write(to: tempDir.appendingPathComponent("index.html"), atomically: true, encoding: .utf8)
+            try "<!DOCTYPE html>".write(to: tempDir.appendingPathComponent("about.html"), atomically: true, encoding: .utf8)
+            
+            let config = SiteConfiguration(
+                name: siteName,
+                baseURL: siteName.baseURL,
+                outputDirectory: tempDir.path,
+                urlDiscoveryStrategy: .htmlFiles(directory: tempDir.path)
+            )
+            
+            let sitemap = try SitemapGenerator.generate(for: config)
+            
+            // URLs must still appear
+            #expect(sitemap.contains("<loc>\(siteName.baseURL)/</loc>"))
+            #expect(sitemap.contains("<loc>\(siteName.baseURL)/about.html</loc>"))
+            // Zero <lastmod> elements regardless of site
+            #expect(!sitemap.contains("<lastmod>"))
+            #expect(!sitemap.contains("</lastmod>"))
+        }
+    }
+    
     @Test("generate skips HTML files with noindex meta tag")
-    func skipsNoindexPages() async throws {
+    func skipsNoindexPages() throws {
         let tempDir = FileManager.default.temporaryDirectory
             .appendingPathComponent("test-noindex-\(UUID().uuidString)")
         try FileManager.default.createDirectory(at: tempDir, withIntermediateDirectories: true)
@@ -242,11 +273,10 @@ struct GenerationTests {
             name: .dev21,
             baseURL: "https://21.dev",
             outputDirectory: tempDir.path,
-            urlDiscoveryStrategy: .htmlFiles(directory: tempDir.path),
-            lastmodStrategy: .currentDate
+            urlDiscoveryStrategy: .htmlFiles(directory: tempDir.path)
         )
         
-        let sitemap = try await SitemapGenerator.generate(for: config)
+        let sitemap = try SitemapGenerator.generate(for: config)
         
         #expect(sitemap.contains("<loc>https://21.dev/</loc>"))
         #expect(!sitemap.contains("about.html"))

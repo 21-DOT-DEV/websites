@@ -12,6 +12,7 @@ import Foundation
 import Slipstream
 import DesignSystem
 import SchemaLib
+import SiteIdentity
 
 struct BlogPostPage {
     private let post: BlogPost

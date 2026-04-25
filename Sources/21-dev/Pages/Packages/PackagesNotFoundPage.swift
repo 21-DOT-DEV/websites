@@ -11,6 +11,7 @@
 import Foundation
 import Slipstream
 import DesignSystem
+import SiteIdentity
 
 /// Section-specific 404 page for packages.
 /// Served when a package URL doesn't match any existing content.

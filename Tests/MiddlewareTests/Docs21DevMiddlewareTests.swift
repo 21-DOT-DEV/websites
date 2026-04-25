@@ -379,4 +379,113 @@ struct Docs21DevMiddlewareTests {
         let result = ctx.evaluateScript("estimateTokens('   ')")!
         #expect(result.toInt32() == 0)
     }
+
+    // MARK: - etagHeader
+
+    @Test("etagHeader wraps hash in W/\"...\" weak format")
+    func etagHeaderFormat() {
+        let result = ctx.evaluateScript("etagHeader('abc123')")!
+        #expect(result.toString() == "W/\"abc123\"")
+    }
+
+    @Test("etagHeader handles empty hash")
+    func etagHeaderEmpty() {
+        let result = ctx.evaluateScript("etagHeader('')")!
+        #expect(result.toString() == "W/\"\"")
+    }
+
+    // MARK: - etagMatches
+
+    @Test("etagMatches returns false when If-None-Match is null")
+    func etagMatchesNull() {
+        let result = ctx.evaluateScript("etagMatches('W/\"abc\"', null)")!
+        #expect(result.toBool() == false)
+    }
+
+    @Test("etagMatches returns false when If-None-Match is empty string")
+    func etagMatchesEmpty() {
+        let result = ctx.evaluateScript("etagMatches('W/\"abc\"', '')")!
+        #expect(result.toBool() == false)
+    }
+
+    @Test("etagMatches returns true for wildcard *")
+    func etagMatchesWildcard() {
+        let result = ctx.evaluateScript("etagMatches('W/\"abc\"', '*')")!
+        #expect(result.toBool() == true)
+    }
+
+    @Test("etagMatches returns true for identical weak ETags")
+    func etagMatchesWeakIdentical() {
+        let result = ctx.evaluateScript("etagMatches('W/\"abc\"', 'W/\"abc\"')")!
+        #expect(result.toBool() == true)
+    }
+
+    @Test("etagMatches uses weak comparison: weak server vs strong client")
+    func etagMatchesWeakComparison() {
+        // RFC 9110 §13.1.3: If-None-Match MUST use weak comparison
+        let result = ctx.evaluateScript("etagMatches('W/\"abc\"', '\"abc\"')")!
+        #expect(result.toBool() == true)
+    }
+
+    @Test("etagMatches finds match in comma-separated list")
+    func etagMatchesList() {
+        let result = ctx.evaluateScript("etagMatches('W/\"abc\"', 'W/\"xxx\", W/\"abc\", W/\"yyy\"')")!
+        #expect(result.toBool() == true)
+    }
+
+    @Test("etagMatches returns false for unrelated hash")
+    func etagMatchesNoMatch() {
+        let result = ctx.evaluateScript("etagMatches('W/\"abc\"', 'W/\"xyz\"')")!
+        #expect(result.toBool() == false)
+    }
+
+    @Test("etagMatches handles whitespace around list entries")
+    func etagMatchesWhitespace() {
+        let result = ctx.evaluateScript("etagMatches('W/\"abc\"', '  W/\"xxx\"  ,   W/\"abc\"   ')")!
+        #expect(result.toBool() == true)
+    }
+
+    // MARK: - buildNotModifiedHeaders
+
+    @Test("buildNotModifiedHeaders includes ETag")
+    func buildNotModifiedIncludesETag() {
+        let js = "buildNotModifiedHeaders('W/\"abc\"', {})"
+        let dict = ctx.evaluateScript(js)!.toDictionary() as! [String: Any]
+        #expect(dict["ETag"] as? String == "W/\"abc\"")
+    }
+
+    @Test("buildNotModifiedHeaders excludes Content-Type")
+    func buildNotModifiedExcludesContentType() {
+        let js = "buildNotModifiedHeaders('W/\"abc\"', {'Content-Type': 'text/html'})"
+        let dict = ctx.evaluateScript(js)!.toDictionary() as! [String: Any]
+        #expect(dict["Content-Type"] == nil)
+    }
+
+    @Test("buildNotModifiedHeaders excludes Content-Length")
+    func buildNotModifiedExcludesContentLength() {
+        let js = "buildNotModifiedHeaders('W/\"abc\"', {'Content-Length': '1234'})"
+        let dict = ctx.evaluateScript(js)!.toDictionary() as! [String: Any]
+        #expect(dict["Content-Length"] == nil)
+    }
+
+    @Test("buildNotModifiedHeaders preserves Cache-Control")
+    func buildNotModifiedPreservesCacheControl() {
+        let js = "buildNotModifiedHeaders('W/\"abc\"', {'Cache-Control': 'public, max-age=300'})"
+        let dict = ctx.evaluateScript(js)!.toDictionary() as! [String: Any]
+        #expect(dict["Cache-Control"] as? String == "public, max-age=300")
+    }
+
+    @Test("buildNotModifiedHeaders preserves Vary")
+    func buildNotModifiedPreservesVary() {
+        let js = "buildNotModifiedHeaders('W/\"abc\"', {'Vary': 'Accept-Encoding'})"
+        let dict = ctx.evaluateScript(js)!.toDictionary() as! [String: Any]
+        #expect(dict["Vary"] as? String == "Accept-Encoding")
+    }
+
+    @Test("buildNotModifiedHeaders is case-insensitive on input keys")
+    func buildNotModifiedCaseInsensitive() {
+        let js = "buildNotModifiedHeaders('W/\"abc\"', {'cache-control': 'public, max-age=42'})"
+        let dict = ctx.evaluateScript(js)!.toDictionary() as! [String: Any]
+        #expect(dict["Cache-Control"] as? String == "public, max-age=42")
+    }
 }
