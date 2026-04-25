@@ -11,6 +11,7 @@
 import Foundation
 import Slipstream
 import DesignSystem
+import SiteIdentity
 import UtilLib
 
 @main

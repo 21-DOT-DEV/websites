@@ -1106,4 +1106,195 @@ struct SchemaTests {
         #expect(json.contains("Organization"))
         #expect(json.contains("BreadcrumbList"))
     }
+
+    // MARK: - Inline JSON-LD safety (`<` / `>` escape)
+
+    @Test("renderCompact escapes `<` as \\u003c so inline <script> blocks are safe")
+    func testRenderCompactEscapesLessThan() throws {
+        let blog = BlogPostingSchema(
+            headline: "</script><img src=x onerror=alert(1)>",
+            datePublished: "2026-01-01"
+        )
+        let json = try SchemaGraph(blog).renderCompact()
+
+        // Raw `</script>` must NEVER appear in the rendered JSON-LD —
+        // it would prematurely terminate the surrounding <script> block.
+        #expect(!json.contains("</script>"))
+        // Both `<` and `>` must appear escaped. (JSONEncoder also escapes `/`
+        // to `\/`, which is independently safe; we don't assert on it because
+        // that's encoder-default behavior, not our post-process.)
+        #expect(json.contains("\\u003c"))
+        #expect(json.contains("\\u003e"))
+    }
+
+    @Test("render (pretty) also escapes `<` and `>`")
+    func testRenderPrettyEscapesAngleBrackets() throws {
+        let blog = BlogPostingSchema(
+            headline: "title with < and > characters",
+            datePublished: "2026-01-01"
+        )
+        let json = try SchemaGraph(blog).render()
+
+        #expect(!json.contains("with <"))
+        #expect(!json.contains("> characters"))
+        #expect(json.contains("\\u003c"))
+        #expect(json.contains("\\u003e"))
+    }
+
+    @Test("Escape preserves valid JSON parseability")
+    func testEscapePreservesJSONParseability() throws {
+        let blog = BlogPostingSchema(
+            headline: "Round-trip </script> safety",
+            datePublished: "2026-01-01"
+        )
+        let json = try SchemaGraph(blog).renderCompact()
+        // The escaped bytes still represent the original string after JSON decoding.
+        let parsed = try JSONSerialization.jsonObject(with: Data(json.utf8)) as? [String: Any]
+        #expect(parsed?["headline"] as? String == "Round-trip </script> safety")
+    }
+
+    // MARK: - TechArticleSchema Tests
+
+    @Test("TechArticleSchema encodes minimal fields")
+    func testTechArticleSchemaMinimal() throws {
+        let schema = TechArticleSchema(headline: "Getting Started")
+        let graph = SchemaGraph(schema)
+        let json = try graph.render()
+
+        #expect(json.contains("\"@type\""))
+        #expect(json.contains("TechArticle"))
+        #expect(json.contains("Getting Started"))
+        #expect(json.contains("\"inLanguage\""))
+        #expect(json.contains("en-US"))
+    }
+
+    @Test("TechArticleSchema encodes all optional fields")
+    func testTechArticleSchemaFull() throws {
+        let schema = TechArticleSchema(
+            id: "https://docs.21.dev/documentation/zkp/choosingp256kvszkp/#techarticle",
+            headline: "Choosing Between P256K and ZKP",
+            description: "Decision boundary between the two products.",
+            url: "https://docs.21.dev/documentation/zkp/choosingp256kvszkp/",
+            inLanguage: "en-US",
+            isPartOf: SchemaReference(id: "https://docs.21.dev/#website"),
+            mainEntityOfPage: SchemaReference(id: "https://docs.21.dev/documentation/zkp/choosingp256kvszkp/#webpage"),
+            publisher: SchemaReference(id: "https://21.dev/#organization")
+        )
+        let graph = SchemaGraph(schema)
+        let json = try graph.render()
+
+        // JSONEncoder escapes `/` as `\/`, so assert structurally via JSONSerialization.
+        let parsed = try JSONSerialization.jsonObject(with: Data(json.utf8)) as? [String: Any]
+        #expect(parsed?["headline"] as? String == "Choosing Between P256K and ZKP")
+        #expect(parsed?["description"] as? String == "Decision boundary between the two products.")
+        #expect(parsed?["url"] as? String == "https://docs.21.dev/documentation/zkp/choosingp256kvszkp/")
+        let isPartOf = parsed?["isPartOf"] as? [String: String]
+        #expect(isPartOf?["@id"] == "https://docs.21.dev/#website")
+        let publisher = parsed?["publisher"] as? [String: String]
+        #expect(publisher?["@id"] == "https://21.dev/#organization")
+    }
+
+    @Test("TechArticleSchema omits nil optional fields")
+    func testTechArticleSchemaOmitsNil() throws {
+        let schema = TechArticleSchema(headline: "Title")
+        let graph = SchemaGraph(schema)
+        let json = try graph.render()
+
+        #expect(!json.contains("\"description\""))
+        #expect(!json.contains("\"url\""))
+        #expect(!json.contains("\"isPartOf\""))
+        #expect(!json.contains("\"publisher\""))
+        #expect(!json.contains("\"@id\""))
+    }
+
+    @Test("TechArticleSchema participates in @graph alongside WebPage")
+    func testTechArticleInGraph() throws {
+        let webPage = WebPageSchema(
+            id: "https://docs.21.dev/x/#webpage",
+            isPartOf: SchemaReference(id: "https://docs.21.dev/#website"),
+            name: "Choosing Between P256K and ZKP",
+            url: "https://docs.21.dev/x/",
+            mainEntity: SchemaReference(id: "https://docs.21.dev/x/#techarticle")
+        )
+        let article = TechArticleSchema(
+            id: "https://docs.21.dev/x/#techarticle",
+            headline: "Choosing Between P256K and ZKP",
+            mainEntityOfPage: SchemaReference(id: "https://docs.21.dev/x/#webpage")
+        )
+        let graph = SchemaGraph([webPage, article])
+        let json = try graph.render()
+
+        #expect(json.contains("\"@graph\""))
+        #expect(json.contains("\"WebPage\""))
+        #expect(json.contains("\"TechArticle\""))
+        #expect(json.contains("#webpage"))
+        #expect(json.contains("#techarticle"))
+    }
+
+    // MARK: - APIReferenceSchema Tests
+
+    @Test("APIReferenceSchema encodes minimal fields")
+    func testAPIReferenceSchemaMinimal() throws {
+        let schema = APIReferenceSchema(headline: "EventLoop")
+        let graph = SchemaGraph(schema)
+        let json = try graph.render()
+
+        #expect(json.contains("APIReference"))
+        #expect(json.contains("EventLoop"))
+    }
+
+    @Test("APIReferenceSchema encodes API-specific fields")
+    func testAPIReferenceSchemaSpecificFields() throws {
+        let schema = APIReferenceSchema(
+            id: "https://docs.21.dev/documentation/event/eventloop/#apireference",
+            headline: "EventLoop",
+            description: "A libevent-backed event loop.",
+            url: "https://docs.21.dev/documentation/event/eventloop/",
+            programmingLanguage: "Swift",
+            codeRepository: "https://github.com/21-DOT-DEV/swift-event",
+            about: "Event"
+        )
+        let graph = SchemaGraph(schema)
+        let json = try graph.render()
+
+        let parsed = try JSONSerialization.jsonObject(with: Data(json.utf8)) as? [String: Any]
+        #expect(parsed?["programmingLanguage"] as? String == "Swift")
+        #expect(parsed?["codeRepository"] as? String == "https://github.com/21-DOT-DEV/swift-event")
+        #expect(parsed?["about"] as? String == "Event")
+    }
+
+    @Test("APIReferenceSchema omits API-specific fields when nil")
+    func testAPIReferenceSchemaOmitsNilSpecific() throws {
+        let schema = APIReferenceSchema(headline: "EventLoop")
+        let graph = SchemaGraph(schema)
+        let json = try graph.render()
+
+        #expect(!json.contains("\"programmingLanguage\""))
+        #expect(!json.contains("\"codeRepository\""))
+        #expect(!json.contains("\"about\""))
+    }
+
+    @Test("APIReferenceSchema bidirectional refs with WebPage")
+    func testAPIReferenceBidirectionalRefs() throws {
+        let pageURL = "https://docs.21.dev/documentation/event/eventloop/"
+        let webPage = WebPageSchema(
+            id: "\(pageURL)#webpage",
+            isPartOf: SchemaReference(id: "https://docs.21.dev/#website"),
+            name: "EventLoop",
+            url: pageURL,
+            mainEntity: SchemaReference(id: "\(pageURL)#apireference")
+        )
+        let api = APIReferenceSchema(
+            id: "\(pageURL)#apireference",
+            headline: "EventLoop",
+            mainEntityOfPage: SchemaReference(id: "\(pageURL)#webpage")
+        )
+        let graph = SchemaGraph([webPage, api])
+        let json = try graph.render()
+
+        #expect(json.contains("\"mainEntity\""))
+        #expect(json.contains("\"mainEntityOfPage\""))
+        #expect(json.contains("#webpage"))
+        #expect(json.contains("#apireference"))
+    }
 }

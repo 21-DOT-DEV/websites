@@ -10,6 +10,7 @@
 
 import Foundation
 import SchemaLib
+import SiteIdentity
 import Slipstream
 import DesignSystem
 

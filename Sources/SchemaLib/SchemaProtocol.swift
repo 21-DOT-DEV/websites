@@ -51,17 +51,25 @@ public struct SchemaGraph: Sendable {
         let encoder = JSONEncoder()
         encoder.outputFormatting = formatting
         
+        let data: Data
         if schemas.count == 1 {
             // Single schema: use simple format without @graph
             let wrapper = SingleSchemaWrapper(context: context, schema: schemas[0])
-            let data = try encoder.encode(wrapper)
-            return String(data: data, encoding: .utf8) ?? "{}"
+            data = try encoder.encode(wrapper)
         } else {
             // Multiple schemas: use @graph format
             let wrapper = GraphSchemaWrapper(context: context, graph: schemas)
-            let data = try encoder.encode(wrapper)
-            return String(data: data, encoding: .utf8) ?? "{}"
+            data = try encoder.encode(wrapper)
         }
+        let raw = String(data: data, encoding: .utf8) ?? "{}"
+        // Inline-JSON-LD safety: prevent `</script>` smuggling into the surrounding
+        // <script type="application/ld+json"> block. Escapes `<` and `>` as \u003c
+        // and \u003e — canonical pattern recommended by Mozilla and OWASP for inline
+        // JSON. Behavior-preserving for all current consumers (no schema field today
+        // legitimately contains `<` or `>`).
+        return raw
+            .replacingOccurrences(of: "<", with: "\\u003c")
+            .replacingOccurrences(of: ">", with: "\\u003e")
     }
 }
 

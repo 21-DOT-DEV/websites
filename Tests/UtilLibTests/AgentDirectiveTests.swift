@@ -227,7 +227,7 @@ struct AgentDirectiveTests {
 
     // MARK: - buildDirective
 
-    @Test("Builds directive with @graph containing WebSite and WebPage")
+    @Test("Builds directive with @graph containing WebSite, Organization, and WebPage")
     func buildDirectiveWithGraph() throws {
         let markdownURL = URL(string: "https://docs.21.dev/data/documentation/p256k/p256k/context.md")!
         let directive = try AgentDirectiveInjector.buildDirective(
@@ -250,7 +250,11 @@ struct AgentDirectiveTests {
         #expect(directive.contains("WebPage"))
         #expect(directive.contains("docs.21.dev"))
         #expect(directive.contains("isPartOf"))
-        // No mainEntity (removed in migration)
+        // Organization publisher node — anchored to the marketing-site
+        // canonical @id so docs and 21.dev resolve to the same entity.
+        #expect(directive.contains("Organization"))
+        #expect(directive.contains("21.dev\\/#organization"))
+        // No mainEntity when no DocC sidecar is supplied
         #expect(!directive.contains("mainEntity"))
         // No MediaObject
         #expect(!directive.contains("MediaObject"))
@@ -616,9 +620,9 @@ struct AgentDirectiveTests {
         #expect(action == .skipped)
     }
 
-    @Test("Allowlist has exactly 96 entries (15 llms.txt + 52 Discussion + 29 authored)")
+    @Test("Allowlist has exactly 120 entries (15 P256K llms.txt + 52 Discussion + 29 authored + 10 Event llms.txt + 12 OpenSSL llms.txt + 2 ZKP authored)")
     func allowlistCompleteness() {
-        #expect(AgentDirectiveInjector.indexablePages.count == 96)
+        #expect(AgentDirectiveInjector.indexablePages.count == 120)
 
         // Spot-check P256K llms.txt entries
         #expect(AgentDirectiveInjector.indexablePages.contains("documentation/p256k"))
@@ -636,9 +640,25 @@ struct AgentDirectiveTests {
         #expect(AgentDirectiveInjector.indexablePages.contains("documentation/p256k/p256k/recovery/publickey/init(_:signature:format:)-4311g"))
         #expect(AgentDirectiveInjector.indexablePages.contains("documentation/p256k/sha256/hash(data:)"))
 
-        // ZKP re-exports P256K — all ZKP pages are SEO dupes, excluded until unique APIs exist
-        #expect(!AgentDirectiveInjector.indexablePages.contains("documentation/zkp"))
+        // Spot-check Event llms.txt entries
+        #expect(AgentDirectiveInjector.indexablePages.contains("documentation/event"))
+        #expect(AgentDirectiveInjector.indexablePages.contains("documentation/event/gettingstarted"))
+        #expect(AgentDirectiveInjector.indexablePages.contains("documentation/event/eventloop"))
+        #expect(AgentDirectiveInjector.indexablePages.contains("documentation/event/socketerror"))
+
+        // Spot-check OpenSSL llms.txt entries
+        #expect(AgentDirectiveInjector.indexablePages.contains("documentation/openssl"))
+        #expect(AgentDirectiveInjector.indexablePages.contains("documentation/openssl/gettingstarted"))
+        #expect(AgentDirectiveInjector.indexablePages.contains("documentation/openssl/sha256"))
+        #expect(AgentDirectiveInjector.indexablePages.contains("documentation/openssl/rsa/privatekey"))
+
+        // ZKP-unique authored articles allowlisted (module overview + product-selection guide)
+        #expect(AgentDirectiveInjector.indexablePages.contains("documentation/zkp"))
+        #expect(AgentDirectiveInjector.indexablePages.contains("documentation/zkp/choosingp256kvszkp"))
+
+        // ZKP symbol pages still excluded — they re-export P256K and would be SEO dupes
         #expect(!AgentDirectiveInjector.indexablePages.contains("documentation/zkp/p256k/signing"))
+        #expect(!AgentDirectiveInjector.indexablePages.contains("documentation/zkp/p256k/schnorr/privatekey"))
 
         // Protocol conformance stubs excluded (no authored content)
         #expect(!AgentDirectiveInjector.indexablePages.contains("documentation/p256k/p256k/signing/privatekey/==(_:_:)"))

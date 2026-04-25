@@ -26,6 +26,7 @@ let package = Package(
             dependencies: [
                 .product(name: "Slipstream", package: "slipstream"),
                 .target(name: "DesignSystem"),
+                .target(name: "SiteIdentity"),
                 .target(name: "UtilLib")
             ]
         ),
@@ -68,13 +69,25 @@ let package = Package(
             name: "SchemaLibTests",
             dependencies: ["SchemaLib"]
         ),
+        // MARK: - SiteIdentity (org/site constants, shared by 21-dev + UtilLib)
+        .target(
+            name: "SiteIdentity",
+            dependencies: [
+                .target(name: "SchemaLib")
+            ]
+        ),
+        .testTarget(
+            name: "SiteIdentityTests",
+            dependencies: ["SiteIdentity"]
+        ),
         // MARK: - Utilities Library & CLI
         .target(
             name: "UtilLib",
             dependencies: [
                 .product(name: "Subprocess", package: "swift-subprocess"),
                 .product(name: "SwiftSoup", package: "SwiftSoup"),
-                .target(name: "SchemaLib")
+                .target(name: "SchemaLib"),
+                .target(name: "SiteIdentity")
             ]
         ),
         .executableTarget(

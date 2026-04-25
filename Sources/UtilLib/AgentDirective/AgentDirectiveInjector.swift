@@ -10,10 +10,27 @@
 
 import Foundation
 import SchemaLib
+import SiteIdentity
 
 /// Injects agent directive tags into HTML files to guide AI agents toward
 /// machine-readable markdown versions.
 public enum AgentDirectiveInjector {
+
+    /// Maps a DocC module slug (case-insensitive) to its canonical
+    /// `codeRepository` URL.
+    ///
+    /// The mapping mirrors `Resources/docs-21-dev/external-archives.json`. We
+    /// keep a small static table here to avoid loading and parsing that file
+    /// at injection time; if a new DocC bundle ships, add it in both places.
+    static func codeRepository(forModule module: String?) -> String? {
+        guard let module = module?.lowercased() else { return nil }
+        switch module {
+        case "p256k", "zkp": return "\(SiteIdentity.githubURL)/swift-secp256k1"
+        case "event":        return "\(SiteIdentity.githubURL)/swift-event"
+        case "openssl":      return "\(SiteIdentity.githubURL)/swift-openssl"
+        default:             return nil
+        }
+    }
 
     /// Marker string used to detect existing JSON-LD directives.
     /// Present in both full directives (with markdown link) and fallback directives.
@@ -92,9 +109,14 @@ public enum AgentDirectiveInjector {
     /// - `Resources/docs-21-dev/data/documentation/p256k/llms.txt` (15 curated entries)
     /// - One-time audit of pages with `<h2>Discussion</h2>` sections (52 entries)
     /// - One-time audit of pages with authored Parameters/Return Value/aside sections (29 entries)
+    /// - `Resources/docs-21-dev/data/documentation/event/llms.txt` (10 curated entries)
+    /// - `Resources/docs-21-dev/data/documentation/openssl/llms.txt` (12 curated entries)
+    /// - ZKP-unique authored articles (2 entries: module overview + ChoosingP256KvsZKP)
     ///
-    /// ZKP re-exports P256K, so ZKP pages are SEO duplicates and excluded.
-    /// Add ZKP-unique pages (e.g. bulletproofs) when they exist.
+    /// ZKP symbol pages (`p256k/...` under `zkp/`) re-export P256K, so they are
+    /// SEO duplicates and remain excluded. Only ZKP-unique authored articles
+    /// (module overview, product-selection guides, future bulletproof/rangeproof
+    /// pages) are allowlisted.
     ///
     /// When llms.txt or doc comments change, re-audit with:
     ///   find Websites/docs-21-dev/documentation/p256k -name index.html \( \
@@ -221,6 +243,45 @@ public enum AgentDirectiveInjector {
         "documentation/p256k/sha256/hash(data:)",
         "documentation/p256k/sharedsecret/==(_:_:)-7g0c5",
         "documentation/p256k/swift/string/init(bytes:)",
+
+        // --- Event llms.txt (10 entries) ---
+        // ## Documentation
+        "documentation/event/gettingstarted",
+        "documentation/event/productionconsiderations",
+        "documentation/event/backendandplatforms",
+        "documentation/event/choosinglibeventvsevent",
+        "documentation/event",
+        // ## Symbols
+        "documentation/event/eventloop",
+        "documentation/event/socket",
+        "documentation/event/serversocket",
+        "documentation/event/socketaddress",
+        // ## Optional
+        "documentation/event/socketerror",
+
+        // --- OpenSSL llms.txt (12 entries) ---
+        // ## Documentation
+        "documentation/openssl/gettingstarted",
+        "documentation/openssl/securityconsiderations",
+        "documentation/openssl/choosinglibcryptovsopenssl",
+        "documentation/openssl",
+        // ## Symbols
+        "documentation/openssl/sha256",
+        "documentation/openssl/base64url",
+        "documentation/openssl/rsa",
+        "documentation/openssl/ssl",
+        // ## Optional
+        "documentation/openssl/sha256/sha256digest",
+        "documentation/openssl/rsa/privatekey",
+        "documentation/openssl/rsa/publickey",
+        "documentation/openssl/opensslerror",
+
+        // --- ZKP-unique authored articles (2 entries) ---
+        // Sourced from upstream Sources/ZKP/ZKP.docc/*.md (swift-secp256k1).
+        // ZKP symbol pages re-export P256K and stay noindex'd; only authored
+        // articles unique to the ZKP product are allowlisted here.
+        "documentation/zkp",
+        "documentation/zkp/choosingp256kvszkp",
     ]
 
     /// Normalizes an HTML file's relative path for allowlist comparison.
@@ -389,27 +450,47 @@ public enum AgentDirectiveInjector {
     /// 2. `<link rel="alternate" type="text/markdown">` — markdown alternate (when available)
     /// 3. `<script type="application/ld+json">` — JSON-LD `@graph` with:
     ///    - `WebSite` node (always — intentionally on every page, docs subdomain has no homepage)
-    ///    - `WebPage` node with `isPartOf → WebSite`
+    ///    - `Organization` publisher node (always — anchored to the marketing
+    ///      site's canonical `@id`, providing a cross-domain identity link)
     ///    - `BreadcrumbList` node (only when breadcrumb items exist)
+    ///    - `WebPage` node with `isPartOf → WebSite` and (when applicable)
+    ///      `mainEntity → TechArticle | APIReference`
+    ///    - `TechArticle` node when the DocC sidecar's `metadata.role`
+    ///      indicates an authored article
+    ///    - `APIReference` node when the DocC sidecar's role indicates a
+    ///      symbol or symbol-collection / module page
+    ///
+    /// When `sidecar` is `nil` (no DocC metadata available — top-level
+    /// `documentation/index.html`, generation-time loader failure, or a
+    /// non-DocC page), the renderer falls back to the slug-derived `pageName`
+    /// and emits `WebPage` only (no Article-class node).
     ///
     /// - Parameters:
     ///   - markdownURL: The markdown URL for this specific page, or `nil` if none exists
     ///   - relativePath: File path relative to the output directory
     ///   - baseURL: Site base URL (e.g., `https://docs.21.dev/`)
+    ///   - shouldIndex: When `false`, prepends the canonical noindex meta tag
+    ///   - sidecar: Optional DocC page-data sidecar driving title, abstract,
+    ///     and Article-class node selection. Defaults to `nil` for source
+    ///     compatibility with existing call sites.
     /// - Returns: Combined HTML string for injection before `</head>`
     public static func buildDirective(
         markdownURL: URL?,
         relativePath: String,
         baseURL: URL,
-        shouldIndex: Bool = true
+        shouldIndex: Bool = true,
+        sidecar: DocCSidecar? = nil
     ) throws -> String {
         var baseURLString = baseURL.absoluteString
         if !baseURLString.hasSuffix("/") {
             baseURLString += "/"
         }
 
-        // Derive breadcrumbs and page name
+        // Derive breadcrumbs and a slug-cased fallback page name. When the
+        // sidecar provides an authoritative title, prefer that.
         let (breadcrumbItems, pageName) = deriveBreadcrumbs(from: relativePath, baseURL: baseURL)
+        let resolvedPageName = sidecar?.metadata.title ?? pageName
+        let resolvedDescription = sidecar?.concatenatedAbstract
 
         // Derive page URL from relativePath
         var pagePathComponent = relativePath
@@ -432,7 +513,12 @@ public enum AgentDirectiveInjector {
         )
         schemas.append(website)
 
-        // 2. BreadcrumbList — only when items exist
+        // 2. Organization (publisher) — always present, anchored to the
+        //    marketing site's canonical `@id` so docs and 21.dev resolve to
+        //    the same Organization entity for AI/LLM crawlers.
+        schemas.append(SiteIdentity.organizationSchema)
+
+        // 3. BreadcrumbList — only when items exist
         let breadcrumbId = "\(pageURL)#breadcrumb"
         let breadcrumbRef: SchemaReference?
         if !breadcrumbItems.isEmpty {
@@ -446,15 +532,67 @@ public enum AgentDirectiveInjector {
             breadcrumbRef = nil
         }
 
-        // 3. WebPage — always present
+        // 4. Article-class node (TechArticle | APIReference), driven by the
+        //    DocC sidecar's `metadata.role`. We compute it before the WebPage
+        //    so the WebPage can carry a `mainEntity` back-reference.
+        let webPageId = "\(pageURL)#webpage"
+        let publisherRef = SchemaReference(id: SiteIdentity.schemaID)
+        let articleNode: (any Schema)?
+        let mainEntityRef: SchemaReference?
+
+        switch sidecar?.semanticRole {
+        case .article:
+            let articleId = "\(pageURL)#techarticle"
+            articleNode = TechArticleSchema(
+                id: articleId,
+                headline: sidecar?.metadata.title ?? resolvedPageName,
+                description: resolvedDescription,
+                url: pageURL,
+                isPartOf: SchemaReference(id: websiteId),
+                mainEntityOfPage: SchemaReference(id: webPageId),
+                publisher: publisherRef
+            )
+            mainEntityRef = SchemaReference(id: articleId)
+        case .symbol, .collection:
+            let articleId = "\(pageURL)#apireference"
+            // Prefer the sidecar's own module assignment; fall back to the
+            // path-derived slug (uppercased to match DocC's bundle name).
+            let module = sidecar?.moduleName
+                ?? extractModule(from: relativePath)?.uppercased()
+            articleNode = APIReferenceSchema(
+                id: articleId,
+                headline: sidecar?.metadata.title ?? resolvedPageName,
+                description: resolvedDescription,
+                url: pageURL,
+                isPartOf: SchemaReference(id: websiteId),
+                mainEntityOfPage: SchemaReference(id: webPageId),
+                publisher: publisherRef,
+                programmingLanguage: "Swift",
+                codeRepository: AgentDirectiveInjector.codeRepository(forModule: module),
+                about: module
+            )
+            mainEntityRef = SchemaReference(id: articleId)
+        case .landingPage, .other, .unknown, .none:
+            articleNode = nil
+            mainEntityRef = nil
+        }
+
+        // 5. WebPage — always present, now enriched with sidecar fields and
+        //    a back-reference to the Article-class node (when present).
         let webPage = WebPageSchema(
-            id: "\(pageURL)#webpage",
+            id: webPageId,
             isPartOf: SchemaReference(id: websiteId),
-            name: pageName,
+            name: resolvedPageName,
             url: pageURL,
-            breadcrumb: breadcrumbRef
+            description: resolvedDescription,
+            breadcrumb: breadcrumbRef,
+            mainEntity: mainEntityRef
         )
         schemas.append(webPage)
+
+        if let articleNode {
+            schemas.append(articleNode)
+        }
 
         // Build output tags
         var parts: [String] = []
@@ -700,6 +838,32 @@ public enum AgentDirectiveInjector {
         var results: [InjectionResult] = []
 
         for entry in entries {
+            // Tolerant sidecar lookup. A missing or malformed sidecar must
+            // not abort the directory walk — we record the status on the
+            // per-file `InjectionResult` so the caller can apply a
+            // failure-rate threshold at the summary level.
+            let sidecarOutcome = DocCSidecarLoader.loadIfPresent(
+                relativePath: entry.relativePath,
+                in: directoryPath
+            )
+            let sidecar: DocCSidecar?
+            let sidecarStatus: SidecarStatus
+            let sidecarFailureMessage: String?
+            switch sidecarOutcome {
+            case .loaded(let parsed):
+                sidecar = parsed
+                sidecarStatus = .loaded
+                sidecarFailureMessage = nil
+            case .missing:
+                sidecar = nil
+                sidecarStatus = .missing
+                sidecarFailureMessage = nil
+            case .failed(_, let message):
+                sidecar = nil
+                sidecarStatus = .failed
+                sidecarFailureMessage = message
+            }
+
             do {
                 let html = try String(contentsOfFile: entry.absolutePath, encoding: .utf8)
                 let mdRelPath = deriveMarkdownRelativePath(from: entry.relativePath)
@@ -712,7 +876,8 @@ public enum AgentDirectiveInjector {
                     markdownURL: markdownURL,
                     relativePath: entry.relativePath,
                     baseURL: baseURL,
-                    shouldIndex: isIndexable
+                    shouldIndex: isIndexable,
+                    sidecar: sidecar
                 )
 
                 let (fixedHTML, action) = inject(html: html, directive: directive, force: force)
@@ -726,7 +891,9 @@ public enum AgentDirectiveInjector {
                     relativePath: entry.relativePath,
                     action: action,
                     noindexed: !isIndexable,
-                    errorMessage: nil
+                    errorMessage: nil,
+                    sidecarStatus: sidecarStatus,
+                    sidecarFailureMessage: sidecarFailureMessage
                 ))
             } catch {
                 results.append(InjectionResult(
@@ -734,7 +901,9 @@ public enum AgentDirectiveInjector {
                     relativePath: entry.relativePath,
                     action: .failed,
                     noindexed: !Self.shouldIndex(relativePath: entry.relativePath),
-                    errorMessage: error.localizedDescription
+                    errorMessage: error.localizedDescription,
+                    sidecarStatus: sidecarStatus,
+                    sidecarFailureMessage: sidecarFailureMessage
                 ))
             }
         }

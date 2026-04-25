@@ -11,6 +11,7 @@
 import Foundation
 import Slipstream
 import DesignSystem
+import SiteIdentity
 
 /// Root 404 page for the site.
 /// Served when no matching content is found at any path.

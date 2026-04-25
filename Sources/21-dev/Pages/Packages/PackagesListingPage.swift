@@ -12,6 +12,7 @@ import Foundation
 import Slipstream
 import DesignSystem
 import SchemaLib
+import SiteIdentity
 
 struct PackagesListingPage {
     // Page metadata

@@ -6,7 +6,6 @@
 //
 
 import Foundation
-import DesignSystem
 import SchemaLib
 
 /// Centralized site identity information - single source of truth for all site-wide data
