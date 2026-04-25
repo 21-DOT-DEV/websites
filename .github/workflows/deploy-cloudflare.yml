@@ -199,6 +199,44 @@ jobs:
           
           echo "✓ All 21.dev redirects verified on preview"
       
+      - name: Verify ETag + 304 revalidation (HTML pages)
+        if: inputs.deploy-to-production == false
+        run: |
+          PREVIEW_URL="${{ steps.cloudflare.outputs.deployment-url }}"
+          
+          # Both site middlewares emit a weak ETag for text/html 200 responses.
+          # Pick a per-site path that returns HTML (NOT a redirect), then round-trip
+          # the ETag with If-None-Match to confirm 304 Not Modified.
+          if [[ "${{ inputs.project-name }}" == "docs-21-dev" ]]; then
+            TEST_PATH="/documentation/"
+          else
+            TEST_PATH="/"
+          fi
+          
+          echo "🔍 Verifying ETag round-trip on ${PREVIEW_URL}${TEST_PATH}"
+          
+          # Step 1: confirm ETag is present on the 200 response
+          headers=$(curl -sI "${PREVIEW_URL}${TEST_PATH}")
+          etag=$(echo "$headers" | awk 'BEGIN{IGNORECASE=1} /^etag:/ {sub(/^etag:[[:space:]]*/, "", $0); print}' | tr -d '\r\n')
+          
+          if [ -z "$etag" ]; then
+            echo "❌ ERROR: ETag header missing on ${TEST_PATH}"
+            echo "--- response headers ---"
+            echo "$headers"
+            exit 1
+          fi
+          echo "✅ ETag present: $etag"
+          
+          # Step 2: confirm If-None-Match returns 304 for the same etag
+          status=$(curl -sI -o /dev/null -w "%{http_code}" \
+            -H "If-None-Match: $etag" \
+            "${PREVIEW_URL}${TEST_PATH}")
+          if [ "$status" != "304" ]; then
+            echo "❌ ERROR: If-None-Match expected 304, got $status"
+            exit 1
+          fi
+          echo "✅ If-None-Match → 304 Not Modified"
+      
       - name: Purge Cloudflare cache (production only)
         if: inputs.deploy-to-production == true
         continue-on-error: true

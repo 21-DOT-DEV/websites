@@ -1,7 +1,7 @@
 # Cloudflare Pages Headers — docs.21.dev (Production)
 # Production builds serve static DocC content with full security headers including HSTS.
 
-# Cloudflare Pages matches top-to-bottom; keep specific asset/JSON patterns above the catch-all HTML sections below.
+# Cloudflare Pages applies ALL matching rules and CONCATENATES values for repeated header keys (e.g. two rules each setting Cache-Control yields a single comma-separated value). To avoid that, the catch-all `/*` rule below intentionally does NOT set Cache-Control or Vary; specific paths declare their own caching. Without this, the immutable hashed assets under /css/* /js/* /img/* would be clamped to the catch-all's max-age=300 instead of caching for 1 year.
 
 # JavaScript bundle (DocC search) — content-hashed filenames, safe to mark immutable
 /js/*
@@ -65,19 +65,27 @@
 /llms.txt
   Content-Type: text/plain; charset=utf-8
   X-Content-Type-Options: nosniff
+  Cache-Control: public, max-age=300, stale-while-revalidate=86400
+  Vary: Accept-Encoding
 
 /llms-full.txt
   Content-Type: text/plain; charset=utf-8
   X-Content-Type-Options: nosniff
+  Cache-Control: public, max-age=300, stale-while-revalidate=86400
+  Vary: Accept-Encoding
 
 /robots.txt
   Content-Type: text/plain; charset=utf-8
   X-Content-Type-Options: nosniff
+  Cache-Control: public, max-age=300, stale-while-revalidate=86400
+  Vary: Accept-Encoding
 
 /sitemap.xml
   Content-Type: application/xml; charset=utf-8
   X-Content-Type-Options: nosniff
   X-Robots-Tag: noindex
+  Cache-Control: public, max-age=300, stale-while-revalidate=86400
+  Vary: Accept-Encoding
 
 # Content negotiation: markdown alternate for AI agents
 /documentation/*
@@ -85,6 +93,9 @@
 
 # Production HTML (DocC) — strict baseline + CSP allowing DocC assets and analytics
 # NOTE: Extend CSP allowlists by appending origins (e.g., extra script host) instead of removing defaults to keep minimum protections intact.
+# Cache-Control is intentionally OMITTED here — see top-of-file note. HTML pages
+# rely on Cloudflare’s default heuristic caching plus the per-page ETag emitted
+# by Resources/docs-21-dev/functions/_middleware.ts; conditional GETs return 304.
 /*
   Link: </llms.txt>; rel="llms-txt"
   Link: </sitemap.xml>; rel="sitemap"
@@ -98,5 +109,3 @@
   Permissions-Policy: geolocation=(), microphone=(), camera=(), payment=(), fullscreen=(self)
   Cross-Origin-Opener-Policy: same-origin
   Cross-Origin-Resource-Policy: same-origin
-  Cache-Control: public, max-age=300, stale-while-revalidate=86400
-  Vary: Accept-Encoding
