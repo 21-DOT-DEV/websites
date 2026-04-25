@@ -99,7 +99,7 @@ let package = Package(
         ),
         .testTarget(
             name: "UtilLibTests",
-            dependencies: ["UtilLib"],
+            dependencies: ["UtilLib", "SchemaLib"],
             resources: [.copy("Fixtures")]
         ),
         .testTarget(

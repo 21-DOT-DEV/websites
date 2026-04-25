@@ -13,6 +13,7 @@
 //
 
 import Foundation
+import SchemaLib
 import Testing
 @testable import UtilLib
 
@@ -53,7 +54,7 @@ private func makeSidecar(
 @Suite("AgentDirectiveInjector — TechArticle wiring")
 struct AgentDirectiveTechArticleTests {
 
-    @Test("Article sidecar emits TechArticle node and bidirectional refs")
+    @Test("Article sidecar emits TechArticle node with articleSection=Guides and bidirectional refs")
     func articleEmitsTechArticle() throws {
         let sidecar = try makeSidecar(
             title: "Choosing Between P256K and ZKP",
@@ -69,8 +70,8 @@ struct AgentDirectiveTechArticleTests {
             sidecar: sidecar
         )
 
-        // Article-class node is present.
-        #expect(directive.contains("TechArticle"))
+        // Article-class node is present, uniformly typed as TechArticle.
+        #expect(directive.contains("\"TechArticle\""))
         // WebPage gets a back-reference to the TechArticle.
         #expect(directive.contains("mainEntity"))
         #expect(directive.contains("#techarticle"))
@@ -79,8 +80,13 @@ struct AgentDirectiveTechArticleTests {
         // Title is sourced from the sidecar, not the slug fallback.
         #expect(directive.contains("Choosing Between P256K and ZKP"))
         #expect(directive.contains("Pick the right product"))
-        // No APIReference for an authored article.
-        #expect(!directive.contains("APIReference"))
+        // articleSection is "Guides" for prose articles.
+        #expect(directive.contains("\"articleSection\":\"Guides\""))
+        // Authored articles do not get an `about` (no single subject).
+        #expect(!directive.contains("\"about\""))
+        // No APIReference legacy type/fragment for an authored article.
+        #expect(!directive.contains("\"APIReference\""))
+        #expect(!directive.contains("#apireference"))
     }
 
     @Test("Article WebPage.name equals sidecar.metadata.title (not slug)")
@@ -102,15 +108,37 @@ struct AgentDirectiveTechArticleTests {
         #expect(directive.contains("Choosing Between P256K and ZKP"))
         #expect(!directive.contains("Choosingp256kvszkp"))
     }
+
+    @Test("Article-role @id uses TechArticleSchema.canonicalID helper")
+    func articleIDMatchesCanonicalHelper() throws {
+        let sidecar = try makeSidecar(
+            title: "Choosing Between P256K and ZKP",
+            role: "article"
+        )
+
+        let directive = try AgentDirectiveInjector.buildDirective(
+            markdownURL: nil,
+            relativePath: "documentation/zkp/choosingp256kvszkp/index.html",
+            baseURL: docsBaseURL,
+            sidecar: sidecar
+        )
+
+        let expectedID = TechArticleSchema.canonicalID(
+            forPageURL: "https://docs.21.dev/documentation/zkp/choosingp256kvszkp/"
+        )
+        // Match against the JSON-LD escaped form (`/` -> `\/`) the renderer emits.
+        let escapedID = expectedID.replacingOccurrences(of: "/", with: "\\/")
+        #expect(directive.contains(escapedID))
+    }
 }
 
 // MARK: - buildDirective(sidecar:) — Symbol / Collection roles
 
-@Suite("AgentDirectiveInjector — APIReference wiring")
-struct AgentDirectiveAPIReferenceTests {
+@Suite("AgentDirectiveInjector — TechArticle (symbol/collection) wiring")
+struct AgentDirectiveSymbolCollectionTests {
 
-    @Test("Symbol sidecar emits APIReference with Swift / repo / module")
-    func symbolEmitsAPIReference() throws {
+    @Test("Symbol sidecar emits TechArticle with articleSection=API Reference and about=<module>")
+    func symbolEmitsTechArticle() throws {
         let sidecar = try makeSidecar(
             title: "PrivateKey",
             role: "symbol",
@@ -126,19 +154,26 @@ struct AgentDirectiveAPIReferenceTests {
             sidecar: sidecar
         )
 
-        #expect(directive.contains("APIReference"))
-        #expect(directive.contains("#apireference"))
-        #expect(directive.contains("\"programmingLanguage\":\"Swift\""))
-        #expect(directive.contains("21-DOT-DEV\\/swift-secp256k1"))
+        // Uniform TechArticle @type for both prose and reference pages.
+        #expect(directive.contains("\"TechArticle\""))
+        // Reference pages carry articleSection: "API Reference".
+        #expect(directive.contains("\"articleSection\":\"API Reference\""))
+        // Reference pages carry the module name in `about`.
         #expect(directive.contains("\"about\":\"P256K\""))
-        // WebPage has a mainEntity ref to the APIReference node.
+        // Canonical fragment is uniformly #techarticle.
+        #expect(directive.contains("#techarticle"))
+        // WebPage has a mainEntity ref to the TechArticle node.
         #expect(directive.contains("mainEntity"))
-        // No TechArticle for a symbol page.
-        #expect(!directive.contains("TechArticle"))
+        // Dropped properties must NOT appear.
+        #expect(!directive.contains("\"programmingLanguage\""))
+        #expect(!directive.contains("\"codeRepository\""))
+        // Legacy APIReference type/fragment must NOT appear.
+        #expect(!directive.contains("\"APIReference\""))
+        #expect(!directive.contains("#apireference"))
     }
 
-    @Test("Collection (module overview) sidecar also emits APIReference")
-    func collectionEmitsAPIReference() throws {
+    @Test("Collection (module overview) sidecar emits TechArticle with API Reference section")
+    func collectionEmitsTechArticle() throws {
         let sidecar = try makeSidecar(
             title: "P256K",
             role: "collection",
@@ -152,33 +187,40 @@ struct AgentDirectiveAPIReferenceTests {
             sidecar: sidecar
         )
 
-        #expect(directive.contains("APIReference"))
-        #expect(directive.contains("21-DOT-DEV\\/swift-secp256k1"))
+        #expect(directive.contains("\"TechArticle\""))
+        #expect(directive.contains("\"articleSection\":\"API Reference\""))
+        #expect(directive.contains("\"about\":\"P256K\""))
+        #expect(!directive.contains("\"APIReference\""))
     }
 
-    @Test("APIReference for ZKP module routes to swift-secp256k1 repo")
-    func zkpRepoMapping() throws {
+    @Test("Symbol-role @id uses TechArticleSchema.canonicalID helper")
+    func symbolIDMatchesCanonicalHelper() throws {
         let sidecar = try makeSidecar(
-            title: "ZKP",
-            role: "collection",
-            module: "ZKP"
+            title: "PrivateKey",
+            role: "symbol",
+            module: "P256K"
         )
 
         let directive = try AgentDirectiveInjector.buildDirective(
             markdownURL: nil,
-            relativePath: "documentation/zkp/index.html",
+            relativePath: "documentation/p256k/p256k/signing/privatekey/index.html",
             baseURL: docsBaseURL,
             sidecar: sidecar
         )
-        #expect(directive.contains("21-DOT-DEV\\/swift-secp256k1"))
+
+        let expectedID = TechArticleSchema.canonicalID(
+            forPageURL: "https://docs.21.dev/documentation/p256k/p256k/signing/privatekey/"
+        )
+        let escapedID = expectedID.replacingOccurrences(of: "/", with: "\\/")
+        #expect(directive.contains(escapedID))
     }
 
-    @Test("APIReference for Event module routes to swift-event repo")
-    func eventRepoMapping() throws {
+    @Test("`about` falls back to path-derived module when sidecar.moduleName is nil")
+    func aboutFallsBackToPath() throws {
+        // Sidecar without a module field— forces extractModule(from:) fallback.
         let sidecar = try makeSidecar(
             title: "Event",
-            role: "collection",
-            module: "Event"
+            role: "collection"
         )
 
         let directive = try AgentDirectiveInjector.buildDirective(
@@ -187,26 +229,10 @@ struct AgentDirectiveAPIReferenceTests {
             baseURL: docsBaseURL,
             sidecar: sidecar
         )
-        #expect(directive.contains("21-DOT-DEV\\/swift-event"))
-    }
 
-    @Test("Unknown module yields no codeRepository field")
-    func unknownModuleHasNoRepository() throws {
-        let sidecar = try makeSidecar(
-            title: "Mystery",
-            role: "collection",
-            module: "Mystery"
-        )
-
-        let directive = try AgentDirectiveInjector.buildDirective(
-            markdownURL: nil,
-            relativePath: "documentation/mystery/index.html",
-            baseURL: docsBaseURL,
-            sidecar: sidecar
-        )
-        #expect(directive.contains("APIReference"))
-        // codeRepository is omitted (encodeIfPresent) — no swift-* token.
-        #expect(!directive.contains("\"codeRepository\""))
+        // extractModule returns lowercase "event"; the injector uppercases it
+        // to match DocC's bundle-name convention.
+        #expect(directive.contains("\"about\":\"EVENT\""))
     }
 }
 
@@ -226,8 +252,8 @@ struct AgentDirectiveRoleFallthroughTests {
             sidecar: sidecar
         )
 
-        #expect(!directive.contains("TechArticle"))
-        #expect(!directive.contains("APIReference"))
+        #expect(!directive.contains("\"TechArticle\""))
+        #expect(!directive.contains("\"APIReference\""))
         #expect(!directive.contains("mainEntity"))
     }
 
@@ -241,8 +267,8 @@ struct AgentDirectiveRoleFallthroughTests {
             sidecar: sidecar
         )
 
-        #expect(!directive.contains("TechArticle"))
-        #expect(!directive.contains("APIReference"))
+        #expect(!directive.contains("\"TechArticle\""))
+        #expect(!directive.contains("\"APIReference\""))
     }
 
     @Test("nil sidecar still emits Organization + WebPage with slug name")
@@ -258,38 +284,66 @@ struct AgentDirectiveRoleFallthroughTests {
         #expect(directive.contains("WebPage"))
         // Slug-derived page name still appears (capitalized last segment).
         #expect(directive.contains("\"name\":\"Context\""))
-        #expect(!directive.contains("TechArticle"))
-        #expect(!directive.contains("APIReference"))
+        #expect(!directive.contains("\"TechArticle\""))
+        #expect(!directive.contains("\"APIReference\""))
     }
 }
 
-// MARK: - codeRepository(forModule:) helper
+// MARK: - Regression: APIReference / #apireference must never re-appear
 
-@Suite("AgentDirectiveInjector.codeRepository helper")
-struct AgentDirectiveCodeRepositoryTests {
+@Suite("AgentDirectiveInjector — APIReference legacy regression")
+struct AgentDirectiveAPIReferenceRegressionTests {
 
-    @Test("Maps p256k and zkp to swift-secp256k1 (case-insensitive)")
-    func p256kAndZkpMapToSecp256k1() {
-        #expect(AgentDirectiveInjector.codeRepository(forModule: "P256K")?.hasSuffix("swift-secp256k1") == true)
-        #expect(AgentDirectiveInjector.codeRepository(forModule: "p256k")?.hasSuffix("swift-secp256k1") == true)
-        #expect(AgentDirectiveInjector.codeRepository(forModule: "ZKP")?.hasSuffix("swift-secp256k1") == true)
+    /// Walks the cross-product of representative roles × paths and confirms
+    /// that the deprecated `"APIReference"` `@type` and `#apireference`
+    /// fragment never leak back into the rendered JSON-LD. Pinning these
+    /// strings as forbidden defends against accidental reintroduction
+    /// (e.g., copy-paste from older docs / specs).
+    @Test("No representative role+path combination ever emits 'APIReference' or '#apireference'")
+    func neverEmitsLegacyAPIReferenceTokens() throws {
+        struct Case { let title: String; let role: String; let module: String?; let path: String }
+        let cases: [Case] = [
+            .init(title: "Choosing P256K vs ZKP", role: "article", module: "ZKP",
+                  path: "documentation/zkp/choosingp256kvszkp/index.html"),
+            .init(title: "PrivateKey", role: "symbol", module: "P256K",
+                  path: "documentation/p256k/p256k/signing/privatekey/index.html"),
+            .init(title: "P256K", role: "collection", module: "P256K",
+                  path: "documentation/p256k/index.html"),
+            .init(title: "Event", role: "collection", module: "Event",
+                  path: "documentation/event/index.html"),
+            .init(title: "Documentation", role: "landingPage", module: nil,
+                  path: "documentation/index.html"),
+        ]
+
+        for c in cases {
+            let sidecar = try makeSidecar(title: c.title, role: c.role, module: c.module)
+            let directive = try AgentDirectiveInjector.buildDirective(
+                markdownURL: nil,
+                relativePath: c.path,
+                baseURL: docsBaseURL,
+                sidecar: sidecar
+            )
+            #expect(
+                !directive.contains("\"APIReference\""),
+                "role=\(c.role) path=\(c.path) leaked legacy @type 'APIReference'"
+            )
+            #expect(
+                !directive.contains("#apireference"),
+                "role=\(c.role) path=\(c.path) leaked legacy fragment '#apireference'"
+            )
+        }
     }
 
-    @Test("Maps event to swift-event")
-    func eventMapping() {
-        #expect(AgentDirectiveInjector.codeRepository(forModule: "Event")?.hasSuffix("swift-event") == true)
-    }
-
-    @Test("Maps openssl to swift-openssl")
-    func opensslMapping() {
-        #expect(AgentDirectiveInjector.codeRepository(forModule: "OpenSSL")?.hasSuffix("swift-openssl") == true)
-    }
-
-    @Test("Returns nil for unknown / nil module")
-    func unknownReturnsNil() {
-        #expect(AgentDirectiveInjector.codeRepository(forModule: nil) == nil)
-        #expect(AgentDirectiveInjector.codeRepository(forModule: "Unknown") == nil)
-        #expect(AgentDirectiveInjector.codeRepository(forModule: "") == nil)
+    @Test("nil sidecar path also never emits the legacy tokens")
+    func nilSidecarPathHasNoLegacyTokens() throws {
+        let directive = try AgentDirectiveInjector.buildDirective(
+            markdownURL: nil,
+            relativePath: "documentation/p256k/p256k/context/index.html",
+            baseURL: docsBaseURL,
+            sidecar: nil
+        )
+        #expect(!directive.contains("\"APIReference\""))
+        #expect(!directive.contains("#apireference"))
     }
 }
 

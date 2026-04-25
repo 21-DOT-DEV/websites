@@ -1168,7 +1168,7 @@ struct SchemaTests {
         #expect(json.contains("en-US"))
     }
 
-    @Test("TechArticleSchema encodes all optional fields")
+    @Test("TechArticleSchema encodes all optional fields including articleSection and about")
     func testTechArticleSchemaFull() throws {
         let schema = TechArticleSchema(
             id: "https://docs.21.dev/documentation/zkp/choosingp256kvszkp/#techarticle",
@@ -1178,16 +1178,21 @@ struct SchemaTests {
             inLanguage: "en-US",
             isPartOf: SchemaReference(id: "https://docs.21.dev/#website"),
             mainEntityOfPage: SchemaReference(id: "https://docs.21.dev/documentation/zkp/choosingp256kvszkp/#webpage"),
-            publisher: SchemaReference(id: "https://21.dev/#organization")
+            publisher: SchemaReference(id: "https://21.dev/#organization"),
+            articleSection: "Guides",
+            about: "ZKP"
         )
         let graph = SchemaGraph(schema)
         let json = try graph.render()
 
         // JSONEncoder escapes `/` as `\/`, so assert structurally via JSONSerialization.
         let parsed = try JSONSerialization.jsonObject(with: Data(json.utf8)) as? [String: Any]
+        #expect(parsed?["@type"] as? String == "TechArticle")
         #expect(parsed?["headline"] as? String == "Choosing Between P256K and ZKP")
         #expect(parsed?["description"] as? String == "Decision boundary between the two products.")
         #expect(parsed?["url"] as? String == "https://docs.21.dev/documentation/zkp/choosingp256kvszkp/")
+        #expect(parsed?["articleSection"] as? String == "Guides")
+        #expect(parsed?["about"] as? String == "ZKP")
         let isPartOf = parsed?["isPartOf"] as? [String: String]
         #expect(isPartOf?["@id"] == "https://docs.21.dev/#website")
         let publisher = parsed?["publisher"] as? [String: String]
@@ -1205,6 +1210,8 @@ struct SchemaTests {
         #expect(!json.contains("\"isPartOf\""))
         #expect(!json.contains("\"publisher\""))
         #expect(!json.contains("\"@id\""))
+        #expect(!json.contains("\"articleSection\""))
+        #expect(!json.contains("\"about\""))
     }
 
     @Test("TechArticleSchema participates in @graph alongside WebPage")
@@ -1231,63 +1238,85 @@ struct SchemaTests {
         #expect(json.contains("#techarticle"))
     }
 
-    // MARK: - APIReferenceSchema Tests
+    // MARK: - TechArticleSchema canonical-id helper
 
-    @Test("APIReferenceSchema encodes minimal fields")
-    func testAPIReferenceSchemaMinimal() throws {
-        let schema = APIReferenceSchema(headline: "EventLoop")
-        let graph = SchemaGraph(schema)
-        let json = try graph.render()
-
-        #expect(json.contains("APIReference"))
-        #expect(json.contains("EventLoop"))
+    @Test("TechArticleSchema.canonicalIDFragment is the literal #techarticle")
+    func testTechArticleCanonicalIDFragment() {
+        // Lock the public contract — external consumers may key on this fragment.
+        #expect(TechArticleSchema.canonicalIDFragment == "#techarticle")
     }
 
-    @Test("APIReferenceSchema encodes API-specific fields")
-    func testAPIReferenceSchemaSpecificFields() throws {
-        let schema = APIReferenceSchema(
-            id: "https://docs.21.dev/documentation/event/eventloop/#apireference",
+    @Test("TechArticleSchema.canonicalID concatenates pageURL with the fragment")
+    func testTechArticleCanonicalIDFromPageURL() {
+        let pageURL = "https://docs.21.dev/documentation/event/"
+        let id = TechArticleSchema.canonicalID(forPageURL: pageURL)
+        #expect(id == "https://docs.21.dev/documentation/event/#techarticle")
+        #expect(id.hasSuffix(TechArticleSchema.canonicalIDFragment))
+    }
+
+    // MARK: - TechArticleSchema role-flavored configurations
+
+    @Test("TechArticle for symbol/collection role carries articleSection=API Reference and about=<module>")
+    func testTechArticleSymbolRoleShape() throws {
+        let pageURL = "https://docs.21.dev/documentation/event/eventloop/"
+        let api = TechArticleSchema(
+            id: TechArticleSchema.canonicalID(forPageURL: pageURL),
             headline: "EventLoop",
             description: "A libevent-backed event loop.",
-            url: "https://docs.21.dev/documentation/event/eventloop/",
-            programmingLanguage: "Swift",
-            codeRepository: "https://github.com/21-DOT-DEV/swift-event",
+            url: pageURL,
+            isPartOf: SchemaReference(id: "https://docs.21.dev/#website"),
+            mainEntityOfPage: SchemaReference(id: "\(pageURL)#webpage"),
+            publisher: SchemaReference(id: "https://21.dev/#organization"),
+            articleSection: "API Reference",
             about: "Event"
         )
-        let graph = SchemaGraph(schema)
+        let graph = SchemaGraph(api)
         let json = try graph.render()
 
         let parsed = try JSONSerialization.jsonObject(with: Data(json.utf8)) as? [String: Any]
-        #expect(parsed?["programmingLanguage"] as? String == "Swift")
-        #expect(parsed?["codeRepository"] as? String == "https://github.com/21-DOT-DEV/swift-event")
+        #expect(parsed?["@type"] as? String == "TechArticle")
+        #expect(parsed?["articleSection"] as? String == "API Reference")
         #expect(parsed?["about"] as? String == "Event")
+        // The dropped properties must NOT appear — they're not part of the
+        // TechArticle shape per the post-research design.
+        #expect(parsed?["programmingLanguage"] == nil)
+        #expect(parsed?["codeRepository"] == nil)
     }
 
-    @Test("APIReferenceSchema omits API-specific fields when nil")
-    func testAPIReferenceSchemaOmitsNilSpecific() throws {
-        let schema = APIReferenceSchema(headline: "EventLoop")
-        let graph = SchemaGraph(schema)
+    @Test("TechArticle for article role carries articleSection=Guides and omits about")
+    func testTechArticleArticleRoleShape() throws {
+        let pageURL = "https://docs.21.dev/documentation/zkp/choosingp256kvszkp/"
+        let article = TechArticleSchema(
+            id: TechArticleSchema.canonicalID(forPageURL: pageURL),
+            headline: "Choosing Between P256K and ZKP",
+            url: pageURL,
+            articleSection: "Guides"
+        )
+        let graph = SchemaGraph(article)
         let json = try graph.render()
 
-        #expect(!json.contains("\"programmingLanguage\""))
-        #expect(!json.contains("\"codeRepository\""))
-        #expect(!json.contains("\"about\""))
+        let parsed = try JSONSerialization.jsonObject(with: Data(json.utf8)) as? [String: Any]
+        #expect(parsed?["articleSection"] as? String == "Guides")
+        #expect(parsed?["about"] == nil)
     }
 
-    @Test("APIReferenceSchema bidirectional refs with WebPage")
-    func testAPIReferenceBidirectionalRefs() throws {
+    @Test("Bidirectional refs use the canonical #techarticle fragment for symbol pages too")
+    func testTechArticleBidirectionalRefsForSymbol() throws {
         let pageURL = "https://docs.21.dev/documentation/event/eventloop/"
+        let articleId = TechArticleSchema.canonicalID(forPageURL: pageURL)
         let webPage = WebPageSchema(
             id: "\(pageURL)#webpage",
             isPartOf: SchemaReference(id: "https://docs.21.dev/#website"),
             name: "EventLoop",
             url: pageURL,
-            mainEntity: SchemaReference(id: "\(pageURL)#apireference")
+            mainEntity: SchemaReference(id: articleId)
         )
-        let api = APIReferenceSchema(
-            id: "\(pageURL)#apireference",
+        let api = TechArticleSchema(
+            id: articleId,
             headline: "EventLoop",
-            mainEntityOfPage: SchemaReference(id: "\(pageURL)#webpage")
+            mainEntityOfPage: SchemaReference(id: "\(pageURL)#webpage"),
+            articleSection: "API Reference",
+            about: "Event"
         )
         let graph = SchemaGraph([webPage, api])
         let json = try graph.render()
@@ -1295,6 +1324,10 @@ struct SchemaTests {
         #expect(json.contains("\"mainEntity\""))
         #expect(json.contains("\"mainEntityOfPage\""))
         #expect(json.contains("#webpage"))
-        #expect(json.contains("#apireference"))
+        #expect(json.contains("#techarticle"))
+        // Regression: never re-emit the deprecated #apireference fragment.
+        #expect(!json.contains("#apireference"))
+        // Regression: never emit the non-Schema.org @type "APIReference".
+        #expect(!json.contains("\"APIReference\""))
     }
 }

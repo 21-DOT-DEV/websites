@@ -16,22 +16,6 @@ import SiteIdentity
 /// machine-readable markdown versions.
 public enum AgentDirectiveInjector {
 
-    /// Maps a DocC module slug (case-insensitive) to its canonical
-    /// `codeRepository` URL.
-    ///
-    /// The mapping mirrors `Resources/docs-21-dev/external-archives.json`. We
-    /// keep a small static table here to avoid loading and parsing that file
-    /// at injection time; if a new DocC bundle ships, add it in both places.
-    static func codeRepository(forModule module: String?) -> String? {
-        guard let module = module?.lowercased() else { return nil }
-        switch module {
-        case "p256k", "zkp": return "\(SiteIdentity.githubURL)/swift-secp256k1"
-        case "event":        return "\(SiteIdentity.githubURL)/swift-event"
-        case "openssl":      return "\(SiteIdentity.githubURL)/swift-openssl"
-        default:             return nil
-        }
-    }
-
     /// Marker string used to detect existing JSON-LD directives.
     /// Present in both full directives (with markdown link) and fallback directives.
     static let marker = "\"isPartOf\""
@@ -454,11 +438,13 @@ public enum AgentDirectiveInjector {
     ///      site's canonical `@id`, providing a cross-domain identity link)
     ///    - `BreadcrumbList` node (only when breadcrumb items exist)
     ///    - `WebPage` node with `isPartOf → WebSite` and (when applicable)
-    ///      `mainEntity → TechArticle | APIReference`
-    ///    - `TechArticle` node when the DocC sidecar's `metadata.role`
-    ///      indicates an authored article
-    ///    - `APIReference` node when the DocC sidecar's role indicates a
-    ///      symbol or symbol-collection / module page
+    ///      `mainEntity → TechArticle`
+    ///    - `TechArticle` node when the DocC sidecar's `metadata.role` is
+    ///      `article`, `symbol`, or `collection`. The article-vs-reference
+    ///      distinction is encoded via `articleSection` ("Guides" for prose,
+    ///      "API Reference" for symbol/collection); the `@type` is uniform
+    ///      `TechArticle` across both — see Schema.org guidance and
+    ///      Vercel/Pulumi peer practice.
     ///
     /// When `sidecar` is `nil` (no DocC metadata available — top-level
     /// `documentation/index.html`, generation-time loader failure, or a
@@ -532,9 +518,13 @@ public enum AgentDirectiveInjector {
             breadcrumbRef = nil
         }
 
-        // 4. Article-class node (TechArticle | APIReference), driven by the
-        //    DocC sidecar's `metadata.role`. We compute it before the WebPage
-        //    so the WebPage can carry a `mainEntity` back-reference.
+        // 4. TechArticle node, driven by the DocC sidecar's `metadata.role`.
+        //    Both authored prose (.article) and reference pages
+        //    (.symbol / .collection) emit a uniform `@type: "TechArticle"`,
+        //    differentiated by `articleSection` ("Guides" vs "API Reference").
+        //    Symbol/collection pages additionally carry `about: <ModuleName>`.
+        //    We compute the article node before the WebPage so the WebPage
+        //    can carry a `mainEntity` back-reference.
         let webPageId = "\(pageURL)#webpage"
         let publisherRef = SchemaReference(id: SiteIdentity.schemaID)
         let articleNode: (any Schema)?
@@ -542,7 +532,7 @@ public enum AgentDirectiveInjector {
 
         switch sidecar?.semanticRole {
         case .article:
-            let articleId = "\(pageURL)#techarticle"
+            let articleId = TechArticleSchema.canonicalID(forPageURL: pageURL)
             articleNode = TechArticleSchema(
                 id: articleId,
                 headline: sidecar?.metadata.title ?? resolvedPageName,
@@ -550,16 +540,17 @@ public enum AgentDirectiveInjector {
                 url: pageURL,
                 isPartOf: SchemaReference(id: websiteId),
                 mainEntityOfPage: SchemaReference(id: webPageId),
-                publisher: publisherRef
+                publisher: publisherRef,
+                articleSection: "Guides"
             )
             mainEntityRef = SchemaReference(id: articleId)
         case .symbol, .collection:
-            let articleId = "\(pageURL)#apireference"
+            let articleId = TechArticleSchema.canonicalID(forPageURL: pageURL)
             // Prefer the sidecar's own module assignment; fall back to the
             // path-derived slug (uppercased to match DocC's bundle name).
             let module = sidecar?.moduleName
                 ?? extractModule(from: relativePath)?.uppercased()
-            articleNode = APIReferenceSchema(
+            articleNode = TechArticleSchema(
                 id: articleId,
                 headline: sidecar?.metadata.title ?? resolvedPageName,
                 description: resolvedDescription,
@@ -567,8 +558,7 @@ public enum AgentDirectiveInjector {
                 isPartOf: SchemaReference(id: websiteId),
                 mainEntityOfPage: SchemaReference(id: webPageId),
                 publisher: publisherRef,
-                programmingLanguage: "Swift",
-                codeRepository: AgentDirectiveInjector.codeRepository(forModule: module),
+                articleSection: "API Reference",
                 about: module
             )
             mainEntityRef = SchemaReference(id: articleId)
