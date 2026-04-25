@@ -31,6 +31,12 @@ function writeAnalytics(
  * collisions across this site's pages. SHA-1 is cryptographically broken
  * but ETags are not security-sensitive; this is the de-facto industry
  * standard for edge-side content fingerprinting.
+ *
+ * Used only for the markdown content-negotiation path below — that response
+ * is built from a `fetch()` body we own in JS, so it is genuinely hashable.
+ * Static HTML responses are NOT hashed here; CF Pages auto-emits strong
+ * ETags for them and handles `If-None-Match` → 304 natively. See the comment
+ * at the bottom of this function for why we do not override that.
  */
 async function sha1Hex(buf: BufferSource, length = 16): Promise<string> {
   const hashBuf = await crypto.subtle.digest("SHA-1", buf);
@@ -38,15 +44,6 @@ async function sha1Hex(buf: BufferSource, length = 16): Promise<string> {
     .map((b) => b.toString(16).padStart(2, "0"))
     .join("");
   return hex.slice(0, length);
-}
-
-/** Materialize a Headers instance into a plain object for the pure helpers. */
-function headersToObject(headers: Headers): Record<string, string> {
-  const out: Record<string, string> = {};
-  headers.forEach((value, key) => {
-    out[key] = value;
-  });
-  return out;
 }
 
 export async function onRequest(context: EventContext<unknown, string, unknown>) {
@@ -139,38 +136,23 @@ export async function onRequest(context: EventContext<unknown, string, unknown>)
     }
   }
 
-  // --- 3. Default: serve normally, with ETag for HTML responses ---
+  // --- 3. Default: serve normally with error handling ---
+  //
+  // We deliberately do NOT compute a custom ETag for the HTML response from
+  // `context.next()` here. Cloudflare Pages auto-emits a strong ETag for
+  // every static-asset 200 OK response (HTML included) and handles
+  // `If-None-Match` → 304 natively:
+  //   https://developers.cloudflare.com/pages/configuration/serving-pages/
+  //
+  // An earlier attempt to wrap this branch in a SHA-1 fingerprint of the
+  // buffered response body failed because for static assets CF Pages serves
+  // the body via its asset pipeline AFTER the function returns —
+  // `arrayBuffer()` returned 0 bytes, producing the constant SHA-1-of-empty
+  // `da39a3ee…` for every page and breaking revalidation entirely. The
+  // markdown branch above does NOT have this problem because the response is
+  // built from a `fetch()` whose body is fully materialized in JS.
   try {
-    const response = await context.next();
-
-    // ETag only applies to 200 OK HTML pages. Static assets (CSS, JSON,
-    // sitemap.xml, llms.txt, etc.) already get auto-ETagged by Cloudflare
-    // Pages, and tagging error/redirect responses provides no caching value.
-    if (response.status !== 200) return response;
-    const contentType = response.headers.get("content-type") || "";
-    if (!contentType.toLowerCase().startsWith("text/html")) return response;
-
-    const body = await response.arrayBuffer();
-    const hash = await sha1Hex(body);
-    const etag = etagHeader(hash);
-
-    if (etagMatches(etag, ifNoneMatch)) {
-      return new Response(null, {
-        status: 304,
-        headers: buildNotModifiedHeaders(etag, headersToObject(response.headers)),
-      });
-    }
-
-    const newHeaders = new Headers(response.headers);
-    newHeaders.set("ETag", etag);
-    if (!newHeaders.has("Vary")) {
-      newHeaders.set("Vary", "Accept-Encoding");
-    }
-    return new Response(body, {
-      status: 200,
-      statusText: response.statusText,
-      headers: newHeaders,
-    });
+    return await context.next();
   } catch (err) {
     return new Response("Internal Server Error", { status: 500 });
   }
