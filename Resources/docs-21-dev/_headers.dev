@@ -41,12 +41,18 @@
   X-Robots-Tag: noindex
 
 # cfpages-ignore: glob-content-type (DocC generates hundreds of .md files; explicit paths impractical)
+# Detach Link and X-Llms-Txt inherited from the catch-all `/*` rule below: those
+# headers describe HTML pages (llms-txt index, sitemap) and should not appear on
+# raw markdown asset responses. Cloudflare Pages `! HeaderName` syntax removes a
+# header set by a more pervasive matching rule.
 /data/documentation/**/*.md
   Content-Type: text/markdown; charset=utf-8
   Cache-Control: public, max-age=300, stale-while-revalidate=86400
   Vary: Accept-Encoding
   X-Content-Type-Options: nosniff
   X-Robots-Tag: noindex
+  ! Link
+  ! X-Llms-Txt
 
 # DocC data directory (symbol JSON)
 /data/*
@@ -87,7 +93,9 @@
 # NOTE: Extend CSP allowlists by appending origins (e.g., extra script host) instead of removing defaults to keep minimum protections intact.
 /*
   Link: </llms.txt>; rel="llms-txt"
+  Link: </llms-full.txt>; rel="llms-full-txt"
   Link: </sitemap.xml>; rel="sitemap"
+  # X-Llms-Txt: companion to Link rel="llms-txt" for non-RFC-8288 tooling (Mintlify pattern).
   X-Llms-Txt: /llms.txt
   Content-Security-Policy: default-src 'self'; connect-src 'self' https://static.cloudflareinsights.com; font-src 'self' data:; img-src 'self' data:; script-src 'self' https://static.cloudflareinsights.com 'sha256-Tmnua9Q+ofeiLwDiFowbjAxSJRmhO2KE+f0QIsqwNfw='; style-src 'self' 'unsafe-inline'; frame-ancestors 'none'; object-src 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests
   X-Frame-Options: DENY

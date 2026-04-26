@@ -488,4 +488,89 @@ struct Docs21DevMiddlewareTests {
         let dict = ctx.evaluateScript(js)!.toDictionary() as! [String: Any]
         #expect(dict["Cache-Control"] as? String == "public, max-age=42")
     }
+
+    // MARK: - canonicalUrl
+
+    @Test("canonicalUrl strips trailing /index.html")
+    func canonicalStripsIndexHtml() {
+        let r = ctx.evaluateScript("canonicalUrl('/documentation/p256k/index.html')")!
+        #expect(r.toString() == "https://docs.21.dev/documentation/p256k/")
+    }
+
+    @Test("canonicalUrl preserves clean directory paths")
+    func canonicalPreservesDirectoryPaths() {
+        let r = ctx.evaluateScript("canonicalUrl('/documentation/p256k/')")!
+        #expect(r.toString() == "https://docs.21.dev/documentation/p256k/")
+    }
+
+    @Test("canonicalUrl preserves .html siblings (non-index)")
+    func canonicalPreservesHtmlSiblings() {
+        let r = ctx.evaluateScript("canonicalUrl('/documentation/p256k/signing.html')")!
+        #expect(r.toString() == "https://docs.21.dev/documentation/p256k/signing.html")
+    }
+
+    @Test("canonicalUrl handles root path")
+    func canonicalHandlesRoot() {
+        let r = ctx.evaluateScript("canonicalUrl('/')")!
+        #expect(r.toString() == "https://docs.21.dev/")
+    }
+
+    @Test("canonicalUrl always uses https://docs.21.dev origin")
+    func canonicalAlwaysUsesDocsOrigin() {
+        let r = ctx.evaluateScript("canonicalUrl('/llms.txt')")!
+        #expect(r.toString() == "https://docs.21.dev/llms.txt")
+    }
+
+    @Test("canonicalUrl preserves nested deep paths")
+    func canonicalPreservesNestedPaths() {
+        let r = ctx.evaluateScript("canonicalUrl('/documentation/p256k/p256k/signing/')")!
+        #expect(r.toString() == "https://docs.21.dev/documentation/p256k/p256k/signing/")
+    }
+
+    // MARK: - buildHtmlLinkHeader
+
+    @Test("buildHtmlLinkHeader for module path includes alternate and canonical")
+    func linkHeaderModulePath() {
+        let r = ctx.evaluateScript("buildHtmlLinkHeader('/documentation/p256k/')")!.toString()!
+        #expect(r.contains(#"</data/documentation/p256k.md>; rel="alternate"; type="text/markdown""#))
+        #expect(r.contains(#"<https://docs.21.dev/documentation/p256k/>; rel="canonical""#))
+    }
+
+    @Test("buildHtmlLinkHeader for index page uses /llms.txt as alternate")
+    func linkHeaderIndexUsesLlmsTxt() {
+        let r = ctx.evaluateScript("buildHtmlLinkHeader('/')")!.toString()!
+        #expect(r.contains(#"</llms.txt>; rel="alternate"; type="text/markdown""#))
+        #expect(r.contains(#"<https://docs.21.dev/>; rel="canonical""#))
+    }
+
+    @Test("buildHtmlLinkHeader for /documentation/ uses /llms.txt as alternate")
+    func linkHeaderDocumentationIndex() {
+        let r = ctx.evaluateScript("buildHtmlLinkHeader('/documentation/')")!.toString()!
+        #expect(r.contains(#"</llms.txt>; rel="alternate"; type="text/markdown""#))
+        #expect(r.contains(#"<https://docs.21.dev/documentation/>; rel="canonical""#))
+    }
+
+    @Test("buildHtmlLinkHeader for /index.html strips suffix in canonical only")
+    func linkHeaderStripsIndexHtmlInCanonical() {
+        let r = ctx.evaluateScript("buildHtmlLinkHeader('/documentation/p256k/index.html')")!.toString()!
+        // Canonical is the cleaned URL
+        #expect(r.contains(#"<https://docs.21.dev/documentation/p256k/>; rel="canonical""#))
+        // Alternate is what resolveMarkdownPath produces for the literal pathname
+        #expect(r.contains(#"</data/documentation/p256k.md>; rel="alternate""#))
+    }
+
+    @Test("buildHtmlLinkHeader produces RFC 8288 comma-separated value")
+    func linkHeaderCommaSeparated() {
+        let r = ctx.evaluateScript("buildHtmlLinkHeader('/documentation/p256k/')")!.toString()!
+        #expect(r.contains(", "))
+        #expect(!r.hasPrefix(","))
+        #expect(!r.hasSuffix(","))
+    }
+
+    @Test("buildHtmlLinkHeader for .html sibling uses corresponding .md alternate")
+    func linkHeaderHtmlSibling() {
+        let r = ctx.evaluateScript("buildHtmlLinkHeader('/documentation/p256k/p256k/signing.html')")!.toString()!
+        #expect(r.contains(#"</data/documentation/p256k/p256k/signing.md>; rel="alternate""#))
+        #expect(r.contains(#"<https://docs.21.dev/documentation/p256k/p256k/signing.html>; rel="canonical""#))
+    }
 }

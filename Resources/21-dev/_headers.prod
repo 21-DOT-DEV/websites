@@ -88,8 +88,10 @@
 # by Resources/21-dev/functions/_middleware.ts; conditional GETs return 304.
 /*
   Link: </llms.txt>; rel="llms-txt"
+  Link: </llms-full.txt>; rel="llms-full-txt"
   Link: </sitemap.xml>; rel="sitemap"
-  Link: <https://docs.21.dev/documentation/>; rel="service-doc"
+  Link: <https://docs.21.dev/documentation/>; rel="service-doc"; type="text/html"
+  # X-Llms-Txt: companion to Link rel="llms-txt" for non-RFC-8288 tooling (Mintlify pattern).
   X-Llms-Txt: /llms.txt
   Strict-Transport-Security: max-age=63072000; includeSubDomains; preload
   Content-Security-Policy: default-src 'self'; connect-src 'self' https://static.cloudflareinsights.com; font-src 'self'; img-src 'self' data:; script-src 'self' https://static.cloudflareinsights.com; style-src 'self' 'unsafe-inline'; frame-ancestors 'none'; object-src 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests

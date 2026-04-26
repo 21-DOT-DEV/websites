@@ -196,3 +196,63 @@ export function buildNotModifiedHeaders(etag, originalHeaders = {}) {
   }
   return result;
 }
+
+// ---------------------------------------------------------------------------
+// HTML Link header helpers
+//
+// Pure helpers for the HTML pass-through handler to advertise per-page
+// markdown-alternate and canonical URLs at the HTTP layer. Companion to the
+// markup-level <link> tags injected at build time by AgentDirectiveInjector
+// (see Sources/UtilLib/AgentDirective/AgentDirectiveInjector.swift).
+//
+// Mirrors Vercel docs' agent-friendly content-negotiation pattern: HTTP and
+// markup advertise the same alternate + canonical URLs so audit tools that
+// only inspect HTTP headers (curl -I, lightweight crawlers) and tools that
+// parse rendered HTML both see consistent values.
+// ---------------------------------------------------------------------------
+
+/**
+ * Computes the canonical URL for a docs.21.dev HTML page.
+ *
+ * Strips a trailing `/index.html` to match the post-redirect end state
+ * established by `_redirects` (`/*\/index.html /:splat/ 301`). Other forms
+ * (clean directory paths, `.html` siblings) are returned unchanged.
+ *
+ * Aligns with the canonical URL emitted in markup by AgentDirectiveInjector
+ * via `CanonicalURLDeriver`, so HTTP and markup advertise identical values.
+ *
+ * @param {string} pathname  URL pathname including leading slash.
+ * @returns {string}         Absolute canonical URL.
+ */
+export function canonicalUrl(pathname) {
+  const cleaned = pathname.endsWith("/index.html")
+    ? pathname.slice(0, -"index.html".length)
+    : pathname;
+  return `https://docs.21.dev${cleaned}`;
+}
+
+/**
+ * Builds the per-page `Link` header value for HTML responses on docs.21.dev.
+ *
+ * Emits two link entries (RFC 8288 §3 comma-separated):
+ *   - rel="alternate" type="text/markdown" → corresponding markdown URL
+ *     (via `resolveMarkdownPath` — the same algorithm used by the negotiation
+ *     handler, ensuring HTTP advertisement matches the resource agents would
+ *     actually receive via `Accept: text/markdown`).
+ *   - rel="canonical" → cleaned self-URL (via `canonicalUrl`).
+ *
+ * The catch-all `_headers` rule already advertises `rel="llms-txt"`,
+ * `rel="llms-full-txt"`, and `rel="sitemap"`; Cloudflare concatenates those
+ * with this function's value into a single comma-joined Link header.
+ *
+ * @param {string} pathname  URL pathname including leading slash.
+ * @returns {string}         Link header value (no leading "Link: ").
+ */
+export function buildHtmlLinkHeader(pathname) {
+  const mdPath = resolveMarkdownPath(pathname);
+  const canonical = canonicalUrl(pathname);
+  return [
+    `<${mdPath}>; rel="alternate"; type="text/markdown"`,
+    `<${canonical}>; rel="canonical"`,
+  ].join(", ");
+}
