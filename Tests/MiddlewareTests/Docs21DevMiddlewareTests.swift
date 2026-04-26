@@ -616,4 +616,85 @@ struct Docs21DevMiddlewareTests {
         #expect(r.contains(#"</data/documentation/p256k/p256k/signing.md>; rel="alternate""#))
         #expect(r.contains(#"<https://docs.21.dev/documentation/p256k/p256k/signing.html>; rel="canonical""#))
     }
+
+    // MARK: - AGENT_DISCOVERY constants
+
+    @Test("AGENT_DISCOVERY exposes catalog paths")
+    func agentDiscoveryPaths() {
+        let llmsTxt = ctx.evaluateScript("AGENT_DISCOVERY.LLMS_TXT_PATH")!
+        let llmsFull = ctx.evaluateScript("AGENT_DISCOVERY.LLMS_FULL_TXT_PATH")!
+        let sitemap = ctx.evaluateScript("AGENT_DISCOVERY.SITEMAP_PATH")!
+        let xLlmsTxt = ctx.evaluateScript("AGENT_DISCOVERY.X_LLMS_TXT_VALUE")!
+        #expect(llmsTxt.toString() == "/llms.txt")
+        #expect(llmsFull.toString() == "/llms-full.txt")
+        #expect(sitemap.toString() == "/sitemap.xml")
+        #expect(xLlmsTxt.toString() == "/llms.txt")
+    }
+
+    @Test("AGENT_DISCOVERY is frozen (cannot be mutated)")
+    func agentDiscoveryFrozen() {
+        let r = ctx.evaluateScript("Object.isFrozen(AGENT_DISCOVERY)")!
+        #expect(r.toBool() == true)
+    }
+
+    // MARK: - isHtmlContentType
+
+    @Test("isHtmlContentType true for text/html")
+    func htmlContentTypeBare() {
+        #expect(ctx.evaluateScript("isHtmlContentType('text/html')")!.toBool() == true)
+    }
+
+    @Test("isHtmlContentType true for text/html with charset")
+    func htmlContentTypeWithCharset() {
+        #expect(ctx.evaluateScript("isHtmlContentType('text/html; charset=utf-8')")!.toBool() == true)
+    }
+
+    @Test("isHtmlContentType true for mixed-case Text/HTML")
+    func htmlContentTypeMixedCase() {
+        #expect(ctx.evaluateScript("isHtmlContentType('Text/HTML; charset=UTF-8')")!.toBool() == true)
+    }
+
+    @Test("isHtmlContentType false for application/xhtml+xml")
+    func htmlContentTypeXhtmlIsFalse() {
+        #expect(ctx.evaluateScript("isHtmlContentType('application/xhtml+xml')")!.toBool() == false)
+    }
+
+    @Test("isHtmlContentType false for text/markdown")
+    func htmlContentTypeMarkdownIsFalse() {
+        #expect(ctx.evaluateScript("isHtmlContentType('text/markdown; charset=utf-8')")!.toBool() == false)
+    }
+
+    @Test("isHtmlContentType false for null and empty string")
+    func htmlContentTypeNullSafety() {
+        #expect(ctx.evaluateScript("isHtmlContentType(null)")!.toBool() == false)
+        #expect(ctx.evaluateScript("isHtmlContentType('')")!.toBool() == false)
+        #expect(ctx.evaluateScript("isHtmlContentType(undefined)")!.toBool() == false)
+    }
+
+    // MARK: - mergeLinkHeaders
+
+    @Test("mergeLinkHeaders comma-joins both inputs")
+    func mergeLinkBoth() {
+        let r = ctx.evaluateScript(#"mergeLinkHeaders('</a>; rel="x"', '</b>; rel="y"')"#)!
+        #expect(r.toString() == #"</a>; rel="x", </b>; rel="y""#)
+    }
+
+    @Test("mergeLinkHeaders returns additional when existing is empty")
+    func mergeLinkEmptyExisting() {
+        let r = ctx.evaluateScript(#"mergeLinkHeaders('', '</b>; rel="y"')"#)!
+        #expect(r.toString() == #"</b>; rel="y""#)
+    }
+
+    @Test("mergeLinkHeaders returns existing when additional is empty")
+    func mergeLinkEmptyAdditional() {
+        let r = ctx.evaluateScript(#"mergeLinkHeaders('</a>; rel="x"', '')"#)!
+        #expect(r.toString() == #"</a>; rel="x""#)
+    }
+
+    @Test("mergeLinkHeaders is null-safe on both arguments")
+    func mergeLinkNullSafe() {
+        #expect(ctx.evaluateScript("mergeLinkHeaders(null, null)")!.toString() == "")
+        #expect(ctx.evaluateScript(#"mergeLinkHeaders(null, '</a>; rel="x"')"#)!.toString() == #"</a>; rel="x""#)
+        #expect(ctx.evaluateScript(#"mergeLinkHeaders('</a>; rel="x"', null)"#)!.toString() == #"</a>; rel="x""#)
+    }
 }
