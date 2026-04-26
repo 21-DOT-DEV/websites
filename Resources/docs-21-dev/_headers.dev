@@ -34,7 +34,7 @@
   Cache-Control: public, max-age=86400
   Vary: Accept-Encoding
 
-# No-store zones (well-known + JSON)
+# /.well-known/* — short TTL with stale-while-revalidate
 /.well-known/*
   Cache-Control: public, max-age=300, stale-while-revalidate=86400
   Vary: Accept-Encoding
@@ -45,6 +45,11 @@
   Cache-Control: public, max-age=300, stale-while-revalidate=86400
   Vary: Accept-Encoding
   X-Robots-Tag: noindex
+
+# Ensure DocC markdown assets are served as text/markdown (CF Pages does not
+# auto-map .md to text/markdown by default; explicit rule prevents regression).
+/data/documentation/**/*.md
+  Content-Type: text/markdown; charset=utf-8
 
 # Catch-all JSON (linkable-entities, etc.)
 /**/*.json

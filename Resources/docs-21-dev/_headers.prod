@@ -34,7 +34,7 @@
   Cache-Control: public, max-age=86400
   Vary: Accept-Encoding
 
-# No-store zones (well-known + JSON)
+# /.well-known/* — short TTL with stale-while-revalidate
 /.well-known/*
   Cache-Control: public, max-age=300, stale-while-revalidate=86400
   Vary: Accept-Encoding
@@ -45,6 +45,11 @@
   Cache-Control: public, max-age=300, stale-while-revalidate=86400
   Vary: Accept-Encoding
   X-Robots-Tag: noindex
+
+# Ensure DocC markdown assets are served as text/markdown (CF Pages does not
+# auto-map .md to text/markdown by default; explicit rule prevents regression).
+/data/documentation/**/*.md
+  Content-Type: text/markdown; charset=utf-8
 
 # JSON data (DocC linkable-entities, metadata, symbol JSON)
 /**/*.json
@@ -88,15 +93,8 @@
 # Cache-Control is intentionally OMITTED here — see top-of-file note. HTML pages
 # rely on Cloudflare’s default heuristic caching plus the per-page ETag emitted
 # by Resources/docs-21-dev/functions/_middleware.ts; conditional GETs return 304.
-#
-# Link relations and X-Llms-Txt are intentionally NOT set here. Setting them on
-# `/*` leaks them onto markdown asset responses (`/data/documentation/**/*.md`)
-# which agents fetch via `Accept: text/markdown` content negotiation. Cloudflare
-# Pages does NOT honor the documented `! HeaderName` detach syntax for Link
-# headers (verified empirically Apr 2026), so we cannot strip them from the
-# .md responses if they are set here. Instead, all link relations are emitted
-# by Resources/docs-21-dev/functions/_handlers/html.ts via `buildHtmlLinkHeader`,
-# which only runs on HTML responses (other content-types pass through).
+# Link relations and X-Llms-Txt are emitted by _handlers/html.ts (HTML responses
+# only) — see that file's JSDoc for rationale.
 /*
   Strict-Transport-Security: max-age=63072000; includeSubDomains; preload
   Content-Security-Policy: default-src 'self'; connect-src 'self' https://static.cloudflareinsights.com; font-src 'self' data:; img-src 'self' data:; script-src 'self' https://static.cloudflareinsights.com 'sha256-Tmnua9Q+ofeiLwDiFowbjAxSJRmhO2KE+f0QIsqwNfw='; style-src 'self' 'unsafe-inline'; frame-ancestors 'none'; object-src 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests

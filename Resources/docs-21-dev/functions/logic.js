@@ -77,6 +77,11 @@ export function buildMarkdownHeaders(tokens) {
     "Content-Signal": "ai-input=yes, search=yes, ai-train=yes",
     "Cache-Control": `public, max-age=${CACHE_TTL_SECONDS}`,
     "Vary": "Accept",
+    // Mintlify-aligned: agent-discovery hints on the markdown variant too.
+    // Catalog Link relations (no per-page alternate/canonical here — the
+    // markdown response is itself the alternate of the HTML page).
+    "Link": `</llms.txt>; rel="llms-txt", </llms-full.txt>; rel="llms-full-txt"`,
+    "X-Llms-Txt": "/llms.txt",
   };
 }
 

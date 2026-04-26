@@ -278,10 +278,30 @@ struct Docs21DevMiddlewareTests {
     }
 
     @Test("Builds correct Vary header")
-    func headersVary() {
-        let result = ctx.evaluateScript("buildMarkdownHeaders(0)")!
-        let dict = result.toDictionary() as! [String: Any]
+    func buildMarkdownHeadersVary() {
+        let js = "buildMarkdownHeaders(100)"
+        let dict = ctx.evaluateScript(js)!.toDictionary() as! [String: Any]
         #expect(dict["Vary"] as? String == "Accept")
+    }
+
+    @Test("Builds correct Link header (catalog relations only) for markdown response")
+    func buildMarkdownHeadersLink() {
+        let js = "buildMarkdownHeaders(100)"
+        let dict = ctx.evaluateScript(js)!.toDictionary() as! [String: Any]
+        let link = dict["Link"] as? String ?? ""
+        #expect(link.contains(#"</llms.txt>; rel="llms-txt""#))
+        #expect(link.contains(#"</llms-full.txt>; rel="llms-full-txt""#))
+        // Markdown response should NOT include per-page alternate/canonical
+        // (it IS the alternate, and canonical lives on the HTML response).
+        #expect(!link.contains(#"rel="alternate""#))
+        #expect(!link.contains(#"rel="canonical""#))
+    }
+
+    @Test("Builds correct X-Llms-Txt header for markdown response")
+    func buildMarkdownHeadersXLlmsTxt() {
+        let js = "buildMarkdownHeaders(100)"
+        let dict = ctx.evaluateScript(js)!.toDictionary() as! [String: Any]
+        #expect(dict["X-Llms-Txt"] as? String == "/llms.txt")
     }
 
     // MARK: - formatAnalyticsPayload
