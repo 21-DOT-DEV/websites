@@ -77,6 +77,11 @@ export function buildMarkdownHeaders(tokens) {
     "Content-Signal": "ai-input=yes, search=yes, ai-train=yes",
     "Cache-Control": `public, max-age=${CACHE_TTL_SECONDS}`,
     "Vary": "Accept",
+    // Mintlify-aligned: agent-discovery hints on the markdown variant too.
+    // Catalog Link relations (no per-page alternate/canonical here — the
+    // markdown response is itself the alternate of the HTML page).
+    "Link": `</llms.txt>; rel="llms-txt", </llms-full.txt>; rel="llms-full-txt"`,
+    "X-Llms-Txt": "/llms.txt",
   };
 }
 
@@ -195,4 +200,82 @@ export function buildNotModifiedHeaders(etag, originalHeaders = {}) {
     if (value) result[canonical] = value;
   }
   return result;
+}
+
+// ---------------------------------------------------------------------------
+// HTML Link header helpers
+//
+// Pure helpers for the HTML pass-through handler to advertise per-page
+// markdown-alternate and canonical URLs at the HTTP layer. Companion to the
+// markup-level <link> tags injected at build time by AgentDirectiveInjector
+// (see Sources/UtilLib/AgentDirective/AgentDirectiveInjector.swift).
+//
+// Mirrors Vercel docs' agent-friendly content-negotiation pattern: HTTP and
+// markup advertise the same alternate + canonical URLs so audit tools that
+// only inspect HTTP headers (curl -I, lightweight crawlers) and tools that
+// parse rendered HTML both see consistent values.
+// ---------------------------------------------------------------------------
+
+/**
+ * Computes the canonical URL for a docs.21.dev HTML page.
+ *
+ * Strips a trailing `/index.html` to match the post-redirect end state
+ * established by `_redirects` (`/*\/index.html /:splat/ 301`). Other forms
+ * (clean directory paths, `.html` siblings) are returned unchanged.
+ *
+ * NOTE — defensive strip: in production the `/index.html` form never reaches
+ * this function because `_redirects` short-circuits with a 301 before the
+ * Pages Function runs. The strip is retained for:
+ *   - local development with `wrangler pages dev` (where redirect parity is
+ *     not always exact)
+ *   - any future routing change that bypasses the redirect
+ *   - direct callers of `canonicalUrl` outside the request pipeline.
+ *
+ * Aligns with the canonical URL emitted in markup by AgentDirectiveInjector
+ * via `CanonicalURLDeriver`, so HTTP and markup advertise identical values.
+ *
+ * @param {string} pathname  URL pathname including leading slash.
+ * @returns {string}         Absolute canonical URL.
+ */
+export function canonicalUrl(pathname) {
+  const cleaned = pathname.endsWith("/index.html")
+    ? pathname.slice(0, -"index.html".length)
+    : pathname;
+  return `https://docs.21.dev${cleaned}`;
+}
+
+/**
+ * Builds the full `Link` header value for HTML responses on docs.21.dev.
+ *
+ * Emits five link entries (RFC 8288 §3 comma-separated):
+ *   - rel="llms-txt" → `/llms.txt` (catalog: agent-discovery index)
+ *   - rel="llms-full-txt" → `/llms-full.txt` (catalog: full LLM context)
+ *   - rel="sitemap" → `/sitemap.xml` (catalog: machine-readable URL list)
+ *   - rel="alternate" type="text/markdown" → per-page markdown URL via
+ *     `resolveMarkdownPath` (matches the resource agents receive when content-
+ *     negotiating with `Accept: text/markdown`).
+ *   - rel="canonical" → cleaned self-URL via `canonicalUrl`.
+ *
+ * NOTE — Pivot rationale (Apr 2026): the catalog relations (`llms-txt`,
+ * `llms-full-txt`, `sitemap`) were previously set by the `_headers` catch-all
+ * `/*` rule. That leaked them onto markdown asset responses, and Cloudflare
+ * Pages did NOT honor the documented `! HeaderName` detach syntax to remove
+ * them. Moving the catalog Link relations here ensures they only appear on
+ * HTML responses (markdown assets are excluded from this handler via
+ * `_routes.json`). Mirrors Vercel's agent-friendly content-negotiation
+ * pattern — HTTP and markup advertise the same alternate/canonical URLs.
+ *
+ * @param {string} pathname  URL pathname including leading slash.
+ * @returns {string}         Link header value (no leading "Link: ").
+ */
+export function buildHtmlLinkHeader(pathname) {
+  const mdPath = resolveMarkdownPath(pathname);
+  const canonical = canonicalUrl(pathname);
+  return [
+    `</llms.txt>; rel="llms-txt"`,
+    `</llms-full.txt>; rel="llms-full-txt"`,
+    `</sitemap.xml>; rel="sitemap"`,
+    `<${mdPath}>; rel="alternate"; type="text/markdown"`,
+    `<${canonical}>; rel="canonical"`,
+  ].join(", ");
 }

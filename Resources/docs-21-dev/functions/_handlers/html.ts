@@ -1,11 +1,45 @@
+import { buildHtmlLinkHeader } from "../logic.js";
+
 /**
  * Default HTML pass-through.
  *
  * Forwards the request to Cloudflare Pages' static asset pipeline via
- * `context.next()` and returns the response unmodified. Cloudflare Pages
- * emits a strong ETag for every static-asset response, so conditional
- * GETs still terminate with `304 Not Modified` when `If-None-Match`
- * matches.
+ * `context.next()` and merges agent-discovery headers (`Link`, `X-Llms-Txt`)
+ * onto HTML responses before returning. Non-HTML responses (images, JSON,
+ * markdown assets, etc.) are returned unmodified. Cloudflare Pages emits a
+ * strong ETag for every static-asset response, so conditional GETs still
+ * terminate with `304 Not Modified` when `If-None-Match` matches.
+ *
+ * ## Headers added on HTML responses
+ *
+ * Sets the full `Link` header value via `buildHtmlLinkHeader` in `../logic.js`,
+ * which emits five link entries (RFC 8288 §3 comma-joined):
+ *   - rel="llms-txt" — catalog index `/llms.txt`
+ *   - rel="llms-full-txt" — catalog full context `/llms-full.txt`
+ *   - rel="sitemap" — catalog URL list `/sitemap.xml`
+ *   - rel="alternate" type="text/markdown" — per-page markdown URL
+ *   - rel="canonical" — cleaned self-URL (strips trailing `/index.html`)
+ *
+ * Also sets `X-Llms-Txt: /llms.txt` (Mintlify-pair convention: a simpler,
+ * single-value alternative for tooling that doesn't parse RFC 8288 Link
+ * headers).
+ *
+ * ## Why headers are NOT in `_headers /*`
+ *
+ * The catalog Link relations and X-Llms-Txt were previously set by the
+ * `_headers` catch-all `/*` rule. That leaked them onto markdown asset
+ * responses (`/data/documentation/**\/*.md`) which agents fetch via
+ * `Accept: text/markdown` content negotiation, creating an inconsistent
+ * agent contract. Cloudflare Pages does NOT honor the documented
+ * `! HeaderName` detach syntax to remove them (verified Apr 2026), so the
+ * only clean fix is to not set them on `/*` at all. This handler runs only
+ * on paths included in `_routes.json` (HTML pages), so markdown assets
+ * naturally don't receive these headers.
+ *
+ * Mirrors Vercel docs' agent-friendly content-negotiation pattern; HTTP and
+ * markup (injected at build time by `AgentDirectiveInjector`) advertise the
+ * same alternate + canonical URLs so HTTP-only audit tools and HTML-parsing
+ * agents both see consistent values.
  *
  * ## Cache-key / content negotiation note
  *
@@ -28,7 +62,21 @@ export async function handleHtmlPassthrough(
   context: EventContext<unknown, string, unknown>
 ): Promise<Response> {
   try {
-    return await context.next();
+    const response = await context.next();
+    const contentType = response.headers.get("Content-Type") || "";
+    if (!contentType.includes("text/html")) {
+      return response;
+    }
+    const url = new URL(context.request.url);
+    const linkValue = buildHtmlLinkHeader(url.pathname);
+    const merged = new Response(response.body, response);
+    const existing = merged.headers.get("Link");
+    merged.headers.set(
+      "Link",
+      existing ? `${existing}, ${linkValue}` : linkValue
+    );
+    merged.headers.set("X-Llms-Txt", "/llms.txt");
+    return merged;
   } catch (err) {
     console.error("HTML pass-through failed:", err);
     return new Response("Internal Server Error", { status: 500 });

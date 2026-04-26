@@ -34,18 +34,10 @@
   Cache-Control: public, max-age=86400
   Vary: Accept-Encoding
 
-# No-store zones (well-known + JSON)
+# /.well-known/* — short TTL with stale-while-revalidate
 /.well-known/*
   Cache-Control: public, max-age=300, stale-while-revalidate=86400
   Vary: Accept-Encoding
-  X-Robots-Tag: noindex
-
-# cfpages-ignore: glob-content-type (DocC generates hundreds of .md files; explicit paths impractical)
-/data/documentation/**/*.md
-  Content-Type: text/markdown; charset=utf-8
-  Cache-Control: public, max-age=300, stale-while-revalidate=86400
-  Vary: Accept-Encoding
-  X-Content-Type-Options: nosniff
   X-Robots-Tag: noindex
 
 # DocC data directory (symbol JSON)
@@ -53,6 +45,12 @@
   Cache-Control: public, max-age=300, stale-while-revalidate=86400
   Vary: Accept-Encoding
   X-Robots-Tag: noindex
+
+# Explicit Content-Type for DocC markdown assets — defensive against MIME-mapping
+# drift (NGINX-style defaults historically lacked .md; combined with the catch-all's
+# X-Content-Type-Options: nosniff, an incorrect type would silently block crawlers).
+/data/documentation/**/*.md
+  Content-Type: text/markdown; charset=utf-8
 
 # JSON data (DocC linkable-entities, metadata, symbol JSON)
 /**/*.json
@@ -96,10 +94,9 @@
 # Cache-Control is intentionally OMITTED here — see top-of-file note. HTML pages
 # rely on Cloudflare’s default heuristic caching plus the per-page ETag emitted
 # by Resources/docs-21-dev/functions/_middleware.ts; conditional GETs return 304.
+# Link relations and X-Llms-Txt are emitted by _handlers/html.ts (HTML responses
+# only) — see that file's JSDoc for rationale.
 /*
-  Link: </llms.txt>; rel="llms-txt"
-  Link: </sitemap.xml>; rel="sitemap"
-  X-Llms-Txt: /llms.txt
   Strict-Transport-Security: max-age=63072000; includeSubDomains; preload
   Content-Security-Policy: default-src 'self'; connect-src 'self' https://static.cloudflareinsights.com; font-src 'self' data:; img-src 'self' data:; script-src 'self' https://static.cloudflareinsights.com 'sha256-Tmnua9Q+ofeiLwDiFowbjAxSJRmhO2KE+f0QIsqwNfw='; style-src 'self' 'unsafe-inline'; frame-ancestors 'none'; object-src 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests
   X-Frame-Options: DENY

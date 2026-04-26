@@ -77,8 +77,10 @@
 # NOTE: Extend CSP allowlists by appending origins to the existing directive (e.g., add another `connect-src` host) rather than removing defaults.
 /*
   Link: </llms.txt>; rel="llms-txt"
+  Link: </llms-full.txt>; rel="llms-full-txt"
   Link: </sitemap.xml>; rel="sitemap"
-  Link: <https://docs.21.dev/documentation/>; rel="service-doc"
+  Link: <https://docs.21.dev/documentation/>; rel="service-doc"; type="text/html"
+  # X-Llms-Txt: companion to Link rel="llms-txt" for non-RFC-8288 tooling (Mintlify pattern).
   X-Llms-Txt: /llms.txt
   Content-Security-Policy: default-src 'self'; connect-src 'self' https://static.cloudflareinsights.com; font-src 'self'; img-src 'self' data:; script-src 'self' https://static.cloudflareinsights.com; style-src 'self' 'unsafe-inline'; frame-ancestors 'none'; object-src 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests
   X-Frame-Options: DENY
