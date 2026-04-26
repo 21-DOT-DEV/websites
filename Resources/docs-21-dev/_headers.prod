@@ -46,8 +46,9 @@
   Vary: Accept-Encoding
   X-Robots-Tag: noindex
 
-# Ensure DocC markdown assets are served as text/markdown (CF Pages does not
-# auto-map .md to text/markdown by default; explicit rule prevents regression).
+# Explicit Content-Type for DocC markdown assets — defensive against MIME-mapping
+# drift (NGINX-style defaults historically lacked .md; combined with the catch-all's
+# X-Content-Type-Options: nosniff, an incorrect type would silently block crawlers).
 /data/documentation/**/*.md
   Content-Type: text/markdown; charset=utf-8
 
