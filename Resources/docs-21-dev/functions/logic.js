@@ -218,6 +218,14 @@ export function buildNotModifiedHeaders(etag, originalHeaders = {}) {
  * established by `_redirects` (`/*\/index.html /:splat/ 301`). Other forms
  * (clean directory paths, `.html` siblings) are returned unchanged.
  *
+ * NOTE — defensive strip: in production the `/index.html` form never reaches
+ * this function because `_redirects` short-circuits with a 301 before the
+ * Pages Function runs. The strip is retained for:
+ *   - local development with `wrangler pages dev` (where redirect parity is
+ *     not always exact)
+ *   - any future routing change that bypasses the redirect
+ *   - direct callers of `canonicalUrl` outside the request pipeline.
+ *
  * Aligns with the canonical URL emitted in markup by AgentDirectiveInjector
  * via `CanonicalURLDeriver`, so HTTP and markup advertise identical values.
  *

@@ -40,20 +40,6 @@
   Vary: Accept-Encoding
   X-Robots-Tag: noindex
 
-# cfpages-ignore: glob-content-type (DocC generates hundreds of .md files; explicit paths impractical)
-# Detach Link and X-Llms-Txt inherited from the catch-all `/*` rule below: those
-# headers describe HTML pages (llms-txt index, sitemap) and should not appear on
-# raw markdown asset responses. Cloudflare Pages `! HeaderName` syntax removes a
-# header set by a more pervasive matching rule.
-/data/documentation/**/*.md
-  Content-Type: text/markdown; charset=utf-8
-  Cache-Control: public, max-age=300, stale-while-revalidate=86400
-  Vary: Accept-Encoding
-  X-Content-Type-Options: nosniff
-  X-Robots-Tag: noindex
-  ! Link
-  ! X-Llms-Txt
-
 # DocC data directory (symbol JSON)
 /data/*
   Cache-Control: public, max-age=300, stale-while-revalidate=86400
@@ -106,5 +92,13 @@
   Cross-Origin-Opener-Policy: same-origin
   Cross-Origin-Resource-Policy: same-origin
   X-Robots-Tag: noindex, nofollow
-  Cache-Control: public, max-age=300, stale-while-revalidate=86400
-  Vary: Accept-Encoding
+
+# cfpages-ignore: glob-content-type (DocC generates hundreds of .md files; explicit paths impractical)
+# Detach Link and X-Llms-Txt set by the catch-all `/*` rule above: those headers
+# describe HTML pages (llms-txt index, sitemap) and should not appear on raw
+# markdown asset responses. Cloudflare Pages `! HeaderName` syntax removes a
+# header set by an EARLIER matching rule, so this block must come after `/*`.
+/data/documentation/**/*.md
+  Content-Type: text/markdown; charset=utf-8
+  ! Link
+  ! X-Llms-Txt
