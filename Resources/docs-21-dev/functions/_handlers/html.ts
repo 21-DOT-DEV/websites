@@ -4,22 +4,37 @@ import { buildHtmlLinkHeader } from "../logic.js";
  * Default HTML pass-through.
  *
  * Forwards the request to Cloudflare Pages' static asset pipeline via
- * `context.next()` and merges per-page `Link` headers onto HTML responses
- * before returning. Non-HTML responses (images, JSON, etc.) are returned
- * unmodified. Cloudflare Pages emits a strong ETag for every static-asset
- * response, so conditional GETs still terminate with `304 Not Modified`
- * when `If-None-Match` matches.
+ * `context.next()` and merges agent-discovery headers (`Link`, `X-Llms-Txt`)
+ * onto HTML responses before returning. Non-HTML responses (images, JSON,
+ * markdown assets, etc.) are returned unmodified. Cloudflare Pages emits a
+ * strong ETag for every static-asset response, so conditional GETs still
+ * terminate with `304 Not Modified` when `If-None-Match` matches.
  *
- * ## Per-page Link headers
+ * ## Headers added on HTML responses
  *
- * For HTML responses, this handler appends two link relations (per
- * `buildHtmlLinkHeader` in `../logic.js`):
- *   - rel="alternate" type="text/markdown" — corresponding markdown URL.
- *   - rel="canonical" — cleaned self-URL (strips trailing `/index.html`).
+ * Sets the full `Link` header value via `buildHtmlLinkHeader` in `../logic.js`,
+ * which emits five link entries (RFC 8288 §3 comma-joined):
+ *   - rel="llms-txt" — catalog index `/llms.txt`
+ *   - rel="llms-full-txt" — catalog full context `/llms-full.txt`
+ *   - rel="sitemap" — catalog URL list `/sitemap.xml`
+ *   - rel="alternate" type="text/markdown" — per-page markdown URL
+ *   - rel="canonical" — cleaned self-URL (strips trailing `/index.html`)
  *
- * Static catalog-style links (`llms-txt`, `llms-full-txt`, `sitemap`) come
- * from the `_headers` catch-all rule and are concatenated by Cloudflare
- * Pages into the final wire value (RFC 8288 §3 comma-joined).
+ * Also sets `X-Llms-Txt: /llms.txt` (Mintlify-pair convention: a simpler,
+ * single-value alternative for tooling that doesn't parse RFC 8288 Link
+ * headers).
+ *
+ * ## Why headers are NOT in `_headers /*`
+ *
+ * The catalog Link relations and X-Llms-Txt were previously set by the
+ * `_headers` catch-all `/*` rule. That leaked them onto markdown asset
+ * responses (`/data/documentation/**\/*.md`) which agents fetch via
+ * `Accept: text/markdown` content negotiation, creating an inconsistent
+ * agent contract. Cloudflare Pages does NOT honor the documented
+ * `! HeaderName` detach syntax to remove them (verified Apr 2026), so the
+ * only clean fix is to not set them on `/*` at all. This handler runs only
+ * on paths included in `_routes.json` (HTML pages), so markdown assets
+ * naturally don't receive these headers.
  *
  * Mirrors Vercel docs' agent-friendly content-negotiation pattern; HTTP and
  * markup (injected at build time by `AgentDirectiveInjector`) advertise the
@@ -60,6 +75,7 @@ export async function handleHtmlPassthrough(
       "Link",
       existing ? `${existing}, ${linkValue}` : linkValue
     );
+    merged.headers.set("X-Llms-Txt", "/llms.txt");
     return merged;
   } catch (err) {
     console.error("HTML pass-through failed:", err);

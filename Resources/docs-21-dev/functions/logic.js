@@ -240,18 +240,25 @@ export function canonicalUrl(pathname) {
 }
 
 /**
- * Builds the per-page `Link` header value for HTML responses on docs.21.dev.
+ * Builds the full `Link` header value for HTML responses on docs.21.dev.
  *
- * Emits two link entries (RFC 8288 §3 comma-separated):
- *   - rel="alternate" type="text/markdown" → corresponding markdown URL
- *     (via `resolveMarkdownPath` — the same algorithm used by the negotiation
- *     handler, ensuring HTTP advertisement matches the resource agents would
- *     actually receive via `Accept: text/markdown`).
- *   - rel="canonical" → cleaned self-URL (via `canonicalUrl`).
+ * Emits five link entries (RFC 8288 §3 comma-separated):
+ *   - rel="llms-txt" → `/llms.txt` (catalog: agent-discovery index)
+ *   - rel="llms-full-txt" → `/llms-full.txt` (catalog: full LLM context)
+ *   - rel="sitemap" → `/sitemap.xml` (catalog: machine-readable URL list)
+ *   - rel="alternate" type="text/markdown" → per-page markdown URL via
+ *     `resolveMarkdownPath` (matches the resource agents receive when content-
+ *     negotiating with `Accept: text/markdown`).
+ *   - rel="canonical" → cleaned self-URL via `canonicalUrl`.
  *
- * The catch-all `_headers` rule already advertises `rel="llms-txt"`,
- * `rel="llms-full-txt"`, and `rel="sitemap"`; Cloudflare concatenates those
- * with this function's value into a single comma-joined Link header.
+ * NOTE — Pivot rationale (Apr 2026): the catalog relations (`llms-txt`,
+ * `llms-full-txt`, `sitemap`) were previously set by the `_headers` catch-all
+ * `/*` rule. That leaked them onto markdown asset responses, and Cloudflare
+ * Pages did NOT honor the documented `! HeaderName` detach syntax to remove
+ * them. Moving the catalog Link relations here ensures they only appear on
+ * HTML responses (markdown assets are excluded from this handler via
+ * `_routes.json`). Mirrors Vercel's agent-friendly content-negotiation
+ * pattern — HTTP and markup advertise the same alternate/canonical URLs.
  *
  * @param {string} pathname  URL pathname including leading slash.
  * @returns {string}         Link header value (no leading "Link: ").
@@ -260,6 +267,9 @@ export function buildHtmlLinkHeader(pathname) {
   const mdPath = resolveMarkdownPath(pathname);
   const canonical = canonicalUrl(pathname);
   return [
+    `</llms.txt>; rel="llms-txt"`,
+    `</llms-full.txt>; rel="llms-full-txt"`,
+    `</sitemap.xml>; rel="sitemap"`,
     `<${mdPath}>; rel="alternate"; type="text/markdown"`,
     `<${canonical}>; rel="canonical"`,
   ].join(", ");

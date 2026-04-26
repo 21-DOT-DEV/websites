@@ -77,12 +77,9 @@
 
 # Preview HTML (DocC) — security headers without HSTS, noindex to prevent search indexing
 # NOTE: Extend CSP allowlists by appending origins (e.g., extra script host) instead of removing defaults to keep minimum protections intact.
+# Link relations and X-Llms-Txt are emitted by _handlers/html.ts via buildHtmlLinkHeader,
+# not from /* here. See _headers.prod for the full rationale.
 /*
-  Link: </llms.txt>; rel="llms-txt"
-  Link: </llms-full.txt>; rel="llms-full-txt"
-  Link: </sitemap.xml>; rel="sitemap"
-  # X-Llms-Txt: companion to Link rel="llms-txt" for non-RFC-8288 tooling (Mintlify pattern).
-  X-Llms-Txt: /llms.txt
   Content-Security-Policy: default-src 'self'; connect-src 'self' https://static.cloudflareinsights.com; font-src 'self' data:; img-src 'self' data:; script-src 'self' https://static.cloudflareinsights.com 'sha256-Tmnua9Q+ofeiLwDiFowbjAxSJRmhO2KE+f0QIsqwNfw='; style-src 'self' 'unsafe-inline'; frame-ancestors 'none'; object-src 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests
   X-Frame-Options: DENY
   X-Content-Type-Options: nosniff
@@ -92,13 +89,3 @@
   Cross-Origin-Opener-Policy: same-origin
   Cross-Origin-Resource-Policy: same-origin
   X-Robots-Tag: noindex, nofollow
-
-# cfpages-ignore: glob-content-type (DocC generates hundreds of .md files; explicit paths impractical)
-# Detach Link and X-Llms-Txt set by the catch-all `/*` rule above: those headers
-# describe HTML pages (llms-txt index, sitemap) and should not appear on raw
-# markdown asset responses. Cloudflare Pages `! HeaderName` syntax removes a
-# header set by an EARLIER matching rule, so this block must come after `/*`.
-/data/documentation/**/*.md
-  Content-Type: text/markdown; charset=utf-8
-  ! Link
-  ! X-Llms-Txt

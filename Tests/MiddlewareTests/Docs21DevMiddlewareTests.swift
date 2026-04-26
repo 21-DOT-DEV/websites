@@ -529,11 +529,34 @@ struct Docs21DevMiddlewareTests {
 
     // MARK: - buildHtmlLinkHeader
 
-    @Test("buildHtmlLinkHeader for module path includes alternate and canonical")
+    @Test("buildHtmlLinkHeader for module path includes catalog + alternate + canonical")
     func linkHeaderModulePath() {
         let r = ctx.evaluateScript("buildHtmlLinkHeader('/documentation/p256k/')")!.toString()!
+        // Catalog relations
+        #expect(r.contains(#"</llms.txt>; rel="llms-txt""#))
+        #expect(r.contains(#"</llms-full.txt>; rel="llms-full-txt""#))
+        #expect(r.contains(#"</sitemap.xml>; rel="sitemap""#))
+        // Per-page relations
         #expect(r.contains(#"</data/documentation/p256k.md>; rel="alternate"; type="text/markdown""#))
         #expect(r.contains(#"<https://docs.21.dev/documentation/p256k/>; rel="canonical""#))
+    }
+
+    @Test("buildHtmlLinkHeader catalog relations are stable across paths")
+    func linkHeaderCatalogStable() {
+        for path in ["/", "/documentation/", "/documentation/p256k/", "/documentation/p256k/p256k/signing/"] {
+            let r = ctx.evaluateScript("buildHtmlLinkHeader('\(path)')")!.toString()!
+            #expect(r.contains(#"</llms.txt>; rel="llms-txt""#), "missing llms-txt at \(path)")
+            #expect(r.contains(#"</llms-full.txt>; rel="llms-full-txt""#), "missing llms-full-txt at \(path)")
+            #expect(r.contains(#"</sitemap.xml>; rel="sitemap""#), "missing sitemap at \(path)")
+        }
+    }
+
+    @Test("buildHtmlLinkHeader emits exactly five link entries")
+    func linkHeaderHasFiveEntries() {
+        let r = ctx.evaluateScript("buildHtmlLinkHeader('/documentation/p256k/')")!.toString()!
+        // Five link entries → four ", " separators
+        let separatorCount = r.components(separatedBy: ", ").count
+        #expect(separatorCount == 5, "expected 5 entries, got \(separatorCount): \(r)")
     }
 
     @Test("buildHtmlLinkHeader for index page uses /llms.txt as alternate")
