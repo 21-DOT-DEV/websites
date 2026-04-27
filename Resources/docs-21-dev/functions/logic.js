@@ -35,7 +35,7 @@ export function resolveMarkdownPath(pathname) {
   const indexPaths = new Set(["/", "/documentation", "/documentation/"]);
 
   if (indexPaths.has(pathname)) {
-    return "/llms.txt";
+    return AGENT_DISCOVERY.LLMS_TXT_PATH;
   } else if (pathname.endsWith("/index.html")) {
     return "/data" + pathname.replace(/\/index\.html$/, ".md");
   } else if (pathname.endsWith(".html")) {
@@ -80,8 +80,8 @@ export function buildMarkdownHeaders(tokens) {
     // Mintlify-aligned: agent-discovery hints on the markdown variant too.
     // Catalog Link relations (no per-page alternate/canonical here — the
     // markdown response is itself the alternate of the HTML page).
-    "Link": `</llms.txt>; rel="llms-txt", </llms-full.txt>; rel="llms-full-txt"`,
-    "X-Llms-Txt": "/llms.txt",
+    "Link": `<${AGENT_DISCOVERY.LLMS_TXT_PATH}>; rel="llms-txt", <${AGENT_DISCOVERY.LLMS_FULL_TXT_PATH}>; rel="llms-full-txt"`,
+    "X-Llms-Txt": AGENT_DISCOVERY.X_LLMS_TXT_VALUE,
   };
 }
 
@@ -217,6 +217,53 @@ export function buildNotModifiedHeaders(etag, originalHeaders = {}) {
 // ---------------------------------------------------------------------------
 
 /**
+ * Canonical agent-discovery resource paths and X-Llms-Txt value.
+ * Single source of truth — referenced by `buildHtmlLinkHeader` (HTML
+ * response Link), `buildMarkdownHeaders` (markdown-negotiated response Link),
+ * and `_handlers/html.ts` (X-Llms-Txt header set on HTML responses).
+ *
+ * Frozen to prevent accidental mutation by consumers.
+ */
+export const AGENT_DISCOVERY = Object.freeze({
+  LLMS_TXT_PATH: "/llms.txt",
+  LLMS_FULL_TXT_PATH: "/llms-full.txt",
+  SITEMAP_PATH: "/sitemap.xml",
+  X_LLMS_TXT_VALUE: "/llms.txt",
+});
+
+/**
+ * True if the response Content-Type is an HTML variant.
+ *
+ * Symmetric with `isValidMarkdownResponse`. Used by the HTML pass-through
+ * handler (`_handlers/html.ts`) to decide whether to inject agent-discovery
+ * headers on a given response. Lowercases input for case-insensitive
+ * matching; returns false on null/undefined/empty.
+ *
+ * @param {string|null|undefined} contentType
+ * @returns {boolean}
+ */
+export function isHtmlContentType(contentType) {
+  return (contentType || "").toLowerCase().includes("text/html");
+}
+
+/**
+ * Merge two `Link` header values per RFC 8288 §3 (comma-joined).
+ *
+ * Used to combine the catch-all `_headers` rule's Link entries (set by
+ * Cloudflare Pages before the function runs) with the per-response Link
+ * entries the function injects. Either argument may be empty/null/undefined.
+ *
+ * @param {string|null|undefined} existing
+ * @param {string|null|undefined} additional
+ * @returns {string}
+ */
+export function mergeLinkHeaders(existing, additional) {
+  if (!existing) return additional || "";
+  if (!additional) return existing;
+  return `${existing}, ${additional}`;
+}
+
+/**
  * Computes the canonical URL for a docs.21.dev HTML page.
  *
  * Strips a trailing `/index.html` to match the post-redirect end state
@@ -272,9 +319,9 @@ export function buildHtmlLinkHeader(pathname) {
   const mdPath = resolveMarkdownPath(pathname);
   const canonical = canonicalUrl(pathname);
   return [
-    `</llms.txt>; rel="llms-txt"`,
-    `</llms-full.txt>; rel="llms-full-txt"`,
-    `</sitemap.xml>; rel="sitemap"`,
+    `<${AGENT_DISCOVERY.LLMS_TXT_PATH}>; rel="llms-txt"`,
+    `<${AGENT_DISCOVERY.LLMS_FULL_TXT_PATH}>; rel="llms-full-txt"`,
+    `<${AGENT_DISCOVERY.SITEMAP_PATH}>; rel="sitemap"`,
     `<${mdPath}>; rel="alternate"; type="text/markdown"`,
     `<${canonical}>; rel="canonical"`,
   ].join(", ");

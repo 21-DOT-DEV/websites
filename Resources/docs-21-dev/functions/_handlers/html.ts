@@ -1,4 +1,9 @@
-import { buildHtmlLinkHeader } from "../logic.js";
+import {
+  buildHtmlLinkHeader,
+  isHtmlContentType,
+  mergeLinkHeaders,
+  AGENT_DISCOVERY,
+} from "../logic.js";
 
 /**
  * Default HTML pass-through.
@@ -63,19 +68,19 @@ export async function handleHtmlPassthrough(
 ): Promise<Response> {
   try {
     const response = await context.next();
-    const contentType = response.headers.get("Content-Type") || "";
-    if (!contentType.includes("text/html")) {
+    if (!isHtmlContentType(response.headers.get("Content-Type"))) {
       return response;
     }
     const url = new URL(context.request.url);
-    const linkValue = buildHtmlLinkHeader(url.pathname);
     const merged = new Response(response.body, response);
-    const existing = merged.headers.get("Link");
     merged.headers.set(
       "Link",
-      existing ? `${existing}, ${linkValue}` : linkValue
+      mergeLinkHeaders(
+        merged.headers.get("Link"),
+        buildHtmlLinkHeader(url.pathname)
+      )
     );
-    merged.headers.set("X-Llms-Txt", "/llms.txt");
+    merged.headers.set("X-Llms-Txt", AGENT_DISCOVERY.X_LLMS_TXT_VALUE);
     return merged;
   } catch (err) {
     console.error("HTML pass-through failed:", err);
