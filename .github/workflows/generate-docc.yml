@@ -42,9 +42,20 @@ jobs:
 
           # SECP256K1_VERSION is the docs-site pin (may be a prerelease), used for llms.txt stamping.
           # It is sourced from the P256K archive entry; the ZKP entry is expected to share the same tag.
-          SECP256K1_VERSION=$(jq -r '.archives["swift-secp256k1-p256k"].tag' "$ARCHIVES_FILE")
-          EVENT_VERSION=$(jq -r '.archives["swift-event"].tag' "$ARCHIVES_FILE")
-          OPENSSL_VERSION=$(jq -r '.archives["swift-openssl"].tag' "$ARCHIVES_FILE")
+          # Keys must match the short-form keys in external-archives.json (p256k/event/openssl).
+          SECP256K1_VERSION=$(jq -r '.archives["p256k"].tag' "$ARCHIVES_FILE")
+          EVENT_VERSION=$(jq -r '.archives["event"].tag' "$ARCHIVES_FILE")
+          OPENSSL_VERSION=$(jq -r '.archives["openssl"].tag' "$ARCHIVES_FILE")
+
+          # Fail fast if any required key is missing or null — prevents stamping `vnull`
+          # placeholders into llms.txt and shipping broken version strings to the live site.
+          for var in SECP256K1_VERSION EVENT_VERSION OPENSSL_VERSION; do
+            value="${!var}"
+            if [ -z "$value" ] || [ "$value" = "null" ]; then
+              echo "❌ $var is missing or null in $ARCHIVES_FILE — refusing to stamp llms.txt"
+              exit 1
+            fi
+          done
 
           echo "SECP256K1_VERSION=$SECP256K1_VERSION" >> $GITHUB_ENV
           echo "EVENT_VERSION=$EVENT_VERSION" >> $GITHUB_ENV

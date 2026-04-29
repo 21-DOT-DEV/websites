@@ -90,7 +90,7 @@ public enum AgentDirectiveInjector {
     /// Pages that should be indexed by search engines (no noindex tag).
     ///
     /// Sources:
-    /// - `Resources/docs-21-dev/data/documentation/p256k/llms.txt` (15 curated entries)
+    /// - `Resources/docs-21-dev/data/documentation/p256k/llms.txt` (23 curated entries)
     /// - One-time audit of pages with `<h2>Discussion</h2>` sections (52 entries)
     /// - One-time audit of pages with authored Parameters/Return Value/aside sections (29 entries)
     /// - `Resources/docs-21-dev/data/documentation/event/llms.txt` (10 curated entries)
@@ -116,10 +116,22 @@ public enum AgentDirectiveInjector {
         "documentation",
         "documentation/p256k/p256k",
 
-        // --- P256K llms.txt (15 entries) ---
+        // --- P256K llms.txt (23 entries) ---
         // ## Documentation
         "documentation/p256k/gettingstarted",
         "documentation/p256k",
+        // Authored articles added in PR fb0c08 — mirror the `## Documentation`
+        // entries in Resources/docs-21-dev/data/documentation/p256k/llms.txt.
+        // The first two (ellipticcurvediffiehellman, silentpayments) ship for
+        // the first time in swift-secp256k1 0.23.1-prerelease-3.
+        "documentation/p256k/ellipticcurvediffiehellman",
+        "documentation/p256k/silentpayments",
+        "documentation/p256k/tweakingkeys",
+        "documentation/p256k/musig2multisignatures",
+        "documentation/p256k/recoveringpublickeys",
+        "documentation/p256k/serializingkeys",
+        "documentation/p256k/securityconsiderations",
+        "documentation/p256k/keyformats",
         // ## Symbols
         "documentation/p256k/p256k/context",
         "documentation/p256k/p256k/signing",

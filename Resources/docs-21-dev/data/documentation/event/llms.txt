@@ -1,7 +1,5 @@
 # Event — Swift bindings for libevent
 
->> DRAFT: review before merge — authored from swift-event README + Event.doccarchive markdown index at v{{EVENT_VERSION}}.
-
 > Part of the [swift-event](https://docs.21.dev/llms.txt) package (v{{EVENT_VERSION}}).
 > For all markdown files in this module, see [Event llms-full.txt](https://docs.21.dev/data/documentation/event/llms-full.txt).
 

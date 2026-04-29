@@ -15,6 +15,7 @@ ZKP wraps the Blockstream Elements `libsecp256k1-zkp` fork with a type-safe Swif
 ## Documentation
 
 - [ZKP Module](https://docs.21.dev/data/documentation/zkp.md): Module overview — zero-knowledge proofs, Pedersen commitments, range proofs, surjection proofs
+- [Choosing Between P256K and ZKP](https://docs.21.dev/data/documentation/zkp/choosingp256kvszkp.md): Product-selection guide — pick P256K for signing-only workflows, ZKP for zero-knowledge proofs, surjection proofs, ECDSA adaptors, or Schnorr half-aggregation
 
 ## Symbols
 

@@ -1,7 +1,5 @@
 # OpenSSL — Modern Swift bindings for OpenSSL 3.x
 
->> DRAFT: review before merge — authored from swift-openssl README + OpenSSL.doccarchive markdown index at v{{OPENSSL_VERSION}}.
-
 > Part of the [swift-openssl](https://docs.21.dev/llms.txt) package (v{{OPENSSL_VERSION}}).
 > For all markdown files in this module, see [OpenSSL llms-full.txt](https://docs.21.dev/data/documentation/openssl/llms-full.txt).
 
