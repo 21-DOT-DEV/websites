@@ -561,6 +561,20 @@ struct AgentDirectiveTests {
         ))
     }
 
+    @Test("shouldIndex returns true for documentation root (docs.21.dev landing)")
+    func shouldIndexDocumentationRoot() {
+        #expect(AgentDirectiveInjector.shouldIndex(
+            relativePath: "documentation/index.html"
+        ))
+    }
+
+    @Test("shouldIndex returns true for P256K namespace-enum Topics hub")
+    func shouldIndexP256KNamespaceHub() {
+        #expect(AgentDirectiveInjector.shouldIndex(
+            relativePath: "documentation/p256k/p256k/index.html"
+        ))
+    }
+
     @Test("shouldIndex returns false for operator pages")
     func shouldIndexOperatorPage() {
         #expect(!AgentDirectiveInjector.shouldIndex(
@@ -620,9 +634,13 @@ struct AgentDirectiveTests {
         #expect(action == .skipped)
     }
 
-    @Test("Allowlist has exactly 120 entries (15 P256K llms.txt + 52 Discussion + 29 authored + 10 Event llms.txt + 12 OpenSSL llms.txt + 2 ZKP authored)")
+    @Test("Allowlist has exactly 122 entries (2 hub + 15 P256K llms.txt + 52 Discussion + 29 authored + 10 Event llms.txt + 12 OpenSSL llms.txt + 2 ZKP authored)")
     func allowlistCompleteness() {
-        #expect(AgentDirectiveInjector.indexablePages.count == 120)
+        #expect(AgentDirectiveInjector.indexablePages.count == 122)
+
+        // Spot-check hub pages
+        #expect(AgentDirectiveInjector.indexablePages.contains("documentation"))
+        #expect(AgentDirectiveInjector.indexablePages.contains("documentation/p256k/p256k"))
 
         // Spot-check P256K llms.txt entries
         #expect(AgentDirectiveInjector.indexablePages.contains("documentation/p256k"))

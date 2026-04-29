@@ -110,6 +110,12 @@ public enum AgentDirectiveInjector {
     ///     -exec grep -l 'class="aside' {} \; \
     ///   \) | sed 's|Websites/docs-21-dev/||; s|/index.html||' | sort -u
     static let indexablePages: Set<String> = [
+        // --- Hub pages (2 entries, manually curated) ---
+        // Top-level navigation entry points not surfaced by authored-content
+        // audits: docs.21.dev root and the P256K namespace-enum Topics hub.
+        "documentation",
+        "documentation/p256k/p256k",
+
         // --- P256K llms.txt (15 entries) ---
         // ## Documentation
         "documentation/p256k/gettingstarted",
