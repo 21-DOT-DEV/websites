@@ -15,6 +15,14 @@ P256K wraps the Bitcoin Core `libsecp256k1` C library with a type-safe Swift API
 
 - [Getting Started](https://docs.21.dev/data/documentation/p256k/gettingstarted.md): Generate keys, create ECDSA and Schnorr signatures, perform ECDH key agreement
 - [P256K Module](https://docs.21.dev/data/documentation/p256k.md): Module overview — key generation, ECDSA signing, ECDH, public key recovery
+- [Elliptic Curve Diffie-Hellman](https://docs.21.dev/data/documentation/p256k/ellipticcurvediffiehellman.md): Derive a shared secret between two parties over secp256k1 using ECDH key agreement — the foundation of Nostr NIP-04 encryption, BIP-352 Silent Payments, and Lightning's Noise XK handshake
+- [Silent Payments](https://docs.21.dev/data/documentation/p256k/silentpayments.md): Send Bitcoin to a reusable static address without on-chain linkability or sender-receiver interaction, using the BIP-352 Silent Payments protocol
+- [Tweaking Keys](https://docs.21.dev/data/documentation/p256k/tweakingkeys.md): Derive child keys using additive and multiplicative tweaks for BIP-32 key derivation and BIP-341 Taproot
+- [MuSig2 Multi-Signatures](https://docs.21.dev/data/documentation/p256k/musig2multisignatures.md): Create a single Schnorr signature from multiple independent signers using the BIP-327 MuSig2 protocol
+- [Recovering Public Keys](https://docs.21.dev/data/documentation/p256k/recoveringpublickeys.md): Recover an ECDSA public key from a recoverable signature and its recovery ID (BIP-137, BIP-322)
+- [Serializing Keys](https://docs.21.dev/data/documentation/p256k/serializingkeys.md): Import and export keys in raw bytes, PEM, DER, and other standard formats
+- [Security Considerations](https://docs.21.dev/data/documentation/p256k/securityconsiderations.md): Security properties of P256K — context randomization, nonce hygiene, comparison timing, secret zeroization, signature malleability
+- [Key Formats](https://docs.21.dev/data/documentation/p256k/keyformats.md): Why secp256k1 has multiple key representations (compressed, uncompressed, x-only, internal) and when to use each
 
 ## Symbols
 

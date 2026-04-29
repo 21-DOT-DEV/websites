@@ -561,6 +561,20 @@ struct AgentDirectiveTests {
         ))
     }
 
+    @Test("shouldIndex returns true for documentation root (docs.21.dev landing)")
+    func shouldIndexDocumentationRoot() {
+        #expect(AgentDirectiveInjector.shouldIndex(
+            relativePath: "documentation/index.html"
+        ))
+    }
+
+    @Test("shouldIndex returns true for P256K namespace-enum Topics hub")
+    func shouldIndexP256KNamespaceHub() {
+        #expect(AgentDirectiveInjector.shouldIndex(
+            relativePath: "documentation/p256k/p256k/index.html"
+        ))
+    }
+
     @Test("shouldIndex returns false for operator pages")
     func shouldIndexOperatorPage() {
         #expect(!AgentDirectiveInjector.shouldIndex(
@@ -620,15 +634,27 @@ struct AgentDirectiveTests {
         #expect(action == .skipped)
     }
 
-    @Test("Allowlist has exactly 120 entries (15 P256K llms.txt + 52 Discussion + 29 authored + 10 Event llms.txt + 12 OpenSSL llms.txt + 2 ZKP authored)")
+    @Test("Allowlist has exactly 130 entries (2 hub + 23 P256K llms.txt + 52 Discussion + 29 authored + 10 Event llms.txt + 12 OpenSSL llms.txt + 2 ZKP authored)")
     func allowlistCompleteness() {
-        #expect(AgentDirectiveInjector.indexablePages.count == 120)
+        #expect(AgentDirectiveInjector.indexablePages.count == 130)
+
+        // Spot-check hub pages
+        #expect(AgentDirectiveInjector.indexablePages.contains("documentation"))
+        #expect(AgentDirectiveInjector.indexablePages.contains("documentation/p256k/p256k"))
 
         // Spot-check P256K llms.txt entries
         #expect(AgentDirectiveInjector.indexablePages.contains("documentation/p256k"))
         #expect(AgentDirectiveInjector.indexablePages.contains("documentation/p256k/gettingstarted"))
         #expect(AgentDirectiveInjector.indexablePages.contains("documentation/p256k/p256k/signing"))
         #expect(AgentDirectiveInjector.indexablePages.contains("documentation/p256k/p256k/signing/privatekey"))
+
+        // Spot-check newly-added authored articles (added in PR fb0c08)
+        // ellipticcurvediffiehellman + silentpayments are first shipped in
+        // swift-secp256k1 0.23.1-prerelease-3.
+        #expect(AgentDirectiveInjector.indexablePages.contains("documentation/p256k/ellipticcurvediffiehellman"))
+        #expect(AgentDirectiveInjector.indexablePages.contains("documentation/p256k/silentpayments"))
+        #expect(AgentDirectiveInjector.indexablePages.contains("documentation/p256k/tweakingkeys"))
+        #expect(AgentDirectiveInjector.indexablePages.contains("documentation/p256k/musig2multisignatures"))
 
         // Spot-check Discussion audit entries
         #expect(AgentDirectiveInjector.indexablePages.contains("documentation/p256k/p256k/context/rawrepresentation"))
