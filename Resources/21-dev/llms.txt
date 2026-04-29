@@ -47,7 +47,7 @@ Two subdomains serve documentation:
 
 ## Optional
 
-- [Example Symbol — Markdown](https://docs.21.dev/data/documentation/p256k/p256k/signing/sharedsecret.md): Sample documentation format (plain text, LLM-readable)
+- [Example Symbol — Markdown](https://docs.21.dev/data/documentation/p256k/sharedsecret.md): Sample documentation format (plain text, LLM-readable)
 - [Example Symbol — HTML](https://docs.21.dev/documentation/p256k/sharedsecret): Same symbol as interactive DocC page (Vue.js SPA, requires JavaScript to render)
 - [P256K Interactive Docs](https://docs.21.dev/documentation/p256k/): DocC HTML reference with search and type hierarchy
 - [ZKP Interactive Docs](https://docs.21.dev/documentation/zkp/): DocC HTML reference with search and type hierarchy

@@ -3,7 +3,7 @@
 > Part of the [swift-openssl](https://docs.21.dev/llms.txt) package (v{{OPENSSL_VERSION}}).
 > For all markdown files in this module, see [OpenSSL llms-full.txt](https://docs.21.dev/data/documentation/openssl/llms-full.txt).
 
-OpenSSL wraps [OpenSSL 3.6.2](https://github.com/openssl/openssl) with a type-safe Swift 6.1 API covering SHA-256 ([FIPS 180-4](https://csrc.nist.gov/publications/detail/fips/180/4/final)), Base64URL ([RFC 4648 §5](https://datatracker.ietf.org/doc/html/rfc4648#section-5)), and RSA PEM ingestion (PKCS#1 / PKCS#8). OpenSSL itself is statically vendored — no system dependency at runtime. Complements (rather than replaces) [swift-crypto](https://github.com/apple/swift-crypto) and Apple CryptoKit: use OpenSSL when you need PKCS#1 padding variants, PEM I/O, Base64URL with the JOSE alphabet, or interop with existing OpenSSL-based C/C++ code. Swift 6.1+.
+OpenSSL wraps [OpenSSL 3.6.2](https://github.com/openssl/openssl) with a type-safe Swift 6.1 API covering SHA-256 ([FIPS 180-4](https://doi.org/10.6028/NIST.FIPS.180-4)), Base64URL ([RFC 4648 §5](https://datatracker.ietf.org/doc/html/rfc4648#section-5)), and RSA PEM ingestion (PKCS#1 / PKCS#8). OpenSSL itself is statically vendored — no system dependency at runtime. Complements (rather than replaces) [swift-crypto](https://github.com/apple/swift-crypto) and Apple CryptoKit: use OpenSSL when you need PKCS#1 padding variants, PEM I/O, Base64URL with the JOSE alphabet, or interop with existing OpenSSL-based C/C++ code. Swift 6.1+.
 
 ## Instructions
 

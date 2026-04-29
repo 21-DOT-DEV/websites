@@ -3,16 +3,16 @@
   "archives": {
     "p256k": {
       "repo": "21-DOT-DEV/swift-secp256k1",
-      "tag": "0.23.1-prerelease-3",
+      "tag": "0.23.1",
       "artifact": "P256K.doccarchive.zip",
-      "sha256": "ca0ccb3ba5b5a863b887cd23051b4b1a0c3c504212fa5cbdfd49d44a773c89ad",
+      "sha256": "41d970f090070a0fe45ba8f47c190953b8f93ec1868013a431a1f9ae63d3da4b",
       "bundleID": "P256K"
     },
     "zkp": {
       "repo": "21-DOT-DEV/swift-secp256k1",
-      "tag": "0.23.1-prerelease-3",
+      "tag": "0.23.1",
       "artifact": "ZKP.doccarchive.zip",
-      "sha256": "15d4027bf9bbc5ced1ca557f8a29b565cad0b9459d7eab1271884db70db40377",
+      "sha256": "07ab87b84d891e7d4aaa50ad375c97d1b663a0c533a6946bafa76712913dbe2d",
       "bundleID": "ZKP"
     },
     "event": {

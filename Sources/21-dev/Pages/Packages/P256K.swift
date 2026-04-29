@@ -124,17 +124,17 @@ struct P256KPage {
                 title: "Xcode",
                 codeSnippet: SiteIdentity.p256kRepoURL,
                 language: "text",
-                instructions: "In Xcode, go to File → Add Package Dependencies, paste the URL above, select version 0.23.0, and add to your target."
+                instructions: "In Xcode, go to File → Add Package Dependencies, paste the URL above, select version 0.23.1, and add to your target."
             ),
             InstallationOption(
                 title: "Swift Package Manager",
-                codeSnippet: ".package(url: \"\(SiteIdentity.p256kRepoURL)\", exact: \"0.23.0\")",
+                codeSnippet: ".package(url: \"\(SiteIdentity.p256kRepoURL)\", exact: \"0.23.1\")",
                 language: "swift",
                 instructions: "Add this line to your Package.swift dependencies array, then run `swift build` to integrate P256K into your project."
             ),
             InstallationOption(
                 title: "CocoaPods",
-                codeSnippet: "pod 'swift-secp256k1', '0.23.0'",
+                codeSnippet: "pod 'swift-secp256k1', '0.23.1'",
                 language: "ruby",
                 instructions: "Add this line to your Podfile, then run `pod install` to integrate P256K into your Xcode workspace."
             )
@@ -294,7 +294,7 @@ struct P256KPage {
             SiteIdentity.p256kDocsURL,
             "https://swiftpackageindex.com/21-DOT-DEV/swift-secp256k1"
         ],
-        softwareVersion: "0.23.0",
+        softwareVersion: "0.23.1",
         keywords: [
             "secp256k1",
             "Swift",
@@ -398,19 +398,19 @@ struct P256KPage {
                         title: "ECDSA Signatures",
                         description: "Elliptic Curve Digital Signature Algorithm (ECDSA) offers a variant of the Digital Signature Algorithm (DSA) which uses elliptic-curve cryptography.",
                         icon: LightningIcon(),
-                        link: "https://docs.21.dev/documentation/p256k/secp256k1/signing"
+                        link: "https://docs.21.dev/documentation/p256k/p256k/signing/"
                     ),
                     ContentItem(
                         title: "Schnorr Signatures",
                         description: "Schnorr signatures provide enhanced privacy and efficiency with mathematical properties that enable advanced Bitcoin scripting capabilities.",
                         icon: SignatureIcon(),
-                        link: "https://docs.21.dev/documentation/p256k/secp256k1/schnorr"
+                        link: "https://docs.21.dev/documentation/p256k/p256k/schnorr/"
                     ),
                     ContentItem(
                         title: "Key Management",
                         description: "Secure key generation, derivation, and management utilities for Bitcoin development with industry-standard practices.",
                         icon: SwiftPackagesIcon(),
-                        link: "https://docs.21.dev/documentation/p256k/secp256k1/signing/privatekey"
+                        link: "https://docs.21.dev/documentation/p256k/p256k/signing/privatekey/"
                     )
                 ])
             }
