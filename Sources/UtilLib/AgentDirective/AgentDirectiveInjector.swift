@@ -123,7 +123,7 @@ public enum AgentDirectiveInjector {
         // Authored articles added in PR fb0c08 — mirror the `## Documentation`
         // entries in Resources/docs-21-dev/data/documentation/p256k/llms.txt.
         // The first two (ellipticcurvediffiehellman, silentpayments) ship for
-        // the first time in swift-secp256k1 0.23.1-prerelease-3.
+        // the first time in swift-secp256k1 0.23.1.
         "documentation/p256k/ellipticcurvediffiehellman",
         "documentation/p256k/silentpayments",
         "documentation/p256k/tweakingkeys",

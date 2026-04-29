@@ -192,7 +192,7 @@ struct SiteGenerator {
         
         Swift Package Manager (recommended):
         ```swift
-        .package(url: "https://github.com/21-DOT-DEV/swift-secp256k1", exact: "0.23.0")
+        .package(url: "https://github.com/21-DOT-DEV/swift-secp256k1", exact: "0.23.1")
         ```
         
         ## FAQ

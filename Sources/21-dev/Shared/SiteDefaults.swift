@@ -53,7 +53,7 @@ public struct SiteDefaults {
         navigationLinks: [
             NavigationLink(title: "Blog", href: "/blog/"),
             NavigationLink(title: "P256K", href: "/packages/p256k/"),
-            NavigationLink(title: "Docs", href: SiteIdentity.p256kDocsURL, isExternal: true)
+            NavigationLink(title: "Docs", href: SiteIdentity.docsBaseURL + "documentation/", isExternal: true)
         ]
     )
     

@@ -650,7 +650,7 @@ struct AgentDirectiveTests {
 
         // Spot-check newly-added authored articles (added in PR fb0c08)
         // ellipticcurvediffiehellman + silentpayments are first shipped in
-        // swift-secp256k1 0.23.1-prerelease-3.
+        // swift-secp256k1 0.23.1.
         #expect(AgentDirectiveInjector.indexablePages.contains("documentation/p256k/ellipticcurvediffiehellman"))
         #expect(AgentDirectiveInjector.indexablePages.contains("documentation/p256k/silentpayments"))
         #expect(AgentDirectiveInjector.indexablePages.contains("documentation/p256k/tweakingkeys"))
