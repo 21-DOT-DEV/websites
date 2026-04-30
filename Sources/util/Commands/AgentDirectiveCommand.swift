@@ -16,7 +16,7 @@ struct AgentDirectiveCommand: ParsableCommand {
     static let configuration = CommandConfiguration(
         commandName: "agent-directive",
         abstract: "Inject agent directive tags into HTML documentation files",
-        subcommands: [Inject.self]
+        subcommands: [Inject.self, Audit.self]
     )
 }
 
@@ -228,6 +228,151 @@ extension AgentDirectiveCommand {
             if sidecarTotal > 0 {
                 let percent = String(format: "%.2f%%", report.sidecarFailureRate * 100)
                 print("📄 DocC sidecars: \(report.sidecarLoadedCount) loaded, \(report.sidecarFailedCount) failed (\(percent))")
+            }
+        }
+    }
+}
+
+// MARK: - Audit Subcommand
+
+extension AgentDirectiveCommand {
+    /// Apply the hybrid prose-based indexing policy to the downloaded DocC
+    /// archives and report which symbol pages should be added to (or removed
+    /// from) the registry's `indexablePages` allowlist.
+    ///
+    /// See `IndexabilityAuditor` in UtilLib for the policy specification.
+    struct Audit: ParsableCommand {
+        static let configuration = CommandConfiguration(
+            commandName: "audit",
+            abstract: "Audit DocC archives against the hybrid indexability policy (bidirectional drift)",
+            discussion: """
+                Walks every module's DocC sidecar tree under --archives-root,
+                applies the hybrid policy (Type ≥200, Method ≥300, Aside ≥100
+                authored chars), and reports drift in BOTH directions vs.
+                `external-archives.json`'s `indexablePages`:
+
+                  • STALE entries (SEO priority): pages currently in the allowlist
+                    but no longer pass the policy. They appear in the sitemap as
+                    thin content and risk Google Helpful Content demotion of the
+                    whole domain. ACTION: remove from `indexablePages`.
+
+                  • NEWLY-DISCOVERED pages (editorial polish): pages that pass
+                    the policy but aren't in the allowlist. Currently `noindex`
+                    and excluded from the sitemap (single-page traffic loss).
+                    ACTION: review and add to `indexablePages` if they belong
+                    in search.
+
+                Run this after bumping an archive's `tag` in the registry, or
+                as an advisory CI step on every build. Manually review the
+                report and reconcile both directions in the next registry PR.
+                """
+        )
+
+        @Option(
+            name: .long,
+            help: "Directory containing per-module DocC sidecar trees (e.g., 'p256k/', 'tor/')."
+        )
+        var archivesRoot: String = "Websites/docs-21-dev/data/documentation"
+
+        @Option(
+            name: .long,
+            help: "Path to external-archives.json (defaults to the standard registry location)."
+        )
+        var registry: String = ArchiveRegistry.defaultRelativePath
+
+        @Flag(name: .long, help: "Exit non-zero when ANY drift exists (stale entries or newly-discovered pages).")
+        var strict: Bool = false
+
+        @Flag(name: .shortAndLong, help: "Show every eligible page, not just the gap.")
+        var verbose: Bool = false
+
+        mutating func validate() throws {
+            var isDir: ObjCBool = false
+            guard FileManager.default.fileExists(atPath: archivesRoot, isDirectory: &isDir),
+                  isDir.boolValue else {
+                throw ValidationError("--archives-root does not exist or is not a directory: \(archivesRoot)")
+            }
+            guard FileManager.default.fileExists(atPath: registry) else {
+                throw ValidationError("--registry file not found: \(registry)")
+            }
+        }
+
+        mutating func run() throws {
+            let registryURL = URL(fileURLWithPath: registry)
+            let archivesURL = URL(fileURLWithPath: archivesRoot)
+            let registryModel: ArchiveRegistry
+            do {
+                registryModel = try ArchiveRegistry.load(from: registryURL)
+            } catch {
+                print("❌ Failed to load registry: \(error)")
+                throw ExitCode.failure
+            }
+
+            let report: IndexabilityAuditor.AuditReport
+            do {
+                report = try IndexabilityAuditor.audit(
+                    archivesRoot: archivesURL,
+                    registry: registryModel
+                )
+            } catch let auditError as IndexabilityAuditor.AuditError {
+                print("❌ \(auditError.description)")
+                throw ExitCode.failure
+            }
+
+            print("Audit against \(registryModel.allIndexablePages.count) currently-allowlisted pages.")
+            print("Scanned \(report.modules.count) module(s); applied hybrid policy:")
+            print("  - Type pages (Structure/Class/Enum/Protocol/Actor/Type Alias): Overview ≥ \(IndexabilityAuditor.typeOverviewMinChars) chars")
+            print("  - Method pages (Method/Init/Property/Subscript/Operator/Case): Discussion ≥ \(IndexabilityAuditor.methodDiscussionMinChars) chars")
+            print("  - Aside-bearing pages: Discussion ≥ \(IndexabilityAuditor.asideDiscussionMinChars) chars")
+            print()
+
+            // Stale entries lead — they're the SEO-relevant drift signal
+            // (thin pages still in the sitemap risk Helpful Content demotion).
+            // Newly-discovered entries follow as the secondary editorial signal.
+            for moduleReport in report.modules {
+                let staleCount = moduleReport.staleEntries.count
+                let newCount = moduleReport.newlyDiscovered.count
+                let bullet: String
+                if staleCount > 0 {
+                    bullet = "⚠️"
+                } else if newCount > 0 {
+                    bullet = "+"
+                } else {
+                    bullet = "✓"
+                }
+                print("\(bullet) \(moduleReport.module): \(moduleReport.eligible.count) eligible, \(staleCount) stale, \(newCount) new")
+
+                // Stale entries first (louder).
+                for entry in moduleReport.staleEntries {
+                    print("    ⚠ \(entry.path)    [\(entry.reason)]")
+                }
+                // Then newly-discovered.
+                if verbose {
+                    for entry in moduleReport.eligible {
+                        let mark = moduleReport.newlyDiscovered.contains(entry) ? "+" : " "
+                        print("    \(mark) \(entry.path)    [\(entry.reason)]")
+                    }
+                } else {
+                    for entry in moduleReport.newlyDiscovered {
+                        print("    + \(entry.path)    [\(entry.reason)]")
+                    }
+                }
+            }
+
+            print()
+            print("Total: \(report.totalEligible) eligible, \(report.totalStaleEntries) stale, \(report.totalNewlyDiscovered) new.")
+
+            if strict, report.hasGap {
+                print()
+                if report.totalStaleEntries > 0 {
+                    print("❌ --strict: \(report.totalStaleEntries) stale allowlist entr\(report.totalStaleEntries == 1 ? "y" : "ies") detected.")
+                    print("   Remove from external-archives.json's indexablePages — these pages are thin-content liabilities.")
+                }
+                if report.totalNewlyDiscovered > 0 {
+                    print("❌ --strict: \(report.totalNewlyDiscovered) newly-eligible page(s) not in allowlist.")
+                    print("   Add to external-archives.json's indexablePages and rerun.")
+                }
+                throw ExitCode.failure
             }
         }
     }

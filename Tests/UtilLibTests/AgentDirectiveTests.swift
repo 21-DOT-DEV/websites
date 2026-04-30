@@ -634,12 +634,14 @@ struct AgentDirectiveTests {
         #expect(action == .skipped)
     }
 
-    @Test("Allowlist has exactly 130 entries (2 hub + 23 P256K llms.txt + 52 Discussion + 29 authored + 10 Event llms.txt + 12 OpenSSL llms.txt + 2 ZKP authored)")
+    @Test("Allowlist has exactly 251 entries (1 globals.hub + 112 P256K + 22 Event + 27 OpenSSL + 2 ZKP + 87 Tor)")
     func allowlistCompleteness() {
-        #expect(AgentDirectiveInjector.indexablePages.count == 130)
+        #expect(AgentDirectiveInjector.indexablePages.count == 251)
 
-        // Spot-check hub pages
+        // Spot-check globals.hubs (truly cross-cutting site root only).
         #expect(AgentDirectiveInjector.indexablePages.contains("documentation"))
+        // The P256K umbrella namespace landing page lives in the P256K
+        // archive (not globals.hubs) — verify it's still in the union.
         #expect(AgentDirectiveInjector.indexablePages.contains("documentation/p256k/p256k"))
 
         // Spot-check P256K llms.txt entries
@@ -685,6 +687,34 @@ struct AgentDirectiveTests {
         // ZKP symbol pages still excluded — they re-export P256K and would be SEO dupes
         #expect(!AgentDirectiveInjector.indexablePages.contains("documentation/zkp/p256k/signing"))
         #expect(!AgentDirectiveInjector.indexablePages.contains("documentation/zkp/p256k/schnorr/privatekey"))
+
+        // Spot-check Tor essentials (Phase 3 archive addition)
+        #expect(AgentDirectiveInjector.indexablePages.contains("documentation/tor"))
+        #expect(AgentDirectiveInjector.indexablePages.contains("documentation/tor/torclient"))
+        #expect(AgentDirectiveInjector.indexablePages.contains("documentation/tor/torsession"))
+        #expect(AgentDirectiveInjector.indexablePages.contains("documentation/tor/torerror"))
+        #expect(AgentDirectiveInjector.indexablePages.contains("documentation/tor/onionservice"))
+
+        // Spot-check Phase 4 audit additions — type-page Overview entries
+        #expect(AgentDirectiveInjector.indexablePages.contains("documentation/p256k/p256k/signing/ecdsasignature"))
+        #expect(AgentDirectiveInjector.indexablePages.contains("documentation/p256k/p256k/musig/aggregatesignature"))
+
+        // Spot-check Phase 4 audit additions — Event method-level entries
+        #expect(AgentDirectiveInjector.indexablePages.contains("documentation/event/socket/connect(to:loop:)"))
+        #expect(AgentDirectiveInjector.indexablePages.contains("documentation/event/serversocket/accept()"))
+
+        // Spot-check Phase 4 audit additions — OpenSSL Case-role entries (user-cited)
+        #expect(AgentDirectiveInjector.indexablePages.contains("documentation/openssl/opensslerror/invalidkey(_:)"))
+        #expect(AgentDirectiveInjector.indexablePages.contains("documentation/openssl/sha256/hash(data:)"))
+
+        // Spot-check Phase 4 audit additions — Tor user-facing API
+        #expect(AgentDirectiveInjector.indexablePages.contains("documentation/tor/torclient/start()"))
+        #expect(AgentDirectiveInjector.indexablePages.contains("documentation/tor/torcontrolclient/addonion(key:ports:detach:)"))
+        #expect(AgentDirectiveInjector.indexablePages.contains("documentation/tor/foundation/urlsessionconfiguration/configuredfortor(socksendpoint:)"))
+
+        // Tor internal protocol-plumbing children remain excluded (audit filter)
+        #expect(!AgentDirectiveInjector.indexablePages.contains("documentation/tor/controlsocket/readline()"))
+        #expect(!AgentDirectiveInjector.indexablePages.contains("documentation/tor/controlprotocolparser/parseasyncevent(_:)"))
 
         // Protocol conformance stubs excluded (no authored content)
         #expect(!AgentDirectiveInjector.indexablePages.contains("documentation/p256k/p256k/signing/privatekey/==(_:_:)"))
