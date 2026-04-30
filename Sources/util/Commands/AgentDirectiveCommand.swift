@@ -321,6 +321,7 @@ extension AgentDirectiveCommand {
 
             print("Audit against \(registryModel.allIndexablePages.count) currently-allowlisted pages.")
             print("Scanned \(report.modules.count) module(s); applied hybrid policy:")
+            print("  - Framework / Module landings: Overview ≥ \(IndexabilityAuditor.frameworkOverviewMinChars) chars")
             print("  - Type pages (Structure/Class/Enum/Protocol/Actor/Type Alias): Overview ≥ \(IndexabilityAuditor.typeOverviewMinChars) chars")
             print("  - Method pages (Method/Init/Property/Subscript/Operator/Case): Discussion ≥ \(IndexabilityAuditor.methodDiscussionMinChars) chars")
             print("  - Aside-bearing pages: Discussion ≥ \(IndexabilityAuditor.asideDiscussionMinChars) chars")

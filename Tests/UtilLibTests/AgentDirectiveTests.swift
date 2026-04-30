@@ -556,8 +556,11 @@ struct AgentDirectiveTests {
 
     @Test("shouldIndex returns false for non-allowlisted page")
     func shouldIndexNonAllowlisted() {
+        // A skeleton initializer page removed from the allowlist per policy.
+        // disc=74 (well below the 300-char method threshold); unlikely to
+        // cross threshold without a substantial doc-comment expansion.
         #expect(!AgentDirectiveInjector.shouldIndex(
-            relativePath: "documentation/p256k/p256k/signing/xonlykey/index.html"
+            relativePath: "documentation/p256k/p256k/recovery/publickey/init(_:signature:format:)-4311g/index.html"
         ))
     }
 
@@ -634,9 +637,12 @@ struct AgentDirectiveTests {
         #expect(action == .skipped)
     }
 
-    @Test("Allowlist has exactly 251 entries (1 globals.hub + 112 P256K + 22 Event + 27 OpenSSL + 2 ZKP + 87 Tor)")
+    @Test("Allowlist has exactly 285 entries (1 globals.hub + 131 P256K + 25 Event + 28 OpenSSL + 2 ZKP + 98 Tor)")
     func allowlistCompleteness() {
-        #expect(AgentDirectiveInjector.indexablePages.count == 251)
+        // Count reflects the 2026-04-30 reconciliation: +59 newly-eligible
+        // pages added, -25 skeleton stubs removed (disc<150), 12 borderline
+        // entries retained as editorial overrides (disc 154–289 in CI audit).
+        #expect(AgentDirectiveInjector.indexablePages.count == 285)
 
         // Spot-check globals.hubs (truly cross-cutting site root only).
         #expect(AgentDirectiveInjector.indexablePages.contains("documentation"))
@@ -663,10 +669,16 @@ struct AgentDirectiveTests {
         #expect(AgentDirectiveInjector.indexablePages.contains("documentation/p256k/p256k/schnorr/privatekey/signature(for:)"))
         #expect(AgentDirectiveInjector.indexablePages.contains("documentation/p256k/sha256/taggedhash(tag:data:)"))
 
-        // Spot-check authored Parameters/Return Value/aside entries
+        // Spot-check borderline entries retained as editorial overrides
+        // (disc=154–289 — below the 300-char method threshold but carrying
+        // real authored Parameters / Return Value / aside prose; see
+        // 2026-04-30 reconciliation).
         #expect(AgentDirectiveInjector.indexablePages.contains("documentation/p256k/p256k/signing/publickey/isvalidsignature(_:for:)-7sttb"))
-        #expect(AgentDirectiveInjector.indexablePages.contains("documentation/p256k/p256k/recovery/publickey/init(_:signature:format:)-4311g"))
         #expect(AgentDirectiveInjector.indexablePages.contains("documentation/p256k/sha256/hash(data:)"))
+        // Removed 2026-04-30 as a skeleton stub (disc=74, well below the
+        // 300-char policy threshold) once the counter was fixed to see the
+        // full authored prose instead of the first content section only.
+        #expect(!AgentDirectiveInjector.indexablePages.contains("documentation/p256k/p256k/recovery/publickey/init(_:signature:format:)-4311g"))
 
         // Spot-check Event llms.txt entries
         #expect(AgentDirectiveInjector.indexablePages.contains("documentation/event"))

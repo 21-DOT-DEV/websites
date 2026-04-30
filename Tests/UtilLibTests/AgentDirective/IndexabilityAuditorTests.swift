@@ -664,6 +664,239 @@ struct IndexabilityAuditorStaleTests {
     }
 }
 
+// MARK: - Content Counting & Framework Role
+//
+// Covers two empirically-verified issues uncovered by sampling real DocC
+// archives (see conversation thread 2026-04-30):
+//
+// 1. The pre-fix `discussionCharCount` read only the FIRST kind:content
+//    section of `primaryContentSections` and ignored the `abstract` field.
+//    Real DocC method pages emit Return Value as the first content section
+//    (short) followed by Discussion (long), so the auditor undercounted
+//    authored prose by 10–18× on every method-with-return-value page.
+//
+// 2. `roleHeading: "Framework"` was not in any rule bucket, so module
+//    landing pages (1300–2000 authored chars each) fell through to stale.
+//
+// These tests encode the real DocC sidecar shape observed in the OpenSSL
+// archive (abstract + Return Value section + Discussion section) and the
+// Framework landing shape.
+
+@Suite("IndexabilityAuditor — Content Counting & Framework")
+struct IndexabilityAuditorContentCountingTests {
+
+    // MARK: Fixture helpers
+
+    /// Build a sidecar matching DocC's real shape: optional top-level
+    /// `abstract`, then a declarations section, then zero or more
+    /// `kind: content` sections (Return Value, Discussion, etc.).
+    private static func sidecarWithAbstractAndSections(
+        roleHeading: String,
+        symbolKind: String,
+        abstract: String?,
+        contentSections: [[[String: Any]]]
+    ) -> Data {
+        var json: [String: Any] = [
+            "metadata": ["roleHeading": roleHeading, "symbolKind": symbolKind],
+        ]
+        if let abs = abstract {
+            json["abstract"] = [textNode(abs)]
+        }
+        var sections: [[String: Any]] = [
+            // Declarations block is auto-generated; the auditor must ignore it.
+            ["kind": "declarations", "declarations": [] as [Any]] as [String: Any],
+        ]
+        for nodes in contentSections {
+            sections.append([
+                "kind": "content",
+                "content": nodes as [Any],
+            ] as [String: Any])
+        }
+        json["primaryContentSections"] = sections
+        return try! JSONSerialization.data(withJSONObject: json, options: [])
+    }
+
+    private static func textNode(_ s: String) -> [String: Any] {
+        ["type": "text", "text": s]
+    }
+
+    private static func paragraphOf(_ text: String) -> [String: Any] {
+        ["type": "paragraph", "inlineContent": [textNode(text)]]
+    }
+
+    private static func codeListingNode(lines: [String]) -> [String: Any] {
+        ["type": "codeListing", "syntax": "swift", "code": lines]
+    }
+
+    /// Small fixture root for allowlist-entry evaluation tests.
+    private static func makeFixtureRoot(sidecars: [String: Data]) throws -> URL {
+        let tmp = URL(fileURLWithPath: NSTemporaryDirectory())
+            .appendingPathComponent("IndexabilityAuditorContentCountingTests-\(UUID().uuidString)", isDirectory: true)
+            .appendingPathComponent("documentation", isDirectory: true)
+        try FileManager.default.createDirectory(at: tmp, withIntermediateDirectories: true)
+        for (relativePath, data) in sidecars {
+            let url = tmp.appendingPathComponent(relativePath)
+            try FileManager.default.createDirectory(
+                at: url.deletingLastPathComponent(),
+                withIntermediateDirectories: true
+            )
+            try data.write(to: url)
+        }
+        return tmp
+    }
+
+    // MARK: Fix A — authored content counting
+
+    @Test("authoredCharCount sums abstract + all kind:content sections (regression for disc=67 bug)")
+    func authoredCharCountMultiSection() throws {
+        // Mimics real DocC method-page shape: 50-char abstract + 60-char Return
+        // Value section + 400-char Discussion section. The pre-fix auditor read
+        // only the first content section (60) and missed both abstract and
+        // Discussion. Expected total under the fix: 50 + 60 + 400 = 510.
+        let data = Self.sidecarWithAbstractAndSections(
+            roleHeading: "Instance Method", symbolKind: "method",
+            abstract: String(repeating: "a", count: 50),
+            contentSections: [
+                [Self.paragraphOf(String(repeating: "r", count: 60))],   // Return Value
+                [Self.paragraphOf(String(repeating: "d", count: 400))],  // Discussion
+            ]
+        )
+        let root = try JSONSerialization.jsonObject(with: data) as! [String: Any]
+        #expect(IndexabilityAuditor.authoredCharCount(root: root) == 510)
+    }
+
+    @Test("authoredCharCount counts abstract alone when no kind:content sections are present")
+    func authoredCharCountAbstractOnly() throws {
+        // Pages with only a one-line summary (e.g. trivial initializers) emit
+        // an `abstract` but no `kind: content` section. The auditor must still
+        // see the authored prose.
+        let data = Self.sidecarWithAbstractAndSections(
+            roleHeading: "Initializer", symbolKind: "init",
+            abstract: String(repeating: "a", count: 75),
+            contentSections: []
+        )
+        let root = try JSONSerialization.jsonObject(with: data) as! [String: Any]
+        #expect(IndexabilityAuditor.authoredCharCount(root: root) == 75)
+    }
+
+    @Test("authoredCharCount excludes codeListings from the count")
+    func authoredCharCountExcludesCode() throws {
+        // Code samples are not authored prose for SEO purposes — they appear
+        // verbatim on the page but don't signal content quality.
+        let data = Self.sidecarWithAbstractAndSections(
+            roleHeading: "Instance Method", symbolKind: "method",
+            abstract: String(repeating: "a", count: 30),
+            contentSections: [
+                [
+                    Self.paragraphOf(String(repeating: "p", count: 100)),
+                    Self.codeListingNode(lines: [String(repeating: "c", count: 500)]),
+                ]
+            ]
+        )
+        let root = try JSONSerialization.jsonObject(with: data) as! [String: Any]
+        // 30 (abstract) + 100 (prose). Code listing NOT counted.
+        #expect(IndexabilityAuditor.authoredCharCount(root: root) == 130)
+    }
+
+    @Test("evaluate() recognises a method page with abstract + RV + Discussion as eligible (regression)")
+    func evaluateRealDocCShape() throws {
+        // Matches the real openssl/sha256/hash(data:) shape:
+        //   abstract=45, Return Value section=71, Discussion section=679
+        //   → 795 total authored chars.
+        // Pre-fix the auditor reported disc=71 and flagged as stale. Post-fix
+        // it reads the full 795 and passes the 300-char method threshold.
+        let data = Self.sidecarWithAbstractAndSections(
+            roleHeading: "Instance Method", symbolKind: "method",
+            abstract: String(repeating: "a", count: 45),
+            contentSections: [
+                [Self.paragraphOf(String(repeating: "r", count: 71))],   // Return Value
+                [Self.paragraphOf(String(repeating: "d", count: 679))],  // Discussion
+            ]
+        )
+        let page = try IndexabilityAuditor.evaluate(
+            sidecarData: data,
+            canonicalPath: "documentation/openssl/sha256/hash(data:)"
+        )
+        #expect(page != nil, "Multi-section method with 795 authored chars must be eligible under the fix")
+        #expect(page?.reason.contains("method:Instance Method") == true)
+        // Reason carries the TOTAL authored count.
+        #expect(page?.reason.contains("disc=795") == true,
+                "Expected disc=795 in reason, got: \(page?.reason ?? "nil")")
+    }
+
+    // MARK: Fix B — Framework role eligibility
+
+    @Test("evaluate() returns eligible for Framework role with Overview ≥ 500 chars")
+    func frameworkEligibleAboveThreshold() throws {
+        // Matches the real openssl Framework landing shape:
+        //   abstract=147, Overview section≈1924 (total 2071).
+        // Here we use a minimum-viable fixture at 550 total chars.
+        let data = Self.sidecarWithAbstractAndSections(
+            roleHeading: "Framework", symbolKind: "module",
+            abstract: String(repeating: "a", count: 50),
+            contentSections: [
+                [Self.paragraphOf(String(repeating: "o", count: 500))]
+            ]
+        )
+        let page = try IndexabilityAuditor.evaluate(
+            sidecarData: data,
+            canonicalPath: "documentation/mymodule"
+        )
+        #expect(page != nil, "Framework landing with 550 authored chars must be eligible")
+        #expect(page?.reason.contains("framework:Framework") == true)
+        #expect(page?.reason.contains("overview=550") == true)
+    }
+
+    @Test("evaluate() returns nil for Framework role below 500-char threshold")
+    func frameworkBelowThreshold() throws {
+        // Total 430 chars — above the 200-char type threshold but below the
+        // 500-char framework threshold. Framework rule must NOT fall back to
+        // the type rule (Framework role is distinct from type kinds).
+        let data = Self.sidecarWithAbstractAndSections(
+            roleHeading: "Framework", symbolKind: "module",
+            abstract: String(repeating: "a", count: 30),
+            contentSections: [
+                [Self.paragraphOf(String(repeating: "o", count: 400))]
+            ]
+        )
+        let page = try IndexabilityAuditor.evaluate(
+            sidecarData: data,
+            canonicalPath: "documentation/thin-framework"
+        )
+        #expect(page == nil, "Framework with only 430 authored chars must NOT be eligible")
+    }
+
+    @Test("evaluateAllowlistEntry returns .stale for Framework role below threshold with correct reason")
+    func frameworkStaleViaAllowlistEntry() throws {
+        // A thin Framework landing (100 chars total) should be classified as
+        // stale with a reason that identifies the Framework rule and the
+        // 500-char target for maintainer action.
+        let root = try Self.makeFixtureRoot(sidecars: [
+            "thin.json": Self.sidecarWithAbstractAndSections(
+                roleHeading: "Framework", symbolKind: "module",
+                abstract: String(repeating: "a", count: 20),
+                contentSections: [
+                    [Self.paragraphOf(String(repeating: "o", count: 80))]
+                ]
+            )
+        ])
+        defer { try? FileManager.default.removeItem(at: root.deletingLastPathComponent()) }
+
+        let status = try IndexabilityAuditor.evaluateAllowlistEntry(
+            allowlistPath: "documentation/thin",
+            archivesRoot: root
+        )
+        guard case .stale(let entry) = status else {
+            Issue.record("expected .stale, got \(status)")
+            return
+        }
+        #expect(entry.path == "documentation/thin")
+        #expect(entry.reason.contains("framework:Framework"))
+        #expect(entry.reason.contains("overview=100"))
+        #expect(entry.reason.contains("≥500"))
+    }
+}
+
 // MARK: - Defaults & Constants
 
 @Suite("IndexabilityAuditor — Defaults")
@@ -674,6 +907,13 @@ struct IndexabilityAuditorDefaultsTests {
         #expect(IndexabilityAuditor.typeOverviewMinChars == 200)
         #expect(IndexabilityAuditor.methodDiscussionMinChars == 300)
         #expect(IndexabilityAuditor.asideDiscussionMinChars == 100)
+        #expect(IndexabilityAuditor.frameworkOverviewMinChars == 500)
+    }
+
+    @Test("Framework role headings cover DocC module landings")
+    func frameworkRoleHeadingsAreClosedSet() {
+        let expected: Set<String> = ["Framework", "Module"]
+        #expect(IndexabilityAuditor.frameworkRoleHeadings == expected)
     }
 
     @Test("Default exclusions cover Tor's internal protocol-plumbing trees")

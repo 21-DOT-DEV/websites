@@ -35,8 +35,12 @@ import Foundation
 /// 3. **Aside-bearing** page with at least one authored aside callout AND
 ///    `## Discussion` ≥ 100 chars.
 ///
-/// Char counts come from `primaryContentSections[].kind == "content"`,
-/// flattened to plain text with code listings excluded.
+/// Char counts come from the top-level `abstract` plus every
+/// `primaryContentSections[]` entry with `kind == "content"` (e.g. Return
+/// Value, Discussion, Overview), flattened to plain text with code listings
+/// excluded. Reading only the first content section would pick the short
+/// Return Value block and miss the long Discussion that follows — a subtle
+/// undercount that historically inflated the stale-entry count.
 ///
 /// Articles (`metadata.symbolKind == nil`) are NOT type-checked here — they
 /// are hand-curated via per-module `llms.txt` files instead.
@@ -67,6 +71,13 @@ public enum IndexabilityAuditor {
     /// least one authored aside callout (Note / Warning / Tip / Important).
     public static let asideDiscussionMinChars: Int = 100
 
+    /// Minimum char count of authored prose on a **Framework / Module**
+    /// landing page. Module landings carry long-form project overviews by
+    /// nature (README-style content, installation, architecture summary),
+    /// so the bar is set higher than per-type Overviews to avoid trivial
+    /// stub landings slipping into the allowlist.
+    public static let frameworkOverviewMinChars: Int = 500
+
     /// DocC `metadata.roleHeading` values that classify a page as a "type page".
     public static let typeRoleHeadings: Set<String> = [
         "Structure", "Enumeration", "Class", "Protocol", "Type Alias", "Actor",
@@ -76,6 +87,15 @@ public enum IndexabilityAuditor {
     public static let methodRoleHeadings: Set<String> = [
         "Instance Method", "Type Method", "Initializer", "Operator", "Subscript",
         "Instance Property", "Type Property", "Case",
+    ]
+
+    /// DocC `metadata.roleHeading` values that classify a page as a module
+    /// landing. `Framework` is emitted by Swift-DocC for Swift package
+    /// modules; `Module` appears for Objective-C / language-agnostic
+    /// builds. Both are top-level hub pages carrying README-style authored
+    /// prose.
+    public static let frameworkRoleHeadings: Set<String> = [
+        "Framework", "Module",
     ]
 
     /// Default per-module path prefixes excluded from auditing. Pages under
@@ -263,10 +283,15 @@ public enum IndexabilityAuditor {
               let root = any as? [String: Any] else {
             return nil
         }
+        let chars = authoredCharCount(root: root)
         let sections = root["primaryContentSections"] as? [[String: Any]] ?? []
-        let chars = discussionCharCount(sections: sections)
         let aside = sectionsContainAside(sections)
 
+        // Framework / Module landings: tried first because `Framework` is NOT
+        // in `typeRoleHeadings` and would otherwise fall through to stale.
+        if frameworkRoleHeadings.contains(heading), chars >= frameworkOverviewMinChars {
+            return EligiblePage(path: canonicalPath, reason: "framework:\(heading):overview=\(chars)")
+        }
         if typeRoleHeadings.contains(heading), chars >= typeOverviewMinChars {
             return EligiblePage(path: canonicalPath, reason: "type:\(heading):overview=\(chars)")
         }
@@ -345,13 +370,14 @@ public enum IndexabilityAuditor {
             return .eligible(page)
         }
 
-        // Symbol page that failed all three policy rules — STALE.
-        let parsed = (try? JSONSerialization.jsonObject(with: data, options: [])) as? [String: Any]
-        let sections = parsed?["primaryContentSections"] as? [[String: Any]] ?? []
-        let chars = discussionCharCount(sections: sections)
+        // Symbol page that failed all policy rules — STALE.
+        let parsed = (try? JSONSerialization.jsonObject(with: data, options: [])) as? [String: Any] ?? [:]
+        let chars = authoredCharCount(root: parsed)
 
         let reason: String
-        if typeRoleHeadings.contains(heading) {
+        if frameworkRoleHeadings.contains(heading) {
+            reason = "framework:\(heading):overview=\(chars) (need ≥\(frameworkOverviewMinChars))"
+        } else if typeRoleHeadings.contains(heading) {
             reason = "type:\(heading):overview=\(chars) (need ≥\(typeOverviewMinChars))"
         } else if methodRoleHeadings.contains(heading) {
             reason = "method:\(heading):disc=\(chars) (need ≥\(methodDiscussionMinChars))"
@@ -520,13 +546,33 @@ public enum IndexabilityAuditor {
         return lastComponent + "/" + trimmed
     }
 
-    /// Char count of the first `kind: content` section, code-listings excluded.
-    static func discussionCharCount(sections: [[String: Any]]) -> Int {
-        guard let content = sections.first(where: { ($0["kind"] as? String) == "content" }),
-              let nodes = content["content"] as? [Any] else {
-            return 0
+    /// Total authored-prose char count for one sidecar. Counts two sources:
+    ///
+    /// 1. The top-level `abstract` field — DocC's home for the doc-comment
+    ///    summary sentence, separate from `primaryContentSections`.
+    /// 2. Every `primaryContentSections[]` entry with `kind == "content"`
+    ///    (e.g. Return Value section, Discussion section, Overview section).
+    ///    DocC emits multiple content sections per page; summing them all
+    ///    is required to match what a reader actually sees.
+    ///
+    /// Code listings (`type: codeListing`) are excluded — they're code
+    /// samples, not authored prose, and don't carry SEO signal.
+    ///
+    /// This replaces the original `discussionCharCount(sections:)` which
+    /// read only the first `kind: content` section and ignored the
+    /// `abstract` field, producing 10–18× undercounts on method pages.
+    public static func authoredCharCount(root: [String: Any]) -> Int {
+        // 1. Abstract (summary sentence / doc-comment first line).
+        let abstractNodes = root["abstract"] as? [Any] ?? []
+        var total = flattenedText(abstractNodes).count
+        // 2. All kind:content sections — not just the first.
+        let sections = root["primaryContentSections"] as? [[String: Any]] ?? []
+        for section in sections where (section["kind"] as? String) == "content" {
+            if let nodes = section["content"] as? [Any] {
+                total += flattenedText(nodes).count
+            }
         }
-        return flattenedText(nodes).count
+        return total
     }
 
     /// True iff any `type: aside` node appears anywhere in the section tree.
