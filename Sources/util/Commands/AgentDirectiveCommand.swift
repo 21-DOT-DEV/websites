@@ -247,9 +247,9 @@ extension AgentDirectiveCommand {
             abstract: "Audit DocC archives against the hybrid indexability policy (bidirectional drift)",
             discussion: """
                 Walks every module's DocC sidecar tree under --archives-root,
-                applies the hybrid policy (Type ≥200, Method ≥300, Aside ≥100
-                authored chars), and reports drift in BOTH directions vs.
-                `external-archives.json`'s `indexablePages`:
+                applies the hybrid policy (Framework ≥500, Type ≥200, Method
+                ≥300, Aside ≥100 authored chars), and reports drift in BOTH
+                directions vs. `external-archives.json`'s `indexablePages`:
 
                   • STALE entries (SEO priority): pages currently in the allowlist
                     but no longer pass the policy. They appear in the sitemap as
@@ -261,6 +261,13 @@ extension AgentDirectiveCommand {
                     and excluded from the sitemap (single-page traffic loss).
                     ACTION: review and add to `indexablePages` if they belong
                     in search.
+
+                  • NEAR-MISS CANDIDATES (editorial polish, advisory): pages NOT
+                    in the allowlist that fail policy but sit within
+                    --candidate-gap chars (default 50) of their most-achievable
+                    threshold. ACTION: add ~1 sentence of authored prose to each
+                    to convert into indexable pages. Informational only — never
+                    flips --strict exit codes.
 
                 Run this after bumping an archive's `tag` in the registry, or
                 as an advisory CI step on every build. Manually review the
@@ -286,6 +293,12 @@ extension AgentDirectiveCommand {
         @Flag(name: .shortAndLong, help: "Show every eligible page, not just the gap.")
         var verbose: Bool = false
 
+        @Option(
+            name: .long,
+            help: "Max char-gap below threshold to surface as a near-miss candidate for editorial improvement (default: 50). Set to 0 to disable candidate detection. Candidates are informational only and never flip --strict."
+        )
+        var candidateGap: Int = IndexabilityAuditor.candidateMaxGapChars
+
         mutating func validate() throws {
             var isDir: ObjCBool = false
             guard FileManager.default.fileExists(atPath: archivesRoot, isDirectory: &isDir),
@@ -294,6 +307,9 @@ extension AgentDirectiveCommand {
             }
             guard FileManager.default.fileExists(atPath: registry) else {
                 throw ValidationError("--registry file not found: \(registry)")
+            }
+            guard candidateGap >= 0 else {
+                throw ValidationError("--candidate-gap must be >= 0 (got \(candidateGap))")
             }
         }
 
@@ -312,7 +328,8 @@ extension AgentDirectiveCommand {
             do {
                 report = try IndexabilityAuditor.audit(
                     archivesRoot: archivesURL,
-                    registry: registryModel
+                    registry: registryModel,
+                    candidateMaxGap: candidateGap
                 )
             } catch let auditError as IndexabilityAuditor.AuditError {
                 print("❌ \(auditError.description)")
@@ -325,23 +342,34 @@ extension AgentDirectiveCommand {
             print("  - Type pages (Structure/Class/Enum/Protocol/Actor/Type Alias): Overview ≥ \(IndexabilityAuditor.typeOverviewMinChars) chars")
             print("  - Method pages (Method/Init/Property/Subscript/Operator/Case): Discussion ≥ \(IndexabilityAuditor.methodDiscussionMinChars) chars")
             print("  - Aside-bearing pages: Discussion ≥ \(IndexabilityAuditor.asideDiscussionMinChars) chars")
+            if candidateGap > 0 {
+                print("  - Near-miss candidates: pages NOT in allowlist within \(candidateGap) chars of their most-achievable threshold (informational)")
+            }
             print()
 
             // Stale entries lead — they're the SEO-relevant drift signal
             // (thin pages still in the sitemap risk Helpful Content demotion).
             // Newly-discovered entries follow as the secondary editorial signal.
+            // Near-miss candidates trail as the lowest-priority editorial polish.
             for moduleReport in report.modules {
                 let staleCount = moduleReport.staleEntries.count
                 let newCount = moduleReport.newlyDiscovered.count
+                let candidateCount = moduleReport.candidates.count
                 let bullet: String
                 if staleCount > 0 {
                     bullet = "⚠️"
                 } else if newCount > 0 {
                     bullet = "+"
+                } else if candidateCount > 0 {
+                    bullet = "💡"
                 } else {
                     bullet = "✓"
                 }
-                print("\(bullet) \(moduleReport.module): \(moduleReport.eligible.count) eligible, \(staleCount) stale, \(newCount) new")
+                var header = "\(bullet) \(moduleReport.module): \(moduleReport.eligible.count) eligible, \(staleCount) stale, \(newCount) new"
+                if candidateGap > 0 {
+                    header += ", \(candidateCount) candidate\(candidateCount == 1 ? "" : "s")"
+                }
+                print(header)
 
                 // Stale entries first (louder).
                 for entry in moduleReport.staleEntries {
@@ -358,10 +386,22 @@ extension AgentDirectiveCommand {
                         print("    + \(entry.path)    [\(entry.reason)]")
                     }
                 }
+                // Finally, near-miss candidates (editorial polish — add ≈1 sentence
+                // of authored prose to convert each into an indexable page).
+                for candidate in moduleReport.candidates {
+                    print("    💡 \(candidate.path)    [\(candidate.reason)]")
+                }
             }
 
             print()
-            print("Total: \(report.totalEligible) eligible, \(report.totalStaleEntries) stale, \(report.totalNewlyDiscovered) new.")
+            var totals = "Total: \(report.totalEligible) eligible, \(report.totalStaleEntries) stale, \(report.totalNewlyDiscovered) new"
+            if candidateGap > 0 {
+                totals += ", \(report.totalCandidates) candidate\(report.totalCandidates == 1 ? "" : "s")"
+            }
+            print("\(totals).")
+            if candidateGap > 0, report.totalCandidates > 0 {
+                print("💡 Candidates are pages \(candidateGap) or fewer chars from their threshold — add ~1 sentence of authored prose to each to convert into indexable pages.")
+            }
 
             if strict, report.hasGap {
                 print()
@@ -373,6 +413,8 @@ extension AgentDirectiveCommand {
                     print("❌ --strict: \(report.totalNewlyDiscovered) newly-eligible page(s) not in allowlist.")
                     print("   Add to external-archives.json's indexablePages and rerun.")
                 }
+                // Near-miss candidates are advisory and must NOT contribute to
+                // --strict drift — they're editorial polish, not a drift signal.
                 throw ExitCode.failure
             }
         }

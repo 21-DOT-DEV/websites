@@ -78,6 +78,40 @@ public enum IndexabilityAuditor {
     /// stub landings slipping into the allowlist.
     public static let frameworkOverviewMinChars: Int = 500
 
+    /// Maximum char-gap below a role-bucket threshold to surface as a
+    /// near-miss **candidate** for editorial improvement.
+    ///
+    /// A candidate is a page that FAILS the hybrid policy but sits within
+    /// this many chars of its (most-achievable) threshold. The intent is to
+    /// flag the cheapest editorial wins — pages roughly one authored
+    /// sentence away from eligibility — so maintainers can spend a minute
+    /// of doc-comment effort to convert a `noindex` page into an indexed
+    /// one.
+    ///
+    /// ## Rationale for the default (50)
+    ///
+    /// There is **no authoritative industry source** for this threshold:
+    ///
+    /// - Google's Helpful Content guidance explicitly lists *"writing to a
+    ///   particular word count"* as a RED FLAG, not a target.
+    /// - Apple's Style Guide and Xcode's *Writing Documentation* page don't
+    ///   prescribe minimum Discussion lengths.
+    ///
+    /// The 50-char default is a heuristic with two grounding signals:
+    ///
+    /// 1. **Mental model**: 50 chars ≈ 8–9 English words ≈ one short
+    ///    authored sentence. That's the unit of doc-comment improvement a
+    ///    maintainer can realistically add on the spot.
+    /// 2. **Empirical sampling** across the 5 archives (p256k, openssl,
+    ///    event, tor, zkp) yielded roughly 46 candidates at gap ≤ 50,
+    ///    73 at gap ≤ 75, and 93 at gap ≤ 100. 50 surfaces an actionable
+    ///    batch without overwhelming review effort.
+    ///
+    /// Override per call (e.g., `auditModule(... candidateMaxGap: 100)`) or
+    /// at the CLI (`util agent-directive audit --candidate-gap 100`) when a
+    /// wider or narrower net is wanted.
+    public static let candidateMaxGapChars: Int = 50
+
     /// DocC `metadata.roleHeading` values that classify a page as a "type page".
     public static let typeRoleHeadings: Set<String> = [
         "Structure", "Enumeration", "Class", "Protocol", "Type Alias", "Actor",
@@ -158,6 +192,33 @@ public enum IndexabilityAuditor {
         }
     }
 
+    /// One symbol page that FAILS the hybrid policy but sits within
+    /// `candidateMaxGapChars` of its most-achievable threshold.
+    ///
+    /// Editorial signal: "add ~1 sentence of authored prose and this page
+    /// becomes eligible for search indexing." Candidates are informational
+    /// only — they do NOT constitute drift (`AuditReport.hasGap` is
+    /// unaffected) and do NOT flip `--strict` exit codes. Only pages NOT
+    /// in the current allowlist are surfaced as candidates; in-allowlist
+    /// failures remain classified as `StaleEntry` (same shape, different
+    /// recommended action).
+    public struct CandidateEntry: Sendable, Equatable, Hashable {
+        /// Canonical URL form (e.g., `documentation/p256k/p256k/signing/privatekey/publickey`).
+        public let path: String
+        /// Human-readable explanation of the near-miss
+        /// (e.g., `method:Instance Property:disc=297 (gap=3 to ≥300)`).
+        public let reason: String
+        /// Chars the page needs to gain on its most-achievable threshold
+        /// to become eligible. Always in `1...candidateMaxGapChars`.
+        public let gap: Int
+
+        public init(path: String, reason: String, gap: Int) {
+            self.path = path
+            self.reason = reason
+            self.gap = gap
+        }
+    }
+
     /// Result of evaluating a single allowlist entry against the hybrid policy.
     public enum AllowlistStatus: Sendable, Equatable {
         /// Sidecar exists, is a symbol page, AND passes the hybrid policy.
@@ -187,19 +248,26 @@ public enum IndexabilityAuditor {
         /// Empty by default for backward compatibility with callers that
         /// don't populate this field.
         public let staleEntries: [StaleEntry]
+        /// Pages NOT in the allowlist that fail policy but are within
+        /// `candidateMaxGapChars` of their most-achievable threshold — the
+        /// cheapest editorial wins. Informational only; does NOT contribute
+        /// to `AuditReport.hasGap`.
+        public let candidates: [CandidateEntry]
 
         public init(
             module: String,
             eligible: [EligiblePage],
             alreadyAllowed: [EligiblePage],
             newlyDiscovered: [EligiblePage],
-            staleEntries: [StaleEntry] = []
+            staleEntries: [StaleEntry] = [],
+            candidates: [CandidateEntry] = []
         ) {
             self.module = module
             self.eligible = eligible
             self.alreadyAllowed = alreadyAllowed
             self.newlyDiscovered = newlyDiscovered
             self.staleEntries = staleEntries
+            self.candidates = candidates
         }
     }
 
@@ -223,9 +291,19 @@ public enum IndexabilityAuditor {
             modules.reduce(0) { $0 + $1.staleEntries.count }
         }
 
+        /// Total near-miss candidates across all modules. Informational —
+        /// candidate counts never affect `hasGap` or CI-strict exit codes.
+        public var totalCandidates: Int {
+            modules.reduce(0) { $0 + $1.candidates.count }
+        }
+
         /// Bidirectional drift signal: true when the registry doesn't match
         /// reality in either direction (newly-eligible pages missing from
         /// the allowlist, OR allowlist entries that no longer pass policy).
+        ///
+        /// Near-miss candidates are explicitly excluded — they're editorial
+        /// polish, not drift, and must not flip `--strict` exit codes on
+        /// every CI run.
         public var hasGap: Bool {
             totalNewlyDiscovered > 0 || totalStaleEntries > 0
         }
@@ -373,18 +451,117 @@ public enum IndexabilityAuditor {
         // Symbol page that failed all policy rules — STALE.
         let parsed = (try? JSONSerialization.jsonObject(with: data, options: [])) as? [String: Any] ?? [:]
         let chars = authoredCharCount(root: parsed)
+        let sections = parsed["primaryContentSections"] as? [[String: Any]] ?? []
+        let aside = sectionsContainAside(sections)
 
+        // Report the most-achievable threshold for the reader. For a
+        // method page with an aside callout and chars below both
+        // thresholds, the aside bucket (≥100) is closer than the method
+        // bucket (≥300) — surface the actionable target.
         let reason: String
         if frameworkRoleHeadings.contains(heading) {
             reason = "framework:\(heading):overview=\(chars) (need ≥\(frameworkOverviewMinChars))"
         } else if typeRoleHeadings.contains(heading) {
             reason = "type:\(heading):overview=\(chars) (need ≥\(typeOverviewMinChars))"
         } else if methodRoleHeadings.contains(heading) {
-            reason = "method:\(heading):disc=\(chars) (need ≥\(methodDiscussionMinChars))"
+            if aside {
+                reason = "aside:\(heading):disc=\(chars) (need ≥\(asideDiscussionMinChars))"
+            } else {
+                reason = "method:\(heading):disc=\(chars) (need ≥\(methodDiscussionMinChars))"
+            }
         } else {
             reason = "\(heading):chars=\(chars) (failed hybrid policy thresholds)"
         }
         return .stale(StaleEntry(path: allowlistPath, reason: reason))
+    }
+
+    /// Evaluate one DocC sidecar for near-miss candidacy.
+    ///
+    /// Returns a `CandidateEntry` iff **all** of these hold:
+    ///
+    /// 1. The sidecar is a symbol page (`metadata.symbolKind != nil`).
+    /// 2. The page FAILS the hybrid policy (not currently eligible).
+    /// 3. The gap between its authored char count and its most-achievable
+    ///    role-bucket threshold is `1...maxGap`.
+    ///
+    /// Pages that already pass policy (gap ≤ 0) return `nil` — they're
+    /// already indexable. Pages with gap > `maxGap` also return `nil` —
+    /// their thin content is far enough from threshold that a one-sentence
+    /// fix isn't realistic, so they're not surfaced as low-cost editorial
+    /// wins.
+    ///
+    /// The reported threshold is the MOST ACHIEVABLE one for the page's
+    /// role, mirroring `evaluate`'s bucket-selection order:
+    ///
+    /// - `framework:Framework:overview=X (gap=N to ≥500)` — Framework / Module
+    /// - `type:Structure:overview=X (gap=N to ≥200)` — type pages
+    /// - `aside:Initializer:disc=X (gap=N to ≥100)` — method page WITH aside
+    /// - `method:Instance Method:disc=X (gap=N to ≥300)` — method page without aside
+    ///
+    /// - Parameters:
+    ///   - data: Raw JSON bytes of the DocC sidecar.
+    ///   - canonicalPath: Canonical URL form written into the returned
+    ///     `CandidateEntry.path`.
+    ///   - maxGap: Max char-gap below threshold to qualify as a candidate.
+    ///     Defaults to `candidateMaxGapChars` (50).
+    /// - Returns: A `CandidateEntry` iff the page is a near-miss, else `nil`.
+    /// - Throws: Re-throws JSON parse errors (corrupt sidecar).
+    public static func evaluateNearMiss(
+        sidecarData data: Data,
+        canonicalPath: String,
+        maxGap: Int = candidateMaxGapChars
+    ) throws -> CandidateEntry? {
+        // Early-out: pages that already pass policy are not candidates.
+        if try evaluate(sidecarData: data, canonicalPath: canonicalPath) != nil {
+            return nil
+        }
+
+        let shaped = try JSONDecoder().decode(AuditSidecar.self, from: data)
+        guard let meta = shaped.metadata, meta.symbolKind != nil, let heading = meta.roleHeading else {
+            return nil  // Articles / missing metadata / unknown role.
+        }
+
+        guard let any = try? JSONSerialization.jsonObject(with: data, options: []),
+              let root = any as? [String: Any] else {
+            return nil
+        }
+        let chars = authoredCharCount(root: root)
+        let sections = root["primaryContentSections"] as? [[String: Any]] ?? []
+        let aside = sectionsContainAside(sections)
+
+        // Determine the most-achievable threshold for this page's role.
+        // Same order as `evaluate`: framework → type → (method OR aside).
+        let bucketPrefix: String
+        let target: Int
+        let valueKey: String
+        if frameworkRoleHeadings.contains(heading) {
+            bucketPrefix = "framework:\(heading)"
+            target = frameworkOverviewMinChars
+            valueKey = "overview"
+        } else if typeRoleHeadings.contains(heading) {
+            bucketPrefix = "type:\(heading)"
+            target = typeOverviewMinChars
+            valueKey = "overview"
+        } else if methodRoleHeadings.contains(heading) {
+            if aside {
+                bucketPrefix = "aside:\(heading)"
+                target = asideDiscussionMinChars
+            } else {
+                bucketPrefix = "method:\(heading)"
+                target = methodDiscussionMinChars
+            }
+            valueKey = "disc"
+        } else {
+            return nil  // Unknown role — don't surface as candidate.
+        }
+
+        let gap = target - chars
+        guard gap > 0, gap <= maxGap else { return nil }
+        return CandidateEntry(
+            path: canonicalPath,
+            reason: "\(bucketPrefix):\(valueKey)=\(chars) (gap=\(gap) to ≥\(target))",
+            gap: gap
+        )
     }
 
     /// Audit one module's sidecar tree.
@@ -409,7 +586,8 @@ public enum IndexabilityAuditor {
         module: String,
         archivesRoot: URL,
         currentAllowlist: Set<String>,
-        excludedPathPrefixes: [String] = []
+        excludedPathPrefixes: [String] = [],
+        candidateMaxGap: Int = candidateMaxGapChars
     ) throws -> ModuleReport {
         let moduleRoot = archivesRoot.appendingPathComponent(module)
         var isDirectory: ObjCBool = false
@@ -418,8 +596,14 @@ public enum IndexabilityAuditor {
             throw AuditError.archivesRootMissing(moduleRoot)
         }
 
-        // Phase A: discover all eligible pages by scanning the sidecar tree.
+        // Phase A: discover all eligible pages AND near-miss candidates by
+        // scanning the sidecar tree. Each sidecar is evaluated twice per
+        // pass: once against the hybrid policy (`evaluate`) and, on
+        // failure, against the near-miss threshold (`evaluateNearMiss`).
+        // The two evaluations are disjoint — a page can be either eligible
+        // OR a candidate, never both.
         var eligible: [EligiblePage] = []
+        var candidates: [CandidateEntry] = []
         let enumerator = FileManager.default.enumerator(
             at: moduleRoot,
             includingPropertiesForKeys: [.isRegularFileKey],
@@ -436,10 +620,23 @@ public enum IndexabilityAuditor {
             catch { continue }  // unreadable file — skip silently
             if let page = try? evaluate(sidecarData: data, canonicalPath: canonical) {
                 eligible.append(page)
+            } else if !currentAllowlist.contains(canonical),
+                      let candidate = try? evaluateNearMiss(
+                          sidecarData: data,
+                          canonicalPath: canonical,
+                          maxGap: candidateMaxGap
+                      ) {
+                // Near-miss — but only surface if NOT already allowlisted.
+                // In-allowlist failures belong in `.staleEntries` (the
+                // maintainer-action signal), not `.candidates` (the
+                // editorial-polish signal). Keeps the two categories
+                // disjoint and prevents double-counting.
+                candidates.append(candidate)
             }
         }
 
         eligible.sort { $0.path < $1.path }
+        candidates.sort { $0.path < $1.path }
         let eligiblePaths = Set(eligible.map(\.path))
         let already = eligible.filter { currentAllowlist.contains($0.path) }
         let gap = eligible.filter { !currentAllowlist.contains($0.path) }
@@ -464,7 +661,8 @@ public enum IndexabilityAuditor {
             eligible: eligible,
             alreadyAllowed: already,
             newlyDiscovered: gap,
-            staleEntries: stale
+            staleEntries: stale,
+            candidates: candidates
         )
     }
 
@@ -484,7 +682,8 @@ public enum IndexabilityAuditor {
     public static func audit(
         archivesRoot: URL,
         registry: ArchiveRegistry,
-        moduleExclusions: [String: [String]] = defaultModuleExclusions
+        moduleExclusions: [String: [String]] = defaultModuleExclusions,
+        candidateMaxGap: Int = candidateMaxGapChars
     ) throws -> AuditReport {
         var isDirectory: ObjCBool = false
         guard FileManager.default.fileExists(atPath: archivesRoot.path, isDirectory: &isDirectory),
@@ -513,7 +712,8 @@ public enum IndexabilityAuditor {
                 module: module,
                 archivesRoot: archivesRoot,
                 currentAllowlist: perArchiveAllowlist,
-                excludedPathPrefixes: exclusions
+                excludedPathPrefixes: exclusions,
+                candidateMaxGap: candidateMaxGap
             )
             reports.append(report)
         }

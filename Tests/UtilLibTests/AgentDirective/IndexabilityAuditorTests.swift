@@ -947,4 +947,502 @@ struct IndexabilityAuditorDefaultsTests {
         ]
         #expect(IndexabilityAuditor.methodRoleHeadings == expected)
     }
+
+    @Test("Near-miss candidate gap defaults to 50 chars (documented heuristic)")
+    func candidateMaxGapDefault() {
+        // 50 chars ≈ one short authored sentence. Not backed by an authoritative
+        // Apple/Google source — see the 2026-04-30 retrospective for rationale.
+        #expect(IndexabilityAuditor.candidateMaxGapChars == 50)
+    }
+}
+
+// MARK: - Near-Miss Candidate Detection
+//
+// Near-miss candidates are pages that FAIL the hybrid policy but sit within
+// `candidateMaxGapChars` of their role-bucket threshold. They're surfaced as
+// an editorial signal: "add ~1 sentence of authored prose and this page
+// becomes eligible for the index". Pages already in the allowlist are
+// excluded (they surface as `stale` instead — same-shape failure, different
+// recommended action).
+
+@Suite("IndexabilityAuditor — Near-Miss Candidates")
+struct IndexabilityAuditorCandidateTests {
+
+    // MARK: Fixture helpers
+
+    private static func sidecar(
+        roleHeading: String,
+        symbolKind: String = "method",
+        textLength: Int,
+        includeAside: Bool = false
+    ) -> Data {
+        var content: [[String: Any]] = [
+            [
+                "type": "paragraph",
+                "inlineContent": [
+                    ["type": "text", "text": String(repeating: "x", count: textLength)] as [String: Any]
+                ],
+            ]
+        ]
+        if includeAside {
+            content.append([
+                "type": "aside",
+                "style": "note",
+                "content": [] as [Any],
+            ])
+        }
+        let json: [String: Any] = [
+            "metadata": [
+                "roleHeading": roleHeading,
+                "symbolKind": symbolKind,
+                "title": "TestSymbol",
+            ],
+            "primaryContentSections": [
+                ["kind": "content", "content": content] as [String: Any]
+            ],
+        ]
+        return try! JSONSerialization.data(withJSONObject: json, options: [])
+    }
+
+    private static func articleSidecar() -> Data {
+        let json: [String: Any] = [
+            "metadata": ["roleHeading": "Article", "title": "Getting Started"],
+            "primaryContentSections": [] as [Any],
+        ]
+        return try! JSONSerialization.data(withJSONObject: json, options: [])
+    }
+
+    private static func makeFixtureRoot(sidecars: [String: Data]) throws -> URL {
+        let tmp = URL(fileURLWithPath: NSTemporaryDirectory())
+            .appendingPathComponent("IndexabilityAuditorCandidateTests-\(UUID().uuidString)", isDirectory: true)
+            .appendingPathComponent("documentation", isDirectory: true)
+        try FileManager.default.createDirectory(at: tmp, withIntermediateDirectories: true)
+        for (relativePath, data) in sidecars {
+            let url = tmp.appendingPathComponent(relativePath)
+            try FileManager.default.createDirectory(
+                at: url.deletingLastPathComponent(),
+                withIntermediateDirectories: true
+            )
+            try data.write(to: url)
+        }
+        return tmp
+    }
+
+    // MARK: evaluateNearMiss — per-bucket boundaries
+
+    @Test("Method page at gap=30 is a candidate with correct reason")
+    func methodGap30IsCandidate() throws {
+        let data = Self.sidecar(roleHeading: "Instance Method", textLength: 270)
+        let candidate = try IndexabilityAuditor.evaluateNearMiss(
+            sidecarData: data, canonicalPath: "documentation/x/foo"
+        )
+        try #require(candidate != nil)
+        #expect(candidate!.path == "documentation/x/foo")
+        #expect(candidate!.gap == 30)
+        #expect(candidate!.reason.contains("method:Instance Method"))
+        #expect(candidate!.reason.contains("disc=270"))
+        #expect(candidate!.reason.contains("gap=30"))
+        #expect(candidate!.reason.contains("≥300"))
+    }
+
+    @Test("Method page at gap=50 (exact boundary) is a candidate")
+    func methodGap50BoundaryInclusive() throws {
+        let data = Self.sidecar(roleHeading: "Instance Method", textLength: 250)
+        let candidate = try IndexabilityAuditor.evaluateNearMiss(
+            sidecarData: data, canonicalPath: "documentation/x/foo"
+        )
+        #expect(candidate != nil)
+        #expect(candidate?.gap == 50)
+    }
+
+    @Test("Method page at gap=51 (one past boundary) is NOT a candidate")
+    func methodGap51BoundaryExclusive() throws {
+        let data = Self.sidecar(roleHeading: "Instance Method", textLength: 249)
+        let candidate = try IndexabilityAuditor.evaluateNearMiss(
+            sidecarData: data, canonicalPath: "documentation/x/foo"
+        )
+        #expect(candidate == nil)
+    }
+
+    @Test("Eligible page (gap=0 or passing) is NOT a candidate")
+    func eligibleIsNotCandidate() throws {
+        // disc=310 passes the 300-char method threshold → already indexable,
+        // not a near-miss.
+        let data = Self.sidecar(roleHeading: "Instance Method", textLength: 310)
+        let candidate = try IndexabilityAuditor.evaluateNearMiss(
+            sidecarData: data, canonicalPath: "documentation/x/foo"
+        )
+        #expect(candidate == nil, "Eligible pages are already indexable, not candidates")
+    }
+
+    @Test("Type page at gap=20 (below 200-char threshold) is a candidate")
+    func typeGap20IsCandidate() throws {
+        let data = Self.sidecar(roleHeading: "Structure", symbolKind: "struct", textLength: 180)
+        let candidate = try IndexabilityAuditor.evaluateNearMiss(
+            sidecarData: data, canonicalPath: "documentation/x/foo"
+        )
+        try #require(candidate != nil)
+        #expect(candidate!.gap == 20)
+        #expect(candidate!.reason.contains("type:Structure"))
+        #expect(candidate!.reason.contains("overview=180"))
+        #expect(candidate!.reason.contains("≥200"))
+    }
+
+    @Test("Framework page at gap=30 (below 500-char threshold) is a candidate")
+    func frameworkGap30IsCandidate() throws {
+        let data = Self.sidecar(roleHeading: "Framework", symbolKind: "module", textLength: 470)
+        let candidate = try IndexabilityAuditor.evaluateNearMiss(
+            sidecarData: data, canonicalPath: "documentation/mymodule"
+        )
+        try #require(candidate != nil)
+        #expect(candidate!.gap == 30)
+        #expect(candidate!.reason.contains("framework:Framework"))
+        #expect(candidate!.reason.contains("overview=470"))
+        #expect(candidate!.reason.contains("≥500"))
+    }
+
+    @Test("Method with aside at chars=85 reports aside bucket (not method bucket)")
+    func methodWithAsideReportsAsideBucket() throws {
+        // chars=85: method bucket (300) misses by 215 chars (too far),
+        // aside bucket (100) misses by 15 chars (near-miss). The closer,
+        // more-achievable target is aside — that's what we report.
+        let data = Self.sidecar(
+            roleHeading: "Initializer", symbolKind: "init",
+            textLength: 85, includeAside: true
+        )
+        let candidate = try IndexabilityAuditor.evaluateNearMiss(
+            sidecarData: data, canonicalPath: "documentation/x/init(_:)"
+        )
+        try #require(candidate != nil)
+        #expect(candidate!.gap == 15, "Expected gap=15 (aside threshold), not gap=215 (method threshold)")
+        #expect(candidate!.reason.contains("aside:Initializer"))
+        #expect(candidate!.reason.contains("disc=85"))
+        #expect(candidate!.reason.contains("≥100"))
+        #expect(!candidate!.reason.contains("method:"),
+                "Method bucket must NOT be reported when aside bucket is more achievable")
+    }
+
+    @Test("Method without aside at gap=30 reports method bucket (not aside bucket)")
+    func methodWithoutAsideReportsMethodBucket() throws {
+        let data = Self.sidecar(
+            roleHeading: "Instance Method", textLength: 270,
+            includeAside: false
+        )
+        let candidate = try IndexabilityAuditor.evaluateNearMiss(
+            sidecarData: data, canonicalPath: "documentation/x/foo"
+        )
+        try #require(candidate != nil)
+        #expect(candidate!.reason.contains("method:"))
+        #expect(!candidate!.reason.contains("aside:"),
+                "Aside bucket must NOT be reported for pages without asides")
+    }
+
+    // MARK: evaluateNearMiss — custom maxGap override
+
+    @Test("Custom maxGap=100 surfaces pages up to gap=100 (method page at gap=75)")
+    func customMaxGapSurfacesWider() throws {
+        // gap=75 (chars=225, need=300) is outside the 50-char default but
+        // inside a 100-char override.
+        let data = Self.sidecar(roleHeading: "Instance Method", textLength: 225)
+
+        let defaultGap = try IndexabilityAuditor.evaluateNearMiss(
+            sidecarData: data, canonicalPath: "documentation/x/foo"
+        )
+        #expect(defaultGap == nil, "gap=75 exceeds default maxGap=50")
+
+        let wideGap = try IndexabilityAuditor.evaluateNearMiss(
+            sidecarData: data, canonicalPath: "documentation/x/foo",
+            maxGap: 100
+        )
+        try #require(wideGap != nil)
+        #expect(wideGap!.gap == 75)
+    }
+
+    @Test("Custom maxGap=0 surfaces zero candidates (disables near-miss detection)")
+    func customMaxGapZeroDisablesCandidates() throws {
+        let data = Self.sidecar(roleHeading: "Instance Method", textLength: 299)  // gap=1
+        let candidate = try IndexabilityAuditor.evaluateNearMiss(
+            sidecarData: data, canonicalPath: "documentation/x/foo",
+            maxGap: 0
+        )
+        #expect(candidate == nil)
+    }
+
+    // MARK: evaluateNearMiss — out-of-scope inputs
+
+    @Test("Article (no symbolKind) is NOT a candidate")
+    func articleIsNotCandidate() throws {
+        let data = Self.articleSidecar()
+        let candidate = try IndexabilityAuditor.evaluateNearMiss(
+            sidecarData: data, canonicalPath: "documentation/x/gettingstarted"
+        )
+        #expect(candidate == nil)
+    }
+
+    @Test("Unknown role heading is NOT a candidate")
+    func unknownRoleHeadingIsNotCandidate() throws {
+        let data = Self.sidecar(roleHeading: "UnknownKind", textLength: 250)
+        let candidate = try IndexabilityAuditor.evaluateNearMiss(
+            sidecarData: data, canonicalPath: "documentation/x/foo"
+        )
+        #expect(candidate == nil)
+    }
+
+    // MARK: auditModule integration
+
+    @Test("auditModule populates candidates for near-miss pages NOT in allowlist")
+    func auditModuleSurfacesCandidates() throws {
+        let root = try Self.makeFixtureRoot(sidecars: [
+            // Near-miss: gap=30, NOT in allowlist → candidate
+            "p256k/near.json":   Self.sidecar(roleHeading: "Instance Method", textLength: 270),
+            // Eligible: NOT in allowlist → newlyDiscovered, NOT candidate
+            "p256k/big.json":    Self.sidecar(roleHeading: "Instance Method", textLength: 400),
+            // Far-miss: gap=200, NOT in allowlist → silently dropped
+            "p256k/tiny.json":   Self.sidecar(roleHeading: "Instance Method", textLength: 100),
+        ])
+        defer { try? FileManager.default.removeItem(at: root.deletingLastPathComponent()) }
+
+        let report = try IndexabilityAuditor.auditModule(
+            module: "p256k",
+            archivesRoot: root,
+            currentAllowlist: []
+        )
+        #expect(report.candidates.map(\.path) == ["documentation/p256k/near"])
+        #expect(report.candidates.first?.gap == 30)
+    }
+
+    @Test("auditModule excludes in-allowlist near-misses from candidates (they surface as stale)")
+    func auditModuleExcludesAllowlistedFromCandidates() throws {
+        let root = try Self.makeFixtureRoot(sidecars: [
+            "p256k/near.json": Self.sidecar(roleHeading: "Instance Method", textLength: 270),
+        ])
+        defer { try? FileManager.default.removeItem(at: root.deletingLastPathComponent()) }
+
+        // near.json is in the allowlist — should show as stale, NOT as candidate.
+        // Prevents double-counting the same page in two categories.
+        let report = try IndexabilityAuditor.auditModule(
+            module: "p256k",
+            archivesRoot: root,
+            currentAllowlist: ["documentation/p256k/near"]
+        )
+        #expect(report.candidates.isEmpty,
+                "In-allowlist near-misses belong in .staleEntries, not .candidates")
+        #expect(report.staleEntries.map(\.path) == ["documentation/p256k/near"])
+    }
+
+    @Test("auditModule respects excludedPathPrefixes for candidates")
+    func auditModuleRespectsExclusionsForCandidates() throws {
+        let root = try Self.makeFixtureRoot(sidecars: [
+            "tor/torclient.json":                 Self.sidecar(roleHeading: "Instance Method", textLength: 270),
+            "tor/controlsocket/readline.json":    Self.sidecar(roleHeading: "Instance Method", textLength: 270),
+        ])
+        defer { try? FileManager.default.removeItem(at: root.deletingLastPathComponent()) }
+
+        let report = try IndexabilityAuditor.auditModule(
+            module: "tor",
+            archivesRoot: root,
+            currentAllowlist: [],
+            excludedPathPrefixes: ["documentation/tor/controlsocket/"]
+        )
+        // Only the non-excluded near-miss surfaces.
+        #expect(report.candidates.map(\.path) == ["documentation/tor/torclient"])
+    }
+
+    @Test("auditModule sorts candidates by path")
+    func auditModuleSortsCandidates() throws {
+        let root = try Self.makeFixtureRoot(sidecars: [
+            "p256k/zebra.json": Self.sidecar(roleHeading: "Instance Method", textLength: 270),
+            "p256k/alpha.json": Self.sidecar(roleHeading: "Instance Method", textLength: 270),
+            "p256k/mango.json": Self.sidecar(roleHeading: "Instance Method", textLength: 270),
+        ])
+        defer { try? FileManager.default.removeItem(at: root.deletingLastPathComponent()) }
+
+        let report = try IndexabilityAuditor.auditModule(
+            module: "p256k",
+            archivesRoot: root,
+            currentAllowlist: []
+        )
+        #expect(report.candidates.map(\.path) == [
+            "documentation/p256k/alpha",
+            "documentation/p256k/mango",
+            "documentation/p256k/zebra",
+        ])
+    }
+
+    @Test("auditModule candidateMaxGap override propagates to evaluateNearMiss")
+    func auditModuleCandidateMaxGapOverride() throws {
+        let root = try Self.makeFixtureRoot(sidecars: [
+            "p256k/close.json":  Self.sidecar(roleHeading: "Instance Method", textLength: 290),  // gap=10
+            "p256k/medium.json": Self.sidecar(roleHeading: "Instance Method", textLength: 225),  // gap=75
+        ])
+        defer { try? FileManager.default.removeItem(at: root.deletingLastPathComponent()) }
+
+        // Default maxGap=50: only `close` surfaces.
+        let defaultReport = try IndexabilityAuditor.auditModule(
+            module: "p256k",
+            archivesRoot: root,
+            currentAllowlist: []
+        )
+        #expect(defaultReport.candidates.map(\.path) == ["documentation/p256k/close"])
+
+        // Override maxGap=100: both surface.
+        let wideReport = try IndexabilityAuditor.auditModule(
+            module: "p256k",
+            archivesRoot: root,
+            currentAllowlist: [],
+            candidateMaxGap: 100
+        )
+        #expect(wideReport.candidates.map(\.path) == [
+            "documentation/p256k/close",
+            "documentation/p256k/medium",
+        ])
+    }
+
+    // MARK: AuditReport aggregation
+
+    @Test("AuditReport.totalCandidates sums across modules")
+    func auditReportAggregatesCandidates() {
+        let m1 = IndexabilityAuditor.ModuleReport(
+            module: "p256k", eligible: [], alreadyAllowed: [], newlyDiscovered: [],
+            staleEntries: [],
+            candidates: [
+                .init(path: "documentation/p256k/a", reason: "r", gap: 10),
+                .init(path: "documentation/p256k/b", reason: "r", gap: 20),
+            ]
+        )
+        let m2 = IndexabilityAuditor.ModuleReport(
+            module: "tor", eligible: [], alreadyAllowed: [], newlyDiscovered: [],
+            staleEntries: [],
+            candidates: [.init(path: "documentation/tor/c", reason: "r", gap: 30)]
+        )
+        let report = IndexabilityAuditor.AuditReport(modules: [m1, m2])
+        #expect(report.totalCandidates == 3)
+    }
+
+    @Test("AuditReport.hasGap is UNCHANGED by candidates (informational only)")
+    func candidatesDoNotAffectHasGap() {
+        // Candidates alone must NOT flip hasGap — they're advisory, not drift.
+        let candidatesOnly = IndexabilityAuditor.AuditReport(modules: [
+            .init(module: "x", eligible: [], alreadyAllowed: [], newlyDiscovered: [],
+                  staleEntries: [],
+                  candidates: [.init(path: "documentation/x/a", reason: "r", gap: 10)])
+        ])
+        #expect(!candidatesOnly.hasGap,
+                "Candidates are editorial polish, not drift — must not flip hasGap")
+    }
+}
+
+// MARK: - evaluateAllowlistEntry Reason-Bucket Fix
+//
+// Bug: for a method-role page with an aside callout and prose below both the
+// method threshold (300) AND the aside threshold (100), the stale reason
+// string reports `method:…(need ≥300)` — the HIGHER, less-achievable
+// threshold. Readers are told to add 201 chars when just 1 char would
+// satisfy the more relevant aside bucket.
+//
+// Fix: when a method-role page has an aside AND fails both thresholds,
+// report the aside bucket in the stale reason (the closer, more achievable
+// target).
+
+@Suite("IndexabilityAuditor — Stale Reason Bucket Selection")
+struct IndexabilityAuditorStaleReasonTests {
+
+    private static func makeFixtureRoot(sidecars: [String: Data]) throws -> URL {
+        let tmp = URL(fileURLWithPath: NSTemporaryDirectory())
+            .appendingPathComponent("IndexabilityAuditorStaleReasonTests-\(UUID().uuidString)", isDirectory: true)
+            .appendingPathComponent("documentation", isDirectory: true)
+        try FileManager.default.createDirectory(at: tmp, withIntermediateDirectories: true)
+        for (relativePath, data) in sidecars {
+            let url = tmp.appendingPathComponent(relativePath)
+            try FileManager.default.createDirectory(
+                at: url.deletingLastPathComponent(),
+                withIntermediateDirectories: true
+            )
+            try data.write(to: url)
+        }
+        return tmp
+    }
+
+    private static func sidecar(
+        roleHeading: String, symbolKind: String,
+        textLength: Int, includeAside: Bool
+    ) -> Data {
+        var content: [[String: Any]] = [
+            [
+                "type": "paragraph",
+                "inlineContent": [
+                    ["type": "text", "text": String(repeating: "x", count: textLength)] as [String: Any]
+                ],
+            ]
+        ]
+        if includeAside {
+            content.append([
+                "type": "aside",
+                "style": "note",
+                "content": [] as [Any],
+            ])
+        }
+        let json: [String: Any] = [
+            "metadata": ["roleHeading": roleHeading, "symbolKind": symbolKind],
+            "primaryContentSections": [
+                ["kind": "content", "content": content] as [String: Any]
+            ],
+        ]
+        return try! JSONSerialization.data(withJSONObject: json, options: [])
+    }
+
+    @Test("Method with aside at chars=99 reports aside bucket in stale reason (gap=1, not gap=201)")
+    func methodWithAsideReportsAsideBucketOnStale() throws {
+        // Real-world page: documentation/p256k/p256k/recovery/ecdsasignature/init(compactrepresentation:recoveryid:)
+        // — method role + aside callout + 99 chars. Pre-fix reported
+        // `method:Initializer:disc=99 (need ≥300)` (implying need 201 more chars).
+        // Post-fix reports `aside:Initializer:disc=99 (need ≥100)` (just 1 char).
+        let root = try Self.makeFixtureRoot(sidecars: [
+            "p256k/init.json": Self.sidecar(
+                roleHeading: "Initializer", symbolKind: "init",
+                textLength: 99, includeAside: true
+            )
+        ])
+        defer { try? FileManager.default.removeItem(at: root.deletingLastPathComponent()) }
+
+        let status = try IndexabilityAuditor.evaluateAllowlistEntry(
+            allowlistPath: "documentation/p256k/init",
+            archivesRoot: root
+        )
+        guard case .stale(let entry) = status else {
+            Issue.record("expected .stale, got \(status)")
+            return
+        }
+        #expect(entry.reason.contains("aside:Initializer"),
+                "Aside-bearing method must report aside bucket; got: \(entry.reason)")
+        #expect(entry.reason.contains("disc=99"))
+        #expect(entry.reason.contains("≥100"),
+                "Aside bucket threshold (100) must be reported; got: \(entry.reason)")
+        #expect(!entry.reason.contains("≥300"),
+                "Method bucket threshold (300) must NOT be reported for aside-bearing pages")
+    }
+
+    @Test("Method without aside at chars=99 still reports method bucket (≥300)")
+    func methodWithoutAsideReportsMethodBucketOnStale() throws {
+        // Sanity: the aside-bucket override must NOT affect pages without asides.
+        let root = try Self.makeFixtureRoot(sidecars: [
+            "p256k/init.json": Self.sidecar(
+                roleHeading: "Initializer", symbolKind: "init",
+                textLength: 99, includeAside: false
+            )
+        ])
+        defer { try? FileManager.default.removeItem(at: root.deletingLastPathComponent()) }
+
+        let status = try IndexabilityAuditor.evaluateAllowlistEntry(
+            allowlistPath: "documentation/p256k/init",
+            archivesRoot: root
+        )
+        guard case .stale(let entry) = status else {
+            Issue.record("expected .stale, got \(status)")
+            return
+        }
+        #expect(entry.reason.contains("method:Initializer"))
+        #expect(entry.reason.contains("≥300"))
+        #expect(!entry.reason.contains("aside:"))
+    }
 }
