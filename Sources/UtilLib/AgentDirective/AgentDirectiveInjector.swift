@@ -87,204 +87,76 @@ public enum AgentDirectiveInjector {
     /// Marker for detecting existing noindex meta tags in HTML.
     static let noindexMarker = "name=\"robots\""
 
+    /// The archive registry, loaded once at static init from
+    /// `Resources/docs-21-dev/external-archives.json`.
+    ///
+    /// Loaded eagerly at first access of any registry-derived static. Failure
+    /// to load is a fundamental misconfiguration (programmer error or a
+    /// tampered/missing JSON file) — `try!` traps to surface it immediately
+    /// rather than silently degrading allowlisting/breadcrumb behavior.
+    static let registry: ArchiveRegistry = {
+        do {
+            return try ArchiveRegistry.loadDefault()
+        } catch {
+            preconditionFailure("AgentDirectiveInjector: failed to load archive registry: \(error)")
+        }
+    }()
+
     /// Pages that should be indexed by search engines (no noindex tag).
     ///
-    /// Sources:
-    /// - `Resources/docs-21-dev/data/documentation/p256k/llms.txt` (23 curated entries)
-    /// - One-time audit of pages with `<h2>Discussion</h2>` sections (52 entries)
-    /// - One-time audit of pages with authored Parameters/Return Value/aside sections (29 entries)
-    /// - `Resources/docs-21-dev/data/documentation/event/llms.txt` (10 curated entries)
-    /// - `Resources/docs-21-dev/data/documentation/openssl/llms.txt` (12 curated entries)
-    /// - ZKP-unique authored articles (2 entries: module overview + ChoosingP256KvsZKP)
+    /// Aggregated from `globals.hubs` plus every archive's `indexablePages`
+    /// in `Resources/docs-21-dev/external-archives.json`.
     ///
-    /// ZKP symbol pages (`p256k/...` under `zkp/`) re-export P256K, so they are
-    /// SEO duplicates and remain excluded. Only ZKP-unique authored articles
-    /// (module overview, product-selection guides, future bulletproof/rangeproof
-    /// pages) are allowlisted.
+    /// ## Source distribution (per JSON file)
     ///
-    /// When llms.txt or doc comments change, re-audit with:
-    ///   find Websites/docs-21-dev/documentation/p256k -name index.html \( \
-    ///     -exec grep -l '<h2>Discussion</h2>' {} \; -o \
-    ///     -exec grep -l '<h2>Return Value</h2>' {} \; -o \
-    ///     -exec grep -l '<h2>Parameters</h2>' {} \; -o \
-    ///     -exec grep -l 'class="aside' {} \; \
-    ///   \) | sed 's|Websites/docs-21-dev/||; s|/index.html||' | sort -u
-    static let indexablePages: Set<String> = [
-        // --- Hub pages (2 entries, manually curated) ---
-        // Top-level navigation entry points not surfaced by authored-content
-        // audits: docs.21.dev root and the P256K namespace-enum Topics hub.
-        "documentation",
-        "documentation/p256k/p256k",
-
-        // --- P256K llms.txt (23 entries) ---
-        // ## Documentation
-        "documentation/p256k/gettingstarted",
-        "documentation/p256k",
-        // Authored articles added in PR fb0c08 — mirror the `## Documentation`
-        // entries in Resources/docs-21-dev/data/documentation/p256k/llms.txt.
-        // The first two (ellipticcurvediffiehellman, silentpayments) ship for
-        // the first time in swift-secp256k1 0.23.1.
-        "documentation/p256k/ellipticcurvediffiehellman",
-        "documentation/p256k/silentpayments",
-        "documentation/p256k/tweakingkeys",
-        "documentation/p256k/musig2multisignatures",
-        "documentation/p256k/recoveringpublickeys",
-        "documentation/p256k/serializingkeys",
-        "documentation/p256k/securityconsiderations",
-        "documentation/p256k/keyformats",
-        // ## Symbols
-        "documentation/p256k/p256k/context",
-        "documentation/p256k/p256k/signing",
-        "documentation/p256k/p256k/keyagreement",
-        "documentation/p256k/p256k/schnorr",
-        "documentation/p256k/p256k/recovery",
-        "documentation/p256k/p256k/musig",
-        // ## Optional
-        "documentation/p256k/p256k/signing/privatekey",
-        "documentation/p256k/p256k/signing/publickey",
-        "documentation/p256k/p256k/keyagreement/privatekey",
-        "documentation/p256k/p256k/schnorr/privatekey",
-        "documentation/p256k/p256k/recovery/privatekey",
-        "documentation/p256k/int256",
-        "documentation/p256k/uint256",
-
-        // --- Pages with Discussion sections (52 entries, audit 2025-04-06) ---
-        // Context
-        "documentation/p256k/p256k/context/create()",
-        "documentation/p256k/p256k/context/rawrepresentation",
-        // KeyAgreement
-        "documentation/p256k/p256k/keyagreement/privatekey/init(datarepresentation:format:)",
-        "documentation/p256k/p256k/keyagreement/privatekey/init(format:)",
-        "documentation/p256k/p256k/keyagreement/privatekey/sharedsecretfromkeyagreement(with:format:)",
-        "documentation/p256k/p256k/keyagreement/publickey/init(datarepresentation:format:)",
-        "documentation/p256k/p256k/keyagreement/publickey/init(x963representation:)",
-        // MuSig
-        "documentation/p256k/p256k/musig/aggregate(_:)",
-        "documentation/p256k/p256k/musig/aggregatesignature/init(datarepresentation:)",
-        "documentation/p256k/p256k/musig/aggregatesignatures(_:)",
-        "documentation/p256k/p256k/musig/nonce/generate(secretkey:publickey:msg32:extrainput32:)",
-        "documentation/p256k/p256k/musig/nonce/generate(sessionid:secretkey:publickey:msg32:extrainput32:)",
-        "documentation/p256k/p256k/musig/nonce/init(aggregating:)",
-        "documentation/p256k/p256k/musig/nonce/init(datarepresentation:)",
-        "documentation/p256k/p256k/musig/publickey/add(_:format:)",
-        "documentation/p256k/p256k/musig/publickey/init(datarepresentation:format:cache:)",
-        "documentation/p256k/p256k/musig/publickey/isvalidsignature(_:publickey:nonce:for:)",
-        "documentation/p256k/p256k/musig/xonlykey/add(_:)",
-        // Recovery
-        "documentation/p256k/p256k/recovery/ecdsasignature/init(compactrepresentation:recoveryid:)",
-        "documentation/p256k/p256k/recovery/ecdsasignature/init(datarepresentation:)",
-        "documentation/p256k/p256k/recovery/ecdsasignature/normalize",
-        "documentation/p256k/p256k/recovery/privatekey/init(datarepresentation:format:)",
-        "documentation/p256k/p256k/recovery/privatekey/init(format:)",
-        // Schnorr
-        "documentation/p256k/p256k/schnorr/nonce/init(datarepresentation:)",
-        "documentation/p256k/p256k/schnorr/partialsignature/init(datarepresentation:session:)",
-        "documentation/p256k/p256k/schnorr/privatekey/init()",
-        "documentation/p256k/p256k/schnorr/privatekey/init(datarepresentation:)",
-        "documentation/p256k/p256k/schnorr/privatekey/partialsignature(for:pubnonce:securenonce:publicnonceaggregate:publickeyaggregate:)",
-        "documentation/p256k/p256k/schnorr/privatekey/partialsignature(for:pubnonce:securenonce:publicnonceaggregate:xonlykeyaggregate:)",
-        "documentation/p256k/p256k/schnorr/privatekey/signature(for:)",
-        "documentation/p256k/p256k/schnorr/privatekey/signature(for:auxiliaryrand:)",
-        "documentation/p256k/p256k/schnorr/privatekey/signature(message:auxiliaryrand:strict:)",
-        "documentation/p256k/p256k/schnorr/publickey/init(datarepresentation:format:)",
-        "documentation/p256k/p256k/schnorr/schnorrsignature/init(datarepresentation:)",
-        // Signing
-        "documentation/p256k/p256k/signing/ecdsasignature/init(compactrepresentation:)",
-        "documentation/p256k/p256k/signing/ecdsasignature/init(datarepresentation:)",
-        "documentation/p256k/p256k/signing/ecdsasignature/init(derrepresentation:)",
-        "documentation/p256k/p256k/signing/privatekey/add(_:)",
-        "documentation/p256k/p256k/signing/privatekey/init(_:format:)",
-        "documentation/p256k/p256k/signing/privatekey/init(datarepresentation:format:)",
-        "documentation/p256k/p256k/signing/privatekey/init(format:)",
-        "documentation/p256k/p256k/signing/privatekey/multiply(_:)",
-        "documentation/p256k/p256k/signing/publickey/add(_:format:)",
-        "documentation/p256k/p256k/signing/publickey/combine(_:format:)",
-        "documentation/p256k/p256k/signing/publickey/init(datarepresentation:format:)",
-        "documentation/p256k/p256k/signing/publickey/init(x963representation:)",
-        "documentation/p256k/p256k/signing/publickey/multiply(_:format:)",
-        "documentation/p256k/p256k/signing/xonlykey/parity",
-        // Extensions & utility types
-        "documentation/p256k/sha256/taggedhash(tag:data:)",
-        "documentation/p256k/swift/string/bytes",
-        "documentation/p256k/uint256/addmod(_:modulus:)",
-        "documentation/p256k/uint256/mulmod(_:modulus:)",
-
-        // --- Pages with authored Parameters/Return Value/aside (30 entries, audit 2025-04-06) ---
-        // KeyAgreement
-        "documentation/p256k/p256k/keyagreement/publickey/init(derrepresentation:)",
-        // MuSig
-        "documentation/p256k/p256k/musig/publickey/init(xonlykey:)",
-        "documentation/p256k/p256k/musig/xonlykey/init(datarepresentation:keyparity:cache:)",
-        "documentation/p256k/p256k/musig/xonlykey/isvalid(_:for:)",
-        "documentation/p256k/p256k/musig/xonlykey/isvalidsignature(_:for:)",
-        // Recovery
-        "documentation/p256k/p256k/recovery/privatekey/signature(for:)-1eroz",
-        "documentation/p256k/p256k/recovery/privatekey/signature(for:)-pcnn",
-        "documentation/p256k/p256k/recovery/publickey/init(_:signature:format:)-4311g",
-        "documentation/p256k/p256k/recovery/publickey/init(_:signature:format:)-5frmm",
-        // Schnorr
-        "documentation/p256k/p256k/schnorr/privatekey/add(_:)",
-        "documentation/p256k/p256k/schnorr/publickey/init(xonlykey:)",
-        "documentation/p256k/p256k/schnorr/xonlykey/add(_:)",
-        "documentation/p256k/p256k/schnorr/xonlykey/init(datarepresentation:keyparity:cache:)",
-        "documentation/p256k/p256k/schnorr/xonlykey/isvalid(_:for:)",
-        "documentation/p256k/p256k/schnorr/xonlykey/isvalidsignature(_:for:)",
-        // Signing
-        "documentation/p256k/p256k/signing/privatekey/init(derrepresentation:)",
-        "documentation/p256k/p256k/signing/privatekey/init(pemrepresentation:)",
-        "documentation/p256k/p256k/signing/privatekey/signature(for:)-3h6ut",
-        "documentation/p256k/p256k/signing/privatekey/signature(for:)-4qs1k",
-        "documentation/p256k/p256k/signing/publickey/init(derrepresentation:)",
-        "documentation/p256k/p256k/signing/publickey/init(pemrepresentation:)",
-        "documentation/p256k/p256k/signing/publickey/init(xonlykey:)",
-        "documentation/p256k/p256k/signing/publickey/isvalidsignature(_:for:)-7sttb",
-        "documentation/p256k/p256k/signing/publickey/isvalidsignature(_:for:)-8lxch",
-        "documentation/p256k/p256k/signing/xonlykey/init(datarepresentation:keyparity:)",
-        // Extensions & utility types
-        "documentation/p256k/foundation/data/copytounsafemutablebytes(of:)",
-        "documentation/p256k/sha256/hash(data:)",
-        "documentation/p256k/sharedsecret/==(_:_:)-7g0c5",
-        "documentation/p256k/swift/string/init(bytes:)",
-
-        // --- Event llms.txt (10 entries) ---
-        // ## Documentation
-        "documentation/event/gettingstarted",
-        "documentation/event/productionconsiderations",
-        "documentation/event/backendandplatforms",
-        "documentation/event/choosinglibeventvsevent",
-        "documentation/event",
-        // ## Symbols
-        "documentation/event/eventloop",
-        "documentation/event/socket",
-        "documentation/event/serversocket",
-        "documentation/event/socketaddress",
-        // ## Optional
-        "documentation/event/socketerror",
-
-        // --- OpenSSL llms.txt (12 entries) ---
-        // ## Documentation
-        "documentation/openssl/gettingstarted",
-        "documentation/openssl/securityconsiderations",
-        "documentation/openssl/choosinglibcryptovsopenssl",
-        "documentation/openssl",
-        // ## Symbols
-        "documentation/openssl/sha256",
-        "documentation/openssl/base64url",
-        "documentation/openssl/rsa",
-        "documentation/openssl/ssl",
-        // ## Optional
-        "documentation/openssl/sha256/sha256digest",
-        "documentation/openssl/rsa/privatekey",
-        "documentation/openssl/rsa/publickey",
-        "documentation/openssl/opensslerror",
-
-        // --- ZKP-unique authored articles (2 entries) ---
-        // Sourced from upstream Sources/ZKP/ZKP.docc/*.md (swift-secp256k1).
-        // ZKP symbol pages re-export P256K and stay noindex'd; only authored
-        // articles unique to the ZKP product are allowlisted here.
-        "documentation/zkp",
-        "documentation/zkp/choosingp256kvszkp",
-    ]
+    /// - **globals.hubs** — site-wide hub pages (docs root, namespace hubs)
+    /// - **p256k** — P256K llms.txt + audit-derived (Discussion / Parameters /
+    ///   Return Value / aside / type-page Overview entries via hybrid policy)
+    /// - **zkp** — ZKP-unique authored articles only. ZKP symbol pages are
+    ///   re-exports of P256K and remain `noindex` (SEO duplicate prevention).
+    /// - **event** — Event llms.txt + audit-derived entries
+    /// - **openssl** — OpenSSL llms.txt + audit-derived entries
+    /// - **tor** — TorClient/TorSession entry-points + audit-derived entries
+    ///   (excludes internal `controlprotocolparser/*` and `controlsocket/*`
+    ///   children; URLSession extensions stay indexed)
+    ///
+    /// ## Hybrid Indexing Policy
+    ///
+    /// A symbol page is indexable when **any** of these hold:
+    ///
+    /// 1. **Type page** (`Structure` / `Enumeration` / `Class` / `Protocol` /
+    ///    `Type Alias` / `Actor`) with `## Overview` ≥ 200 chars.
+    /// 2. **Method page** (`Instance Method` / `Type Method` / `Initializer` /
+    ///    `Operator` / `Subscript` / `Instance Property` / `Type Property` /
+    ///    `Case`) with `## Discussion` ≥ 300 chars.
+    /// 3. **Aside-bearing** page with an authored aside callout AND
+    ///    `## Discussion` ≥ 100 chars.
+    ///
+    /// Char counts are computed from the DocC JSON sidecar's
+    /// `primaryContentSections[].kind == "content"` block, flattened to plain
+    /// text with code listings excluded. The canonical implementation lives
+    /// in ``IndexabilityAuditor`` (UtilLib), with thresholds exposed as
+    /// `typeOverviewMinChars` / `methodDiscussionMinChars` /
+    /// `asideDiscussionMinChars`.
+    ///
+    /// ## Re-auditing on archive bumps
+    ///
+    /// When an archive's `tag` is bumped in `external-archives.json`, run the
+    /// audit subcommand from the package root:
+    ///
+    ///     nocorrect swift run util agent-directive audit
+    ///
+    /// (Add `--strict` in CI to fail on a non-empty gap; add `--verbose` to
+    /// see every eligible page, not just the gap.)
+    ///
+    /// The command walks each downloaded `.doccarchive`'s JSON sidecars,
+    /// applies the hybrid policy via ``IndexabilityAuditor``, and emits a
+    /// per-module gap report against this allowlist. Manually review and
+    /// merge new entries into the per-archive `indexablePages` array in
+    /// `external-archives.json`. Project-specific exclusions (Tor's internal
+    /// protocol-plumbing children, ZKP's P256K re-exports) are pre-applied
+    /// via `IndexabilityAuditor.defaultModuleExclusions`.
+    static let indexablePages: Set<String> = registry.allIndexablePages
 
     /// Normalizes an HTML file's relative path for allowlist comparison.
     ///
@@ -315,41 +187,23 @@ public enum AgentDirectiveInjector {
 
     /// Known display names for DocC URL segments.
     ///
+    /// Aggregated from `globals.knownNames` plus every archive's `knownNames`
+    /// in `Resources/docs-21-dev/external-archives.json`. Archive-specific
+    /// entries override globals on key collision.
+    ///
     /// Maps lowercased URL segments to their proper-cased display names.
-    /// Single-word segments use capitalize-first fallback; only multi-word
-    /// compounds that would fail under fallback need explicit entries.
+    /// Single-word segments use capitalize-first fallback (in `resolveName`);
+    /// only multi-word compounds that would fail under fallback need entries.
     ///
-    /// Implementation step: After building locally, scan BOTH modules:
-    ///   find Websites/docs-21-dev/documentation -name index.html | \
-    ///     sed 's|.*/documentation/||; s|/index.html||' | \
-    ///     tr '/' '\n' | sort -u
-    /// Compare unique segments against knownNames keys.
-    /// This covers both P256K and ZKP (including ZKP's re-exported P256K symbols).
+    /// To audit for missing entries, run a build then scan all modules:
     ///
-    /// Future contributors: when new symbols are added to P256K or ZKP,
-    /// run the scan command above and add any new multi-word compounds to this map.
-    static let knownNames: [String: String] = [
-        // Modules
-        "p256k": "P256K",
-        "zkp": "ZKP",
-        // Compound names (capitalize-first fallback would be wrong)
-        "int256": "Int256",
-        "keyagreement": "KeyAgreement",
-        "privatekey": "PrivateKey",
-        "publickey": "PublicKey",
-        "xonlypublickey": "XonlyPublicKey",
-        "sharedsecret": "SharedSecret",
-        "sha256digest": "SHA256Digest",
-        "partialsignature": "PartialSignature",
-        "surjectionproof": "SurjectionProof",
-        "rangeproof": "RangeProof",
-        "cryptokitasn1error": "CryptoKitASN1Error",
-        "cryptokitmetaerror": "CryptoKitMetaError",
-        // Articles
-        "gettingstarted": "GettingStarted",
-        // Top-level documentation root
-        "documentation": "API Reference",
-    ]
+    ///     find Websites/docs-21-dev/documentation -name index.html | \
+    ///       sed 's|.*/documentation/||; s|/index.html||' | \
+    ///       tr '/' '\n' | sort -u
+    ///
+    /// The snapshot at `Tests/UtilLibTests/Fixtures/known-segments.txt` is
+    /// validated by `knownNamesSnapshotCompleteness` test.
+    static let knownNames: [String: String] = registry.allKnownNames
 
     /// Resolves a URL segment to its display name using knownNames, with fallback.
     ///

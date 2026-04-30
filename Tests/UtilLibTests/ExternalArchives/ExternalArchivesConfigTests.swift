@@ -10,61 +10,37 @@
 
 import Foundation
 import Testing
+@testable import UtilLib
 
-/// Codable shape of `Resources/docs-21-dev/external-archives.json`.
-///
-/// This struct is the Swift-side schema for the external-archives config file.
-/// It mirrors the JSON Schema at `Resources/docs-21-dev/external-archives.schema.json`.
-/// If either shape changes, both must be updated together.
-private struct ExternalArchives: Decodable {
-    struct Archive: Decodable {
-        let repo: String
-        let tag: String
-        let artifact: String
-        let sha256: String
-        let bundleID: String
-    }
-    let archives: [String: Archive]
-}
-
+/// Validates the fetch-related fields of `external-archives.json` against the
+/// JSON Schema's regex patterns. Indexability and breadcrumb-name fields are
+/// covered by `ArchiveRegistryTests`.
 @Suite("ExternalArchivesConfigTests")
 struct ExternalArchivesConfigTests {
-
-    /// Returns the absolute path to `Resources/docs-21-dev/external-archives.json`,
-    /// anchored at the current working directory (SPM runs tests from the package root).
-    private static func configFileURL() -> URL {
-        let cwd = FileManager.default.currentDirectoryPath
-        return URL(fileURLWithPath: cwd)
-            .appendingPathComponent("Resources")
-            .appendingPathComponent("docs-21-dev")
-            .appendingPathComponent("external-archives.json")
-    }
 
     // Regex patterns from the JSON Schema (stored as String literals to avoid
     // Swift 6 concurrency warnings about static non-Sendable Regex<Substring> values).
     private static let sha256Pattern = "^[0-9a-f]{64}$"
     private static let repoPattern = #"^[^/]+/[^/]+$"#
 
-    @Test("external-archives.json decodes into ExternalArchives")
+    private static func loadRegistry() throws -> ArchiveRegistry {
+        try ArchiveRegistry.loadDefault()
+    }
+
+    @Test("external-archives.json decodes into ArchiveRegistry")
     func decodes() throws {
-        let url = Self.configFileURL()
-        let data = try Data(contentsOf: url)
-        _ = try JSONDecoder().decode(ExternalArchives.self, from: data)
+        _ = try Self.loadRegistry()
     }
 
     @Test("external-archives.json has at least one archive entry")
     func hasAtLeastOneArchive() throws {
-        let url = Self.configFileURL()
-        let data = try Data(contentsOf: url)
-        let config = try JSONDecoder().decode(ExternalArchives.self, from: data)
+        let config = try Self.loadRegistry()
         #expect(!config.archives.isEmpty, "external-archives.json must declare at least one archive")
     }
 
     @Test("every archive `sha256` is 64 lowercase hex characters")
     func sha256IsValidHex() throws {
-        let url = Self.configFileURL()
-        let data = try Data(contentsOf: url)
-        let config = try JSONDecoder().decode(ExternalArchives.self, from: data)
+        let config = try Self.loadRegistry()
 
         for (key, archive) in config.archives {
             #expect(
@@ -76,9 +52,7 @@ struct ExternalArchivesConfigTests {
 
     @Test("every archive `repo` is in owner/name form")
     func repoIsOwnerName() throws {
-        let url = Self.configFileURL()
-        let data = try Data(contentsOf: url)
-        let config = try JSONDecoder().decode(ExternalArchives.self, from: data)
+        let config = try Self.loadRegistry()
 
         for (key, archive) in config.archives {
             #expect(
@@ -90,9 +64,7 @@ struct ExternalArchivesConfigTests {
 
     @Test("every archive `artifact` ends in .zip")
     func artifactEndsInZip() throws {
-        let url = Self.configFileURL()
-        let data = try Data(contentsOf: url)
-        let config = try JSONDecoder().decode(ExternalArchives.self, from: data)
+        let config = try Self.loadRegistry()
 
         for (key, archive) in config.archives {
             #expect(
@@ -104,9 +76,7 @@ struct ExternalArchivesConfigTests {
 
     @Test("every archive has non-empty `tag`")
     func tagNonEmpty() throws {
-        let url = Self.configFileURL()
-        let data = try Data(contentsOf: url)
-        let config = try JSONDecoder().decode(ExternalArchives.self, from: data)
+        let config = try Self.loadRegistry()
 
         for (key, archive) in config.archives {
             #expect(
@@ -118,9 +88,7 @@ struct ExternalArchivesConfigTests {
 
     @Test("every archive has non-empty `bundleID`")
     func bundleIDNonEmpty() throws {
-        let url = Self.configFileURL()
-        let data = try Data(contentsOf: url)
-        let config = try JSONDecoder().decode(ExternalArchives.self, from: data)
+        let config = try Self.loadRegistry()
 
         for (key, archive) in config.archives {
             #expect(
@@ -132,9 +100,7 @@ struct ExternalArchivesConfigTests {
 
     @Test("bundle IDs are unique across archives")
     func bundleIDsAreUnique() throws {
-        let url = Self.configFileURL()
-        let data = try Data(contentsOf: url)
-        let config = try JSONDecoder().decode(ExternalArchives.self, from: data)
+        let config = try Self.loadRegistry()
 
         let ids = config.archives.values.map(\.bundleID)
         let uniqueIDs = Set(ids)

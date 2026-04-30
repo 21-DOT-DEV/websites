@@ -1,14 +1,38 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://docs.21.dev/schemas/external-archives.schema.json",
-  "title": "External DocC Archives",
-  "description": "Pinned external DocC archives consumed by docs.21.dev via `docc merge`.",
+  "title": "External DocC Archive Registry",
+  "description": "Pinned external DocC archives consumed by docs.21.dev via `docc merge`. Also records per-archive search-indexability metadata (`indexablePages`) and breadcrumb display-name overrides (`knownNames`), plus cross-cutting `globals` for site-wide hub pages and shared display names.",
   "type": "object",
   "additionalProperties": false,
   "required": ["archives"],
   "properties": {
     "$schema": {
       "type": "string"
+    },
+    "globals": {
+      "type": "object",
+      "description": "Cross-cutting metadata not owned by any single archive.",
+      "additionalProperties": false,
+      "properties": {
+        "hubs": {
+          "type": "array",
+          "description": "Truly cross-cutting navigation pages that should be search-indexable AND don't belong to any single archive (e.g., the merged docs root). Per-archive module landing pages and namespace hubs (e.g., `documentation/<module>` or `documentation/<module>/<umbrella>`) belong in that archive's `indexablePages` instead, since they co-version with the archive's tag.",
+          "items": {
+            "type": "string",
+            "pattern": "^documentation(/[^/]+)*$"
+          },
+          "uniqueItems": true
+        },
+        "knownNames": {
+          "type": "object",
+          "description": "Display-name overrides applied across all archives (e.g., `documentation` → `API Reference`, `gettingstarted` → `GettingStarted`).",
+          "additionalProperties": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
     },
     "archives": {
       "type": "object",
@@ -42,6 +66,23 @@
             "type": "string",
             "description": "Expected DocC bundle ID from the archive's metadata.json `bundleID` field.",
             "minLength": 1
+          },
+          "indexablePages": {
+            "type": "array",
+            "description": "DocC page paths (relative to site root, no leading slash, no `index.html`) that should be search-indexable. Pages not in this list receive `<meta name=\"robots\" content=\"noindex, follow\">`.",
+            "items": {
+              "type": "string",
+              "pattern": "^documentation/[a-z][^\\s]*$"
+            },
+            "uniqueItems": true
+          },
+          "knownNames": {
+            "type": "object",
+            "description": "Display-name overrides for breadcrumb rendering, scoped to this archive's URL segments. Maps lowercased URL slug to PascalCase or property-name display form (e.g., `torclient` → `TorClient`).",
+            "additionalProperties": {
+              "type": "string",
+              "minLength": 1
+            }
           }
         }
       }

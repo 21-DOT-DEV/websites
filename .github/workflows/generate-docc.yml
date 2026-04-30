@@ -42,14 +42,15 @@ jobs:
 
           # SECP256K1_VERSION is the docs-site pin (may be a prerelease), used for llms.txt stamping.
           # It is sourced from the P256K archive entry; the ZKP entry is expected to share the same tag.
-          # Keys must match the short-form keys in external-archives.json (p256k/event/openssl).
+          # Keys must match the short-form keys in external-archives.json (p256k/event/openssl/tor).
           SECP256K1_VERSION=$(jq -r '.archives["p256k"].tag' "$ARCHIVES_FILE")
           EVENT_VERSION=$(jq -r '.archives["event"].tag' "$ARCHIVES_FILE")
           OPENSSL_VERSION=$(jq -r '.archives["openssl"].tag' "$ARCHIVES_FILE")
+          TOR_VERSION=$(jq -r '.archives["tor"].tag' "$ARCHIVES_FILE")
 
           # Fail fast if any required key is missing or null — prevents stamping `vnull`
           # placeholders into llms.txt and shipping broken version strings to the live site.
-          for var in SECP256K1_VERSION EVENT_VERSION OPENSSL_VERSION; do
+          for var in SECP256K1_VERSION EVENT_VERSION OPENSSL_VERSION TOR_VERSION; do
             value="${!var}"
             if [ -z "$value" ] || [ "$value" = "null" ]; then
               echo "❌ $var is missing or null in $ARCHIVES_FILE — refusing to stamp llms.txt"
@@ -60,10 +61,12 @@ jobs:
           echo "SECP256K1_VERSION=$SECP256K1_VERSION" >> $GITHUB_ENV
           echo "EVENT_VERSION=$EVENT_VERSION" >> $GITHUB_ENV
           echo "OPENSSL_VERSION=$OPENSSL_VERSION" >> $GITHUB_ENV
+          echo "TOR_VERSION=$TOR_VERSION" >> $GITHUB_ENV
 
           echo "� swift-secp256k1 (docs): $SECP256K1_VERSION"
           echo "📦 swift-event:             $EVENT_VERSION"
           echo "📦 swift-openssl:           $OPENSSL_VERSION"
+          echo "📦 swift-tor:               $TOR_VERSION"
 
       - name: Download external DocC archives
         run: |
@@ -290,7 +293,7 @@ jobs:
           project="${{ inputs.project-name }}"
 
           # Find all llms.txt files (root + per-module) and substitute per-package version placeholders.
-          # Placeholders: {{SECP256K1_VERSION}}, {{EVENT_VERSION}}, {{OPENSSL_VERSION}}.
+          # Placeholders: {{SECP256K1_VERSION}}, {{EVENT_VERSION}}, {{OPENSSL_VERSION}}, {{TOR_VERSION}}.
           stamped=0
           while IFS= read -r llms_file; do
             # NOTE: sed -i '' is macOS-specific (macos-26 runner).
@@ -299,12 +302,13 @@ jobs:
               -e "s/{{SECP256K1_VERSION}}/${{ env.SECP256K1_VERSION }}/g" \
               -e "s/{{EVENT_VERSION}}/${EVENT_VERSION:-MISSING_EVENT_VERSION}/g" \
               -e "s/{{OPENSSL_VERSION}}/${OPENSSL_VERSION:-MISSING_OPENSSL_VERSION}/g" \
+              -e "s/{{TOR_VERSION}}/${TOR_VERSION:-MISSING_TOR_VERSION}/g" \
               "$llms_file"
 
             # Guard: fail if any known placeholder wasn't substituted.
-            if grep -qE '\{\{(SECP256K1_VERSION|EVENT_VERSION|OPENSSL_VERSION)\}\}' "$llms_file"; then
+            if grep -qE '\{\{(SECP256K1_VERSION|EVENT_VERSION|OPENSSL_VERSION|TOR_VERSION)\}\}' "$llms_file"; then
               echo "❌ Version placeholder was not substituted in ${llms_file}"
-              grep -nE '\{\{(SECP256K1_VERSION|EVENT_VERSION|OPENSSL_VERSION)\}\}' "$llms_file"
+              grep -nE '\{\{(SECP256K1_VERSION|EVENT_VERSION|OPENSSL_VERSION|TOR_VERSION)\}\}' "$llms_file"
               exit 1
             fi
             stamped=$((stamped + 1))
@@ -318,6 +322,7 @@ jobs:
             echo "   swift-secp256k1: v${{ env.SECP256K1_VERSION }}"
             echo "   swift-event: v${EVENT_VERSION:-MISSING}"
             echo "   swift-openssl: v${OPENSSL_VERSION:-MISSING}"
+            echo "   swift-tor: v${TOR_VERSION:-MISSING}"
           fi
       
       - name: Fix canonical URLs
@@ -351,6 +356,96 @@ jobs:
             --path "$output_dir" \
             --base-url "$BASE_URL" \
             --force
+      
+      - name: Audit indexability allowlist (advisory)
+        run: |
+          project="${{ inputs.project-name }}"
+          output_dir="Websites/${project}"
+          archives_root="${output_dir}/data/documentation"
+          registry_path="Resources/${project}/external-archives.json"
+
+          echo "🔍 Auditing indexability allowlist against authored DocC prose..."
+
+          # Advisory: never fails the build. The registry is the editorial
+          # source of truth; audit findings are suggestions for the next
+          # archive-bump PR. To enforce, append `--strict` to the swift run
+          # invocation below (and drop the `set +e` / `set -e` wrapping).
+          #
+          # Bidirectional drift detection (per SEO best practices):
+          #   - STALE: allowlisted pages that no longer pass the policy.
+          #     SEO-critical — thin pages in the sitemap risk Helpful Content
+          #     demotion that affects the whole domain.
+          #   - NEW: pages that pass policy but aren't in the allowlist.
+          #     Editorial — single-page traffic loss, not site-wide harm.
+          if [ ! -f "$registry_path" ]; then
+            echo "ℹ️  No registry at $registry_path — skipping audit"
+            exit 0
+          fi
+
+          set +e
+          swift run util agent-directive audit \
+            --archives-root "$archives_root" \
+            --registry "$registry_path" \
+            | tee /tmp/audit.log
+          set -e
+
+          # Extract gap counts from the per-entry lines:
+          #   "    ⚠ documentation/..." → stale entry
+          #   "    + documentation/..." → newly-discovered entry
+          stale_count=$(grep -cE '^[[:space:]]+⚠' /tmp/audit.log || true)
+          new_count=$(grep -cE '^[[:space:]]+\+' /tmp/audit.log || true)
+
+          if [ "$stale_count" -gt 0 ] || [ "$new_count" -gt 0 ]; then
+            {
+              echo "## 🔍 Indexability drift: ${stale_count} stale, ${new_count} new"
+              echo ""
+
+              if [ "$stale_count" -gt 0 ]; then
+                echo "### ⚠️ Stale entries (${stale_count}) — SEO priority"
+                echo ""
+                echo "These pages are in \`external-archives.json\`'s \`indexablePages\`"
+                echo "but the authored prose has fallen below policy thresholds. They"
+                echo "are currently in the sitemap as thin content, which can trigger"
+                echo "Google Helpful Content demotion across the whole domain."
+                echo ""
+                echo "**Action**: remove from \`indexablePages\` in the next registry PR."
+                echo ""
+                echo '```'
+                grep -E '^[[:space:]]+⚠' /tmp/audit.log
+                echo '```'
+                echo ""
+              fi
+
+              if [ "$new_count" -gt 0 ]; then
+                echo "### ➕ Newly-eligible pages (${new_count}) — editorial polish"
+                echo ""
+                echo "These pages cross the hybrid-policy threshold but aren't yet"
+                echo "in the allowlist. They are currently \`noindex\` and excluded"
+                echo "from the sitemap (single-page traffic loss, not site-wide)."
+                echo ""
+                echo "**Action**: review and add to \`indexablePages\` if they belong in search."
+                echo ""
+                echo '```'
+                grep -E '^[[:space:]]+\+' /tmp/audit.log
+                echo '```'
+                echo ""
+              fi
+
+              echo "Re-run locally:"
+              echo '```'
+              echo 'nocorrect swift run util agent-directive audit'
+              echo '```'
+            } >> "$GITHUB_STEP_SUMMARY"
+
+            if [ "$stale_count" -gt 0 ]; then
+              echo "⚠️  ${stale_count} stale allowlist entr$([ "$stale_count" = "1" ] && echo "y" || echo "ies") recorded in run summary (SEO priority)"
+            fi
+            if [ "$new_count" -gt 0 ]; then
+              echo "📋 ${new_count} newly-eligible page(s) recorded in run summary"
+            fi
+          else
+            echo "✅ Allowlist matches authored prose in both directions — no drift"
+          fi
       
       - name: Generate 404 page
         run: |

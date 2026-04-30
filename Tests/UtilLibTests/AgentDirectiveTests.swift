@@ -556,8 +556,11 @@ struct AgentDirectiveTests {
 
     @Test("shouldIndex returns false for non-allowlisted page")
     func shouldIndexNonAllowlisted() {
+        // A skeleton initializer page removed from the allowlist per policy.
+        // disc=74 (well below the 300-char method threshold); unlikely to
+        // cross threshold without a substantial doc-comment expansion.
         #expect(!AgentDirectiveInjector.shouldIndex(
-            relativePath: "documentation/p256k/p256k/signing/xonlykey/index.html"
+            relativePath: "documentation/p256k/p256k/recovery/publickey/init(_:signature:format:)-4311g/index.html"
         ))
     }
 
@@ -634,12 +637,17 @@ struct AgentDirectiveTests {
         #expect(action == .skipped)
     }
 
-    @Test("Allowlist has exactly 130 entries (2 hub + 23 P256K llms.txt + 52 Discussion + 29 authored + 10 Event llms.txt + 12 OpenSSL llms.txt + 2 ZKP authored)")
+    @Test("Allowlist has exactly 285 entries (1 globals.hub + 131 P256K + 25 Event + 28 OpenSSL + 2 ZKP + 98 Tor)")
     func allowlistCompleteness() {
-        #expect(AgentDirectiveInjector.indexablePages.count == 130)
+        // Count reflects the 2026-04-30 reconciliation: +59 newly-eligible
+        // pages added, -25 skeleton stubs removed (disc<150), 12 borderline
+        // entries retained as editorial overrides (disc 154–289 in CI audit).
+        #expect(AgentDirectiveInjector.indexablePages.count == 285)
 
-        // Spot-check hub pages
+        // Spot-check globals.hubs (truly cross-cutting site root only).
         #expect(AgentDirectiveInjector.indexablePages.contains("documentation"))
+        // The P256K umbrella namespace landing page lives in the P256K
+        // archive (not globals.hubs) — verify it's still in the union.
         #expect(AgentDirectiveInjector.indexablePages.contains("documentation/p256k/p256k"))
 
         // Spot-check P256K llms.txt entries
@@ -661,10 +669,16 @@ struct AgentDirectiveTests {
         #expect(AgentDirectiveInjector.indexablePages.contains("documentation/p256k/p256k/schnorr/privatekey/signature(for:)"))
         #expect(AgentDirectiveInjector.indexablePages.contains("documentation/p256k/sha256/taggedhash(tag:data:)"))
 
-        // Spot-check authored Parameters/Return Value/aside entries
+        // Spot-check borderline entries retained as editorial overrides
+        // (disc=154–289 — below the 300-char method threshold but carrying
+        // real authored Parameters / Return Value / aside prose; see
+        // 2026-04-30 reconciliation).
         #expect(AgentDirectiveInjector.indexablePages.contains("documentation/p256k/p256k/signing/publickey/isvalidsignature(_:for:)-7sttb"))
-        #expect(AgentDirectiveInjector.indexablePages.contains("documentation/p256k/p256k/recovery/publickey/init(_:signature:format:)-4311g"))
         #expect(AgentDirectiveInjector.indexablePages.contains("documentation/p256k/sha256/hash(data:)"))
+        // Removed 2026-04-30 as a skeleton stub (disc=74, well below the
+        // 300-char policy threshold) once the counter was fixed to see the
+        // full authored prose instead of the first content section only.
+        #expect(!AgentDirectiveInjector.indexablePages.contains("documentation/p256k/p256k/recovery/publickey/init(_:signature:format:)-4311g"))
 
         // Spot-check Event llms.txt entries
         #expect(AgentDirectiveInjector.indexablePages.contains("documentation/event"))
@@ -685,6 +699,34 @@ struct AgentDirectiveTests {
         // ZKP symbol pages still excluded — they re-export P256K and would be SEO dupes
         #expect(!AgentDirectiveInjector.indexablePages.contains("documentation/zkp/p256k/signing"))
         #expect(!AgentDirectiveInjector.indexablePages.contains("documentation/zkp/p256k/schnorr/privatekey"))
+
+        // Spot-check Tor essentials (Phase 3 archive addition)
+        #expect(AgentDirectiveInjector.indexablePages.contains("documentation/tor"))
+        #expect(AgentDirectiveInjector.indexablePages.contains("documentation/tor/torclient"))
+        #expect(AgentDirectiveInjector.indexablePages.contains("documentation/tor/torsession"))
+        #expect(AgentDirectiveInjector.indexablePages.contains("documentation/tor/torerror"))
+        #expect(AgentDirectiveInjector.indexablePages.contains("documentation/tor/onionservice"))
+
+        // Spot-check Phase 4 audit additions — type-page Overview entries
+        #expect(AgentDirectiveInjector.indexablePages.contains("documentation/p256k/p256k/signing/ecdsasignature"))
+        #expect(AgentDirectiveInjector.indexablePages.contains("documentation/p256k/p256k/musig/aggregatesignature"))
+
+        // Spot-check Phase 4 audit additions — Event method-level entries
+        #expect(AgentDirectiveInjector.indexablePages.contains("documentation/event/socket/connect(to:loop:)"))
+        #expect(AgentDirectiveInjector.indexablePages.contains("documentation/event/serversocket/accept()"))
+
+        // Spot-check Phase 4 audit additions — OpenSSL Case-role entries (user-cited)
+        #expect(AgentDirectiveInjector.indexablePages.contains("documentation/openssl/opensslerror/invalidkey(_:)"))
+        #expect(AgentDirectiveInjector.indexablePages.contains("documentation/openssl/sha256/hash(data:)"))
+
+        // Spot-check Phase 4 audit additions — Tor user-facing API
+        #expect(AgentDirectiveInjector.indexablePages.contains("documentation/tor/torclient/start()"))
+        #expect(AgentDirectiveInjector.indexablePages.contains("documentation/tor/torcontrolclient/addonion(key:ports:detach:)"))
+        #expect(AgentDirectiveInjector.indexablePages.contains("documentation/tor/foundation/urlsessionconfiguration/configuredfortor(socksendpoint:)"))
+
+        // Tor internal protocol-plumbing children remain excluded (audit filter)
+        #expect(!AgentDirectiveInjector.indexablePages.contains("documentation/tor/controlsocket/readline()"))
+        #expect(!AgentDirectiveInjector.indexablePages.contains("documentation/tor/controlprotocolparser/parseasyncevent(_:)"))
 
         // Protocol conformance stubs excluded (no authored content)
         #expect(!AgentDirectiveInjector.indexablePages.contains("documentation/p256k/p256k/signing/privatekey/==(_:_:)"))

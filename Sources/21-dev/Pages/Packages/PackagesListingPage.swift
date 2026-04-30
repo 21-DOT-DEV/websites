@@ -40,6 +40,12 @@ struct PackagesListingPage {
             isExternal: true
         ),
         (
+            name: "swift-tor",
+            description: "Embedded Tor (libtor) with a Swift-concurrency-first API — actor-isolated TorClient with SOCKS5 proxy, v3 onion services, typed control-protocol client, and drop-in URLSession Tor routing on Apple platforms.",
+            href: "https://github.com/21-DOT-DEV/swift-tor",
+            isExternal: true
+        ),
+        (
             name: "swift-boost",
             description: "Swift package for Boost C++ libraries, providing portable foundational utilities used by higher-level packages.",
             href: "https://github.com/21-DOT-DEV/swift-boost",
@@ -133,6 +139,12 @@ struct PackagesListingPage {
                         description: packages[3].description,
                         href: packages[3].href,
                         isExternal: packages[3].isExternal
+                    )
+                    packageCard(
+                        name: packages[4].name,
+                        description: packages[4].description,
+                        href: packages[4].href,
+                        isExternal: packages[4].isExternal
                     )
                 }
             }
