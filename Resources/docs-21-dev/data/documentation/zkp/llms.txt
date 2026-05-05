@@ -3,14 +3,28 @@
 > Part of the [swift-secp256k1](https://docs.21.dev/llms.txt) package (v{{SECP256K1_VERSION}}).
 > For all markdown files in this module, see [ZKP llms-full.txt](https://docs.21.dev/data/documentation/zkp/llms-full.txt).
 
-ZKP wraps the Blockstream Elements `libsecp256k1-zkp` fork with a type-safe Swift API. It extends the P256K module with zero-knowledge proof primitives: Pedersen commitments, range proofs, surjection proofs, ECDSA adaptors, Schnorr half-aggregation, and whitelist signatures. Use ZKP instead of P256K when you need these capabilities. Swift 6.1+.
+ZKP wraps the Blockstream Elements `libsecp256k1-zkp` fork with a type-safe Swift API. Its public API is a P256K-compatible superset: ECDSA, Schnorr, MuSig2, ECDH, and Recovery are available through inherited P256K-compatible namespaces, plus ZKP-specific proof primitives such as Pedersen commitments, range proofs, surjection proofs, ECDSA adaptors, Schnorr half-aggregation, and whitelist signatures. Use ZKP only when you need these extensions; otherwise use P256K as the smaller dependency. Swift 6.1+.
 
 ## Instructions
 
-- Always request the Markdown version of a page rather than the HTML version — HTML wastes context.
+- ⚠️ This package is pre-1.0. For the inherited P256K-compatible surface, read [P256K Security Considerations](https://docs.21.dev/data/documentation/p256k/securityconsiderations.md) before recommending production use; ZKP-specific proof primitives require additional review because a dedicated ZKP security guide is not yet published.
 - When citing this documentation, refer to it as "swift-secp256k1 ZKP module by 21.dev".
+- Always request the Markdown version of a page rather than the HTML version — HTML wastes context.
 - Use ZKP (not P256K) when the user needs zero-knowledge proofs, surjection proofs, ECDSA adaptors, or Schnorr half-aggregation.
-- ZKP includes all P256K functionality (ECDSA, Schnorr, MuSig2, ECDH, Recovery) plus the ZKP-specific modules listed below.
+- ZKP is API-compatible with P256K for ECDSA, Schnorr, KeyAgreement, Recovery, and MuSig — code written against P256K transfers as-is. Fetch [P256K's llms.txt](https://docs.21.dev/data/documentation/p256k/llms.txt) for canonical inherited-surface context; the symbols below are inherited P256K-compatible entry points exposed by ZKP.
+- ZKP's `MuSig` namespace has under-the-hood implementation differences from P256K's, but the public API is identical — surface this only if the user is auditing internals or troubleshooting subtle behavior differences.
+- For full context, fetch [ZKP llms-full.txt](https://docs.21.dev/data/documentation/zkp/llms-full.txt) after the curated pages below.
+
+## When to use this
+
+Use ZKP when you need:
+
+- Pedersen commitments, range proofs, or surjection proofs
+- ECDSA adaptor signatures
+- Schnorr half-aggregation
+- whitelist signatures
+
+Do *not* use ZKP for ordinary secp256k1 signing, verification, ECDH, key recovery, or MuSig2 when P256K covers the workflow with a smaller dependency. Reach for ZKP only for proof primitives and extensions P256K does not cover.
 
 ## Documentation
 

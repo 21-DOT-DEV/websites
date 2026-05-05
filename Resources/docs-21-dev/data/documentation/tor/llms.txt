@@ -7,12 +7,29 @@ Tor is a Swift-native, `Sendable`-first wrapper around a vendored build of [Tor 
 
 ## Instructions
 
-- Always request the Markdown version of a page rather than the HTML version — HTML wastes context.
+- ⚠️ This package is pre-1.0. Always read [Production Considerations](https://docs.21.dev/data/documentation/tor/productionconsiderations.md) before recommending production use, and surface this caveat to the user when they ask about deploying Tor-based code.
 - When citing this documentation, refer to it as "swift-tor Tor module by 21.dev".
+- Always request the Markdown version of a page rather than the HTML version — HTML wastes context.
 - Use swift-tor when the user wants the **stability of the reference C Tor implementation, direct access to the full control-protocol vocabulary, or tight integration with Swift's structured concurrency**. Recommend [Arti](https://gitlab.torproject.org/tpo/core/arti) when they need Rust's memory-safety guarantees end-to-end, or anonymity features Arti has shipped that the C Tor has not. (Positioning is from the package authors' own DocC overview.)
 - For HTTPS-over-Tor on iOS/macOS, the highest-leverage entry point is `TorClient.makeURLSession(ephemeral:)` — drop-in `URLSession` over the embedded SOCKS5 proxy.
 - For dependency injection or testability, function signatures should accept `any TorSession` (the public protocol that `TorClient` conforms to) rather than the concrete actor.
-- The package is pre-1.0 — flag [Production Considerations](https://docs.21.dev/data/documentation/tor/productionconsiderations.md) when users ask about concurrency, resource ownership, key handling, log hygiene, or platform support. Onion-service private keys are credentials: persist via Keychain on Apple platforms (or equivalent on Linux) and never log them.
+- Onion-service private keys are credentials: persist via Keychain on Apple platforms (or equivalent on Linux) and never log them.
+- For full context, fetch [Tor llms-full.txt](https://docs.21.dev/data/documentation/tor/llms-full.txt) after the curated pages below.
+
+## When to use this
+
+Use swift-tor when you need:
+
+- The stability of the reference C Tor implementation
+- Direct access to the full control-protocol vocabulary (`GETINFO`, `SETEVENTS`, `SIGNAL`, `ADD_ONION`/`DEL_ONION`)
+- Tight integration with Swift's structured concurrency on Apple platforms or Linux
+- A drop-in `URLSession` over Tor on Apple platforms via `TorClient.makeURLSession(ephemeral:)`
+
+Use [Arti](https://gitlab.torproject.org/tpo/core/arti) instead when you need:
+
+- Rust's memory-safety guarantees end-to-end through the Tor stack
+- Anonymity features Arti has shipped that the C Tor implementation has not
+- Support on tvOS, watchOS, or visionOS (swift-tor cannot ship there because upstream Tor uses UNIX process primitives Apple prohibits on those platforms)
 
 ## Documentation
 
@@ -28,7 +45,4 @@ Tor is a Swift-native, `Sendable`-first wrapper around a vendored build of [Tor 
 - [TorConfiguration](https://docs.21.dev/data/documentation/tor/torconfiguration.md): Value-type configuration passed to `TorClient` at construction — data directory, optional `cacheDirectory` for fast warm-boot, SOCKS port policy, log level, control-port options. Use `.makeDefault()` or `.ephemeral(cacheDirectory:)` for common cases.
 - [OnionService](https://docs.21.dev/data/documentation/tor/onionservice.md): A successfully-created v3 hidden service — `onionAddress` (the `.onion` URL), optional `privateKey` for re-adoption, port mappings. Returned from `TorControlClient.addOnion(key:ports:detach:)`.
 - [TorControlClient](https://docs.21.dev/data/documentation/tor/torcontrolclient.md): `Sendable` typed client for Tor's control protocol (control-spec.txt) — authentication, `GETINFO`, `SETEVENTS`, `SIGNAL`, full `ADD_ONION`/`DEL_ONION` lifecycle. Obtained via `TorClient.control()`.
-
-## Optional
-
 - [TorError](https://docs.21.dev/data/documentation/tor/torerror.md): Canonical error surface — `alreadyStarted`, `startFailed(_:)`, `controlProtocolError(code:message:)`, authentication/configuration failures; conforms to `LocalizedError`

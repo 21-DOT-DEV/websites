@@ -221,9 +221,9 @@
     },
     "openssl": {
       "repo": "21-DOT-DEV/swift-openssl",
-      "tag": "0.1.4",
+      "tag": "0.1.5",
       "artifact": "OpenSSL.doccarchive.zip",
-      "sha256": "98cf794a40e6155566461d8b789fa78d10a062522cb22dddc8155d6f51de722b",
+      "sha256": "f9213bc7b822f0c26328e077104381224f94b995ccbb1c4e8aae9ac9a246ac6f",
       "bundleID": "OpenSSL",
       "indexablePages": [
         "documentation/openssl",
@@ -263,9 +263,9 @@
     },
     "tor": {
       "repo": "21-DOT-DEV/swift-tor",
-      "tag": "0.1.0-prerelease-0",
+      "tag": "0.1.0",
       "artifact": "Tor.doccarchive.zip",
-      "sha256": "db84546aac21531c12f4f26b0001e83de932616732256de95f42850a0c596261",
+      "sha256": "a5ea6a0adbf608666a8e12a433365049b2eb708f81b4effa6e4b1e60551f7871",
       "bundleID": "Tor",
       "indexablePages": [
         "documentation/tor",
