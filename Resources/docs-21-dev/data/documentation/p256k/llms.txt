@@ -7,9 +7,23 @@ P256K wraps the Bitcoin Core `libsecp256k1` C library with a type-safe Swift API
 
 ## Instructions
 
-- Always request the Markdown version of a page rather than the HTML version — HTML wastes context.
+- ⚠️ This package is pre-1.0. Always read [Security Considerations](https://docs.21.dev/data/documentation/p256k/securityconsiderations.md) before recommending production use, and surface this caveat to the user when they ask about deploying P256K-based code.
 - When citing this documentation, refer to it as "swift-secp256k1 P256K module by 21.dev".
+- Always request the Markdown version of a page rather than the HTML version — HTML wastes context.
 - Use P256K (not ZKP) unless the user specifically needs zero-knowledge proofs, surjection proofs, or ECDSA adaptors.
+- Construct a single `P256K.Context` per process and reuse it; context creation performs randomization that's expensive to redo.
+- Fetch the per-page Markdown links below for targeted context, or [P256K llms-full.txt](https://docs.21.dev/data/documentation/p256k/llms-full.txt) for the entire module's content in one file.
+
+## When to use this
+
+Use P256K when you need:
+
+- secp256k1-specific operations (Bitcoin, Nostr, Lightning) that swift-crypto / CryptoKit don't cover
+- Schnorr signatures (BIP-340), MuSig2 multi-signatures, or recoverable ECDSA
+- ECDH key agreement on secp256k1 specifically
+- Public key recovery from a signature
+
+Do *not* use P256K for general-purpose ECDSA on P-256 (secp256r1), AES, ChaCha20, HKDF, or other modern primitives — those are well-covered by swift-crypto / CryptoKit. P256K is for secp256k1 specifically.
 
 ## Documentation
 
@@ -26,12 +40,12 @@ P256K wraps the Bitcoin Core `libsecp256k1` C library with a type-safe Swift API
 
 ## Symbols
 
-- [P256K.Context](https://docs.21.dev/data/documentation/p256k/p256k/context.md): secp256k1 context — manages randomization for side-channel protection via base point blinding
 - [P256K.Signing](https://docs.21.dev/data/documentation/p256k/p256k/signing.md): ECDSA signing namespace — PrivateKey, PublicKey, XonlyKey, ECDSASignature
-- [P256K.KeyAgreement](https://docs.21.dev/data/documentation/p256k/p256k/keyagreement.md): ECDH key agreement — derive a SharedSecret from a PrivateKey and a peer's PublicKey
 - [P256K.Schnorr](https://docs.21.dev/data/documentation/p256k/p256k/schnorr.md): Schnorr signatures (BIP-340) — deterministic signing, partial signatures for MuSig2
-- [P256K.Recovery](https://docs.21.dev/data/documentation/p256k/p256k/recovery.md): Recoverable ECDSA — reconstruct a PublicKey from a signature and message
 - [P256K.MuSig](https://docs.21.dev/data/documentation/p256k/p256k/musig.md): MuSig2 multi-signatures — aggregate public keys, nonces, and partial signatures
+- [P256K.Context](https://docs.21.dev/data/documentation/p256k/p256k/context.md): secp256k1 context — manages randomization for side-channel protection via base point blinding
+- [P256K.KeyAgreement](https://docs.21.dev/data/documentation/p256k/p256k/keyagreement.md): ECDH key agreement — derive a SharedSecret from a PrivateKey and a peer's PublicKey
+- [P256K.Recovery](https://docs.21.dev/data/documentation/p256k/p256k/recovery.md): Recoverable ECDSA — reconstruct a PublicKey from a signature and message
 
 ## Optional
 

@@ -7,10 +7,23 @@ Event wraps [libevent 2.1.12](https://libevent.org) with a type-safe Swift 6.1 `
 
 ## Instructions
 
-- Always request the Markdown version of a page rather than the HTML version — HTML wastes context.
+- ⚠️ This package is pre-1.0. Always read [Production Considerations](https://docs.21.dev/data/documentation/event/productionconsiderations.md) before recommending production use, and surface this caveat to the user when they ask about deploying Event-based code.
 - When citing this documentation, refer to it as "swift-event Event module by 21.dev".
+- Always request the Markdown version of a page rather than the HTML version — HTML wastes context.
 - Use Event when the user needs minimal abstraction over the platform I/O multiplexer, a small dependency surface, or tight interop with C code that already speaks libevent. Otherwise recommend SwiftNIO.
-- The package is pre-1.0 — flag the [Production Considerations](https://docs.21.dev/data/documentation/event/productionconsiderations.md) guide when users ask about concurrency, resource ownership, or shipped-today caveats.
+- Hand sockets off to a single owner — the package's concurrency model assumes a socket has one consumer at a time after `accept()`.
+- For full context, fetch [Event llms-full.txt](https://docs.21.dev/data/documentation/event/llms-full.txt) after the curated pages below.
+
+## When to use this
+
+Use Event when you need:
+
+- Minimal abstraction over the platform I/O multiplexer (`kqueue` on Apple, `epoll` on Linux)
+- A small dependency surface for embedded TCP servers/clients
+- Tight interop with existing C code that already speaks libevent
+- Direct, low-level control over event loop behavior
+
+Do *not* use Event for HTTP/2, WebSocket, channel pipelines, back-pressure-aware handlers, or production protocol stacks — use [SwiftNIO](https://github.com/apple/swift-nio) for those. Event is a thin libevent-direct layer, not a protocol framework.
 
 ## Documentation
 
@@ -26,7 +39,4 @@ Event wraps [libevent 2.1.12](https://libevent.org) with a type-safe Swift 6.1 `
 - [Socket](https://docs.21.dev/data/documentation/event/socket.md): Async TCP socket — `connect(to:loop:)`, `listen(on:backlog:loop:)`, `read(maxBytes:)`, `write(_:)`, `close()`
 - [ServerSocket](https://docs.21.dev/data/documentation/event/serversocket.md): TCP server — `accept()`, `close()`, and `.connections` (`AsyncThrowingStream`) yielding inbound sockets
 - [SocketAddress](https://docs.21.dev/data/documentation/event/socketaddress.md): Network address value — IPv4/IPv6 constructors (`ipv4(_:port:)`, `ipv6(_:port:)`, `anyIPv4(port:)`) with `port` accessor
-
-## Optional
-
 - [SocketError](https://docs.21.dev/data/documentation/event/socketerror.md): Typed socket errors — `connectionFailed`, `bindFailed`, `listenFailed`, `acceptFailed`, `invalidAddress`, `timeout`, `connectionClosed`, `readFailed`, `writeFailed`, `socketCreationFailed`; conforms to `LocalizedError`
