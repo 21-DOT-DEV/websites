@@ -1,30 +1,133 @@
-# As a condition of accessing this website, you agree to
-# abide by the following content signals:
+# Welcomes traditional search and every major AI crawler.
+# Goal: maximum visibility across AI answer engines, search, agentic
+# assistants, and digital archives.
+# Bot list cross-referenced with Cloudflare AI Crawl Control reference.
 
-# (a)  If a content-signal = yes, you may collect content
-# for the corresponding use.
-# (b)  If a content-signal = no, you may not collect
-# content for the corresponding use.
-# (c)  If the website operator does not include a content
-# signal for a corresponding use, the website operator
-# neither grants nor restricts permission via content
-# signal with respect to the corresponding use.
-
-# The content signals and their meanings are:
-
-# search: building a search index and providing search
-# results (e.g., returning hyperlinks and short excerpts
-# from your website's contents).  Search does not include
-# providing AI-generated search summaries.
-# ai-input: inputting content into one or more AI models
-# (e.g., retrieval augmented generation, grounding, or
-# other real-time taking of content for generative AI
-# search answers).
-# ai-train: training or fine-tuning AI models.
-
-User-Agent: *
-Content-Signal: search=yes, ai-input=yes, ai-train=yes
+# ───── OpenAI ─────
+User-agent: GPTBot
 Allow: /
 
-# Tell crawlers where to find your sitemaps
+User-agent: ChatGPT-User
+Allow: /
+
+User-agent: OAI-SearchBot
+Allow: /
+
+# ───── Anthropic ─────
+User-agent: ClaudeBot
+Allow: /
+
+User-agent: Claude-User
+Allow: /
+
+User-agent: Claude-SearchBot
+Allow: /
+
+User-agent: anthropic-ai
+Allow: /
+
+# ───── Google ─────
+User-agent: Googlebot
+Allow: /
+
+User-agent: Google-Extended
+Allow: /
+
+User-agent: Google-CloudVertexBot
+Allow: /
+
+User-agent: GoogleOther
+Allow: /
+
+# ───── Microsoft ─────
+User-agent: Bingbot
+Allow: /
+
+# ───── Apple ─────
+User-agent: Applebot
+Allow: /
+
+User-agent: Applebot-Extended
+Allow: /
+
+# ───── Perplexity ─────
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: Perplexity-User
+Allow: /
+
+# ───── Meta ─────
+User-agent: Meta-ExternalAgent
+Allow: /
+
+User-agent: Meta-ExternalFetcher
+Allow: /
+
+User-agent: FacebookBot
+Allow: /
+
+# ───── Amazon ─────
+User-agent: Amazonbot
+Allow: /
+
+User-agent: NovaAct
+Allow: /
+
+# ───── DuckDuckGo ─────
+User-agent: DuckAssistBot
+Allow: /
+
+# ───── Mistral ─────
+User-agent: MistralAI-User
+Allow: /
+
+# ───── ByteDance ─────
+User-agent: Bytespider
+Allow: /
+
+# ───── Common Crawl (training corpus used by many AI models) ─────
+User-agent: CCBot
+Allow: /
+
+# ───── Huawei (Petal Search; relevant for Asia/MEA markets) ─────
+User-agent: PetalBot
+Allow: /
+
+# ───── Internet Archive (Wayback Machine) ─────
+User-agent: archive.org_bot
+Allow: /
+
+User-agent: ia_archiver
+Allow: /
+
+# ───── Agentic AI assistants (browser-enabled, user-triggered) ─────
+User-agent: Manus-User
+Allow: /
+
+User-agent: Devin
+Allow: /
+
+User-agent: LinerBot
+Allow: /
+
+User-agent: QualifiedBot
+Allow: /
+
+# ───── Optional: regional search engines (uncomment if relevant) ─────
+# User-agent: YandexBot
+# Allow: /
+#
+# User-agent: Baiduspider
+# Allow: /
+
+# ───── All other crawlers ─────
+User-agent: *
+Allow: /
+
+# Discoverability
 Sitemap: https://21.dev/sitemap.xml
+
+# AI-friendly documentation (informational; AI crawlers fetch these directly from /)
+# llms.txt:      https://21.dev/llms.txt
+# llms-full.txt: https://21.dev/llms-full.txt
