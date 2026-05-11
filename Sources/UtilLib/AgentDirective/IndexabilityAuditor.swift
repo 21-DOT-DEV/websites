@@ -219,6 +219,35 @@ public enum IndexabilityAuditor {
         }
     }
 
+    /// One article-shape DocC page (`role == "article"`, no `symbolKind`) that
+    /// is NOT in the current `indexablePages` allowlist.
+    ///
+    /// Articles are hand-curated — they live in per-module `llms.txt` files
+    /// and the corresponding registry allowlist, NOT in the policy-gated
+    /// symbol audit. This bucket exists to surface the *drift signal* (the
+    /// archive shipped a new article that hasn't been added to the registry
+    /// yet) so future bumps don't silently noindex newly-shipped prose.
+    ///
+    /// Informational only: `newArticles` does NOT contribute to
+    /// `AuditReport.hasGap` and never flips `--strict` exit codes. The
+    /// editorial decision (add to `indexablePages` + write a `## Documentation`
+    /// bullet) stays with the maintainer.
+    public struct ArticleEntry: Sendable, Equatable, Hashable {
+        /// Canonical URL form (e.g., `documentation/event/asynctcpserverinswift`).
+        public let path: String
+        /// Approximate authored char count from `primaryContentSections`,
+        /// shown so maintainers can prioritize long-form prose over stubs.
+        public let chars: Int
+        /// `metadata.title` from the DocC sidecar, or `"?"` when missing.
+        public let title: String
+
+        public init(path: String, chars: Int, title: String) {
+            self.path = path
+            self.chars = chars
+            self.title = title
+        }
+    }
+
     /// Result of evaluating a single allowlist entry against the hybrid policy.
     public enum AllowlistStatus: Sendable, Equatable {
         /// Sidecar exists, is a symbol page, AND passes the hybrid policy.
@@ -253,6 +282,13 @@ public enum IndexabilityAuditor {
         /// cheapest editorial wins. Informational only; does NOT contribute
         /// to `AuditReport.hasGap`.
         public let candidates: [CandidateEntry]
+        /// Article-shape DocC pages discovered in the archive but NOT in the
+        /// allowlist. Editorial drift signal — articles are hand-curated, so
+        /// the auditor never auto-adds, but it must surface drift so the next
+        /// bump PR can decide whether to add a Documentation bullet. Like
+        /// `candidates`, this bucket is informational only and does NOT
+        /// contribute to `AuditReport.hasGap`.
+        public let newArticles: [ArticleEntry]
 
         public init(
             module: String,
@@ -260,7 +296,8 @@ public enum IndexabilityAuditor {
             alreadyAllowed: [EligiblePage],
             newlyDiscovered: [EligiblePage],
             staleEntries: [StaleEntry] = [],
-            candidates: [CandidateEntry] = []
+            candidates: [CandidateEntry] = [],
+            newArticles: [ArticleEntry] = []
         ) {
             self.module = module
             self.eligible = eligible
@@ -268,6 +305,7 @@ public enum IndexabilityAuditor {
             self.newlyDiscovered = newlyDiscovered
             self.staleEntries = staleEntries
             self.candidates = candidates
+            self.newArticles = newArticles
         }
     }
 
@@ -295,6 +333,13 @@ public enum IndexabilityAuditor {
         /// candidate counts never affect `hasGap` or CI-strict exit codes.
         public var totalCandidates: Int {
             modules.reduce(0) { $0 + $1.candidates.count }
+        }
+
+        /// Total newly-discovered articles across all modules. Editorial
+        /// drift signal — like `totalCandidates`, never affects `hasGap`
+        /// or CI-strict exit codes (articles are hand-curated).
+        public var totalNewArticles: Int {
+            modules.reduce(0) { $0 + $1.newArticles.count }
         }
 
         /// Bidirectional drift signal: true when the registry doesn't match
@@ -333,6 +378,12 @@ public enum IndexabilityAuditor {
         struct Metadata: Decodable {
             let roleHeading: String?
             let symbolKind: String?
+            /// DocC's high-level page classification (`"article"`, `"symbol"`,
+            /// `"collectionGroup"`, etc.). Used by `evaluateArticle(...)` to
+            /// distinguish hand-curated articles from auto-generated landings.
+            let role: String?
+            /// Human-readable page title, shown in article-drift output.
+            let title: String?
         }
         let metadata: Metadata?
     }
@@ -388,13 +439,16 @@ public enum IndexabilityAuditor {
     /// entry into one of three buckets:
     ///
     /// - `.eligible(EligiblePage)` — sidecar is a symbol page that passes policy
-    /// - `.stale(StaleEntry)` — sidecar is a symbol page that fails policy
-    /// - `.outOfScope(reason)` — no sidecar, article, or path outside the root
+    /// - `.stale(StaleEntry)` — sidecar is a symbol page that fails policy,
+    ///   OR the sidecar is missing entirely (page deleted/renamed upstream)
+    /// - `.outOfScope(reason)` — article, bare-root hub, or path outside the root
     ///
     /// The `.stale` case is the SEO-relevant drift signal: the registry says
-    /// this page should be indexed, but the authored prose has fallen below
-    /// the policy thresholds. Helpful Content systems penalize domains with
-    /// too many thin-content pages in the sitemap.
+    /// this page should be indexed, but either the authored prose has fallen
+    /// below the policy thresholds OR the upstream archive no longer contains
+    /// the page at all. Helpful Content systems penalize domains with too
+    /// many thin-content pages in the sitemap, and dead URLs in the sitemap
+    /// surface as 404s to crawlers.
     ///
     /// - Parameters:
     ///   - allowlistPath: Canonical URL form (e.g., `documentation/p256k/foo`).
@@ -419,7 +473,16 @@ public enum IndexabilityAuditor {
         let sidecarURL = archivesRoot.appendingPathComponent(relative + ".json")
 
         guard FileManager.default.fileExists(atPath: sidecarURL.path) else {
-            return .outOfScope("no sidecar at \(sidecarURL.lastPathComponent)")
+            // Missing sidecar at a non-bare-root path means the upstream
+            // archive no longer contains this page — typically a
+            // renamed/deleted symbol (e.g., a method whose signature gained
+            // a new parameter, retiring the old canonical URL). Bare-root
+            // hubs (`documentation/<module>`) are handled earlier via the
+            // `relative.isEmpty` branch and stay outOfScope.
+            return .stale(StaleEntry(
+                path: allowlistPath,
+                reason: "no sidecar at \(sidecarURL.lastPathComponent) (deleted or renamed upstream)"
+            ))
         }
         let data: Data
         do {
@@ -564,6 +627,49 @@ public enum IndexabilityAuditor {
         )
     }
 
+    /// Classify one DocC sidecar as an article-shape page.
+    ///
+    /// Returns an `ArticleEntry` iff the sidecar's `metadata.role == "article"`
+    /// AND it has no `symbolKind` (so it's a hand-authored prose page, not an
+    /// auto-generated symbol or collection landing). Articles are NOT
+    /// policy-gated — the auditor's job is to surface drift between the
+    /// archive's article set and the registry's `indexablePages` allowlist,
+    /// not to vet authored prose length the way symbol pages are vetted.
+    ///
+    /// Returns `nil` for symbol pages, `collectionGroup` landings,
+    /// non-article roles, and malformed sidecars. Malformed bytes are
+    /// swallowed rather than thrown so a single corrupt file in the
+    /// archive can't abort the whole audit pass.
+    ///
+    /// - Parameters:
+    ///   - data: Raw JSON bytes of the DocC sidecar.
+    ///   - canonicalPath: Canonical URL form (e.g.,
+    ///     `documentation/event/asynctcpserverinswift`).
+    /// - Returns: An `ArticleEntry` when the sidecar is an article, else `nil`.
+    /// - Throws: Does not throw — JSON parse failures yield `nil`.
+    public static func evaluateArticle(
+        sidecarData data: Data,
+        canonicalPath: String
+    ) throws -> ArticleEntry? {
+        guard let shaped = try? JSONDecoder().decode(AuditSidecar.self, from: data),
+              let meta = shaped.metadata,
+              meta.role == "article",
+              meta.symbolKind == nil else {
+            return nil
+        }
+        let chars: Int
+        if let any = try? JSONSerialization.jsonObject(with: data, options: []),
+           let root = any as? [String: Any] {
+            chars = authoredCharCount(root: root)
+        } else {
+            chars = 0
+        }
+        // Fallback to "?" rather than empty string so the CLI output is
+        // unambiguous (an empty title would render as a dangling bracket).
+        let title = meta.title ?? "?"
+        return ArticleEntry(path: canonicalPath, chars: chars, title: title)
+    }
+
     /// Audit one module's sidecar tree.
     ///
     /// - Parameters:
@@ -596,14 +702,18 @@ public enum IndexabilityAuditor {
             throw AuditError.archivesRootMissing(moduleRoot)
         }
 
-        // Phase A: discover all eligible pages AND near-miss candidates by
-        // scanning the sidecar tree. Each sidecar is evaluated twice per
-        // pass: once against the hybrid policy (`evaluate`) and, on
-        // failure, against the near-miss threshold (`evaluateNearMiss`).
-        // The two evaluations are disjoint — a page can be either eligible
-        // OR a candidate, never both.
+        // Phase A: discover all eligible pages, near-miss candidates, AND
+        // article-shape pages by scanning the sidecar tree. Each sidecar is
+        // classified into AT MOST ONE bucket:
+        //   - eligible (passes hybrid policy)
+        //   - candidate (symbol page, not eligible, near-miss, NOT allowlisted)
+        //   - article (role=article, NOT allowlisted)
+        // Articles are gated separately from the symbol path — they're
+        // hand-curated, not policy-gated, so they bypass `evaluate` /
+        // `evaluateNearMiss` entirely and surface as editorial drift.
         var eligible: [EligiblePage] = []
         var candidates: [CandidateEntry] = []
+        var newArticles: [ArticleEntry] = []
         let enumerator = FileManager.default.enumerator(
             at: moduleRoot,
             includingPropertiesForKeys: [.isRegularFileKey],
@@ -620,6 +730,17 @@ public enum IndexabilityAuditor {
             catch { continue }  // unreadable file — skip silently
             if let page = try? evaluate(sidecarData: data, canonicalPath: canonical) {
                 eligible.append(page)
+            } else if let article = try? evaluateArticle(sidecarData: data, canonicalPath: canonical) {
+                // Article-shape page — emit as drift signal ONLY if not in
+                // the allowlist. In-allowlist articles are the steady state
+                // (the maintainer has already curated them) so they don't
+                // need to be reported. Articles can never be `eligible` or
+                // `candidate` (those buckets require `symbolKind`), so this
+                // branch is disjoint from the symbol branches above and
+                // below — no double-counting risk.
+                if !currentAllowlist.contains(canonical) {
+                    newArticles.append(article)
+                }
             } else if !currentAllowlist.contains(canonical),
                       let candidate = try? evaluateNearMiss(
                           sidecarData: data,
@@ -637,6 +758,7 @@ public enum IndexabilityAuditor {
 
         eligible.sort { $0.path < $1.path }
         candidates.sort { $0.path < $1.path }
+        newArticles.sort { $0.path < $1.path }
         let eligiblePaths = Set(eligible.map(\.path))
         let already = eligible.filter { currentAllowlist.contains($0.path) }
         let gap = eligible.filter { !currentAllowlist.contains($0.path) }
@@ -662,7 +784,8 @@ public enum IndexabilityAuditor {
             alreadyAllowed: already,
             newlyDiscovered: gap,
             staleEntries: stale,
-            candidates: candidates
+            candidates: candidates,
+            newArticles: newArticles
         )
     }
 

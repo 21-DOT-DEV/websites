@@ -350,22 +350,28 @@ extension AgentDirectiveCommand {
             // Stale entries lead — they're the SEO-relevant drift signal
             // (thin pages still in the sitemap risk Helpful Content demotion).
             // Newly-discovered entries follow as the secondary editorial signal.
-            // Near-miss candidates trail as the lowest-priority editorial polish.
+            // New articles and near-miss candidates trail as editorial polish.
             for moduleReport in report.modules {
                 let staleCount = moduleReport.staleEntries.count
                 let newCount = moduleReport.newlyDiscovered.count
                 let candidateCount = moduleReport.candidates.count
+                let articleCount = moduleReport.newArticles.count
                 let bullet: String
                 if staleCount > 0 {
                     bullet = "⚠️"
                 } else if newCount > 0 {
                     bullet = "+"
+                } else if articleCount > 0 {
+                    bullet = "📄"
                 } else if candidateCount > 0 {
                     bullet = "💡"
                 } else {
                     bullet = "✓"
                 }
                 var header = "\(bullet) \(moduleReport.module): \(moduleReport.eligible.count) eligible, \(staleCount) stale, \(newCount) new"
+                if articleCount > 0 {
+                    header += ", \(articleCount) new article\(articleCount == 1 ? "" : "s")"
+                }
                 if candidateGap > 0 {
                     header += ", \(candidateCount) candidate\(candidateCount == 1 ? "" : "s")"
                 }
@@ -386,6 +392,13 @@ extension AgentDirectiveCommand {
                         print("    + \(entry.path)    [\(entry.reason)]")
                     }
                 }
+                // New articles — hand-curated drift signal. Surface title and
+                // char count so maintainers can prioritize long-form prose
+                // over stubs when deciding what to add to `indexablePages`
+                // and the `## Documentation` section of the per-module llms.txt.
+                for article in moduleReport.newArticles {
+                    print("    📄 \(article.path)    [\(article.chars) chars]  \"\(article.title)\"")
+                }
                 // Finally, near-miss candidates (editorial polish — add ≈1 sentence
                 // of authored prose to convert each into an indexable page).
                 for candidate in moduleReport.candidates {
@@ -395,10 +408,16 @@ extension AgentDirectiveCommand {
 
             print()
             var totals = "Total: \(report.totalEligible) eligible, \(report.totalStaleEntries) stale, \(report.totalNewlyDiscovered) new"
+            if report.totalNewArticles > 0 {
+                totals += ", \(report.totalNewArticles) new article\(report.totalNewArticles == 1 ? "" : "s")"
+            }
             if candidateGap > 0 {
                 totals += ", \(report.totalCandidates) candidate\(report.totalCandidates == 1 ? "" : "s")"
             }
             print("\(totals).")
+            if report.totalNewArticles > 0 {
+                print("📄 New articles are role=article DocC pages not in the registry — add to `indexablePages` and the `## Documentation` section of the per-module llms.txt.")
+            }
             if candidateGap > 0, report.totalCandidates > 0 {
                 print("💡 Candidates are pages \(candidateGap) or fewer chars from their threshold — add ~1 sentence of authored prose to each to convert into indexable pages.")
             }

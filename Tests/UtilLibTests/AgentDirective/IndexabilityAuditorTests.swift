@@ -499,20 +499,27 @@ struct IndexabilityAuditorStaleTests {
         #expect(entry.reason.contains("≥200"))
     }
 
-    @Test("evaluateAllowlistEntry returns .outOfScope when no sidecar exists")
-    func outOfScopeNoSidecar() throws {
+    @Test("evaluateAllowlistEntry returns .stale when sidecar is missing (deleted/renamed upstream)")
+    func staleOnMissingSidecar() throws {
         let root = try Self.makeFixtureRoot(sidecars: [:])
         defer { try? FileManager.default.removeItem(at: root.deletingLastPathComponent()) }
 
+        // An allowlist entry pointing at a non-bare-root path with no sidecar
+        // on disk means the page was renamed or deleted upstream (e.g.,
+        // `socket/connect(to:loop:)` → `socket/connect(to:loop:timeout:)`).
+        // Flag as stale so the registry can be cleaned up — left in place
+        // it would 404 in the sitemap.
         let status = try IndexabilityAuditor.evaluateAllowlistEntry(
             allowlistPath: "documentation/p256k/missing",
             archivesRoot: root
         )
-        guard case .outOfScope(let reason) = status else {
-            Issue.record("expected .outOfScope, got \(status)")
+        guard case .stale(let entry) = status else {
+            Issue.record("expected .stale, got \(status)")
             return
         }
-        #expect(reason.contains("no sidecar"))
+        #expect(entry.path == "documentation/p256k/missing")
+        #expect(entry.reason.contains("no sidecar"))
+        #expect(entry.reason.contains("deleted"))
     }
 
     @Test("evaluateAllowlistEntry returns .outOfScope for article (no symbolKind)")
@@ -585,21 +592,27 @@ struct IndexabilityAuditorStaleTests {
         #expect(report.staleEntries.map(\.path) == ["documentation/p256k/thin"])
     }
 
-    @Test("auditModule does NOT mark hub-like allowlist entries (no sidecar) as stale")
-    func auditModuleSkipsHubsInStaleCheck() throws {
+    @Test("auditModule flags allowlist entries pointing at missing sidecars as stale (deleted upstream)")
+    func auditModuleDetectsDeletedPages() throws {
         let root = try Self.makeFixtureRoot(sidecars: [
             "p256k/big.json": Self.symbolSidecar(roleHeading: "Structure", symbolKind: "struct", textLength: 250),
         ])
         defer { try? FileManager.default.removeItem(at: root.deletingLastPathComponent()) }
 
-        // 'documentation/p256k/p256k' has no sidecar → out-of-scope, NOT stale.
+        // 'documentation/p256k/renamed' has no sidecar in the archive — e.g.,
+        // a method whose signature changed upstream so the old canonical URL
+        // no longer resolves. Must surface as stale so it can be removed
+        // from the registry before the next sitemap publish.
         let report = try IndexabilityAuditor.auditModule(
             module: "p256k",
             archivesRoot: root,
-            currentAllowlist: ["documentation/p256k/big", "documentation/p256k/p256k"]
+            currentAllowlist: ["documentation/p256k/big", "documentation/p256k/renamed"]
         )
-        #expect(report.staleEntries.isEmpty,
-                "Hub entries with no sidecar must not be flagged as stale; got \(report.staleEntries.map(\.path))")
+        #expect(report.staleEntries.map(\.path) == ["documentation/p256k/renamed"])
+        if let entry = report.staleEntries.first {
+            #expect(entry.reason.contains("no sidecar"))
+            #expect(entry.reason.contains("deleted"))
+        }
     }
 
     @Test("auditModule does NOT mark articles (no symbolKind) as stale")
@@ -1444,5 +1457,286 @@ struct IndexabilityAuditorStaleReasonTests {
         #expect(entry.reason.contains("method:Initializer"))
         #expect(entry.reason.contains("≥300"))
         #expect(!entry.reason.contains("aside:"))
+    }
+}
+
+// MARK: - Article Drift Detection
+//
+// Articles (`metadata.role == "article"`, no `symbolKind`) are hand-curated
+// in per-module `llms.txt` files — they are NOT policy-gated. But the auditor
+// must still surface drift between archives and the registry so future bumps
+// catch newly-shipped articles before they get noindex'd in the live site.
+// `newArticles` is informational only; it does NOT contribute to `hasGap`
+// or flip `--strict` exit codes (matches the `candidates` semantics).
+
+@Suite("IndexabilityAuditor — Article Drift")
+struct IndexabilityAuditorArticleTests {
+
+    // MARK: Fixture helpers
+
+    /// Build an article sidecar (role=article, no symbolKind).
+    private static func articleSidecar(
+        title: String = "An Article",
+        textLength: Int = 500
+    ) -> Data {
+        let json: [String: Any] = [
+            "metadata": [
+                "role": "article",
+                "title": title,
+            ],
+            "primaryContentSections": [
+                [
+                    "kind": "content",
+                    "content": [
+                        [
+                            "type": "paragraph",
+                            "inlineContent": [
+                                ["type": "text", "text": String(repeating: "a", count: textLength)] as [String: Any]
+                            ],
+                        ] as [String: Any]
+                    ],
+                ] as [String: Any]
+            ],
+        ]
+        return try! JSONSerialization.data(withJSONObject: json, options: [])
+    }
+
+    /// Build a symbol-page sidecar (has symbolKind — NOT an article).
+    private static func symbolSidecar(textLength: Int = 250) -> Data {
+        let json: [String: Any] = [
+            "metadata": [
+                "roleHeading": "Structure",
+                "symbolKind": "struct",
+                "role": "symbol",
+            ],
+            "primaryContentSections": [
+                [
+                    "kind": "content",
+                    "content": [
+                        [
+                            "type": "paragraph",
+                            "inlineContent": [
+                                ["type": "text", "text": String(repeating: "x", count: textLength)] as [String: Any]
+                            ],
+                        ] as [String: Any]
+                    ],
+                ] as [String: Any]
+            ],
+        ]
+        return try! JSONSerialization.data(withJSONObject: json, options: [])
+    }
+
+    /// Build an auto-generated collection-group landing (role=collectionGroup, no symbolKind).
+    /// Mirrors DocC's `LocalizedError-Implementations` / `Error-Implementations` shape.
+    private static func collectionGroupSidecar() -> Data {
+        let json: [String: Any] = [
+            "metadata": [
+                "role": "collectionGroup",
+                "title": "LocalizedError Implementations",
+            ],
+            "primaryContentSections": [] as [Any],
+        ]
+        return try! JSONSerialization.data(withJSONObject: json, options: [])
+    }
+
+    private static func makeFixtureRoot(sidecars: [String: Data]) throws -> URL {
+        let tmp = URL(fileURLWithPath: NSTemporaryDirectory())
+            .appendingPathComponent("IndexabilityAuditorArticleTests-\(UUID().uuidString)", isDirectory: true)
+            .appendingPathComponent("documentation", isDirectory: true)
+        try FileManager.default.createDirectory(at: tmp, withIntermediateDirectories: true)
+        for (relativePath, data) in sidecars {
+            let url = tmp.appendingPathComponent(relativePath)
+            try FileManager.default.createDirectory(
+                at: url.deletingLastPathComponent(),
+                withIntermediateDirectories: true
+            )
+            try data.write(to: url)
+        }
+        return tmp
+    }
+
+    // MARK: evaluateArticle — per-sidecar classification
+
+    @Test("evaluateArticle returns ArticleEntry for sidecar with role=article")
+    func articleDetected() throws {
+        let data = Self.articleSidecar(title: "Getting Started", textLength: 750)
+        let entry = try IndexabilityAuditor.evaluateArticle(
+            sidecarData: data,
+            canonicalPath: "documentation/event/gettingstarted"
+        )
+        try #require(entry != nil)
+        #expect(entry!.path == "documentation/event/gettingstarted")
+        #expect(entry!.title == "Getting Started")
+        #expect(entry!.chars == 750)
+    }
+
+    @Test("evaluateArticle returns nil for symbol pages (has symbolKind)")
+    func symbolPagesNotArticles() throws {
+        let data = Self.symbolSidecar()
+        let entry = try IndexabilityAuditor.evaluateArticle(
+            sidecarData: data,
+            canonicalPath: "documentation/event/eventloop"
+        )
+        #expect(entry == nil)
+    }
+
+    @Test("evaluateArticle returns nil for collectionGroup landings (auto-generated)")
+    func collectionGroupNotArticle() throws {
+        let data = Self.collectionGroupSidecar()
+        let entry = try IndexabilityAuditor.evaluateArticle(
+            sidecarData: data,
+            canonicalPath: "documentation/event/socketerror/localizederror-implementations"
+        )
+        #expect(entry == nil)
+    }
+
+    @Test("evaluateArticle returns nil for malformed sidecar JSON")
+    func malformedSidecarNotArticle() throws {
+        let data = Data("not valid json".utf8)
+        let entry = try IndexabilityAuditor.evaluateArticle(
+            sidecarData: data,
+            canonicalPath: "documentation/event/junk"
+        )
+        #expect(entry == nil)
+    }
+
+    @Test("evaluateArticle falls back to title='?' when metadata.title is missing")
+    func articleMissingTitleFallback() throws {
+        // Minimal article-shape sidecar without a title field.
+        let json: [String: Any] = [
+            "metadata": ["role": "article"],
+            "primaryContentSections": [] as [Any],
+        ]
+        let data = try JSONSerialization.data(withJSONObject: json, options: [])
+        let entry = try IndexabilityAuditor.evaluateArticle(
+            sidecarData: data,
+            canonicalPath: "documentation/event/untitled"
+        )
+        try #require(entry != nil)
+        #expect(entry!.title == "?")
+    }
+
+    // MARK: auditModule integration
+
+    @Test("auditModule populates newArticles for articles NOT in allowlist")
+    func auditModuleSurfacesNewArticles() throws {
+        let root = try Self.makeFixtureRoot(sidecars: [
+            "event/gettingstarted.json":   Self.articleSidecar(title: "Getting Started", textLength: 500),
+            "event/newarticle.json":       Self.articleSidecar(title: "Brand New Article", textLength: 4000),
+            "event/eventloop.json":        Self.symbolSidecar(textLength: 250),
+        ])
+        defer { try? FileManager.default.removeItem(at: root.deletingLastPathComponent()) }
+
+        let report = try IndexabilityAuditor.auditModule(
+            module: "event",
+            archivesRoot: root,
+            // gettingstarted is in the allowlist; newarticle is NOT.
+            currentAllowlist: ["documentation/event/gettingstarted", "documentation/event/eventloop"]
+        )
+        #expect(report.newArticles.map(\.path) == ["documentation/event/newarticle"])
+        #expect(report.newArticles.first?.title == "Brand New Article")
+        #expect(report.newArticles.first?.chars == 4000)
+    }
+
+    @Test("auditModule excludes already-allowlisted articles from newArticles")
+    func auditModuleExcludesAllowlistedArticles() throws {
+        let root = try Self.makeFixtureRoot(sidecars: [
+            "event/gettingstarted.json": Self.articleSidecar(textLength: 500),
+        ])
+        defer { try? FileManager.default.removeItem(at: root.deletingLastPathComponent()) }
+
+        let report = try IndexabilityAuditor.auditModule(
+            module: "event",
+            archivesRoot: root,
+            currentAllowlist: ["documentation/event/gettingstarted"]
+        )
+        #expect(report.newArticles.isEmpty,
+                "Articles already in the allowlist must not surface as drift; got \(report.newArticles.map(\.path))")
+    }
+
+    @Test("auditModule excludes symbol pages from newArticles (even if not in allowlist)")
+    func auditModuleExcludesSymbolsFromArticles() throws {
+        let root = try Self.makeFixtureRoot(sidecars: [
+            "event/eventloop.json": Self.symbolSidecar(textLength: 250),
+        ])
+        defer { try? FileManager.default.removeItem(at: root.deletingLastPathComponent()) }
+
+        let report = try IndexabilityAuditor.auditModule(
+            module: "event",
+            archivesRoot: root,
+            currentAllowlist: []
+        )
+        #expect(report.newArticles.isEmpty,
+                "Symbol pages must not appear in newArticles (they go through the symbol policy path)")
+    }
+
+    @Test("auditModule sorts newArticles by path")
+    func auditModuleSortsNewArticles() throws {
+        let root = try Self.makeFixtureRoot(sidecars: [
+            "event/zebra.json": Self.articleSidecar(title: "Zebra", textLength: 500),
+            "event/alpha.json": Self.articleSidecar(title: "Alpha", textLength: 500),
+            "event/mango.json": Self.articleSidecar(title: "Mango", textLength: 500),
+        ])
+        defer { try? FileManager.default.removeItem(at: root.deletingLastPathComponent()) }
+
+        let report = try IndexabilityAuditor.auditModule(
+            module: "event",
+            archivesRoot: root,
+            currentAllowlist: []
+        )
+        #expect(report.newArticles.map(\.path) == [
+            "documentation/event/alpha",
+            "documentation/event/mango",
+            "documentation/event/zebra",
+        ])
+    }
+
+    @Test("auditModule respects excludedPathPrefixes for newArticles")
+    func auditModuleRespectsExclusionsForArticles() throws {
+        let root = try Self.makeFixtureRoot(sidecars: [
+            "tor/torclientarticle.json":            Self.articleSidecar(textLength: 500),
+            "tor/controlsocket/internalarticle.json": Self.articleSidecar(textLength: 500),
+        ])
+        defer { try? FileManager.default.removeItem(at: root.deletingLastPathComponent()) }
+
+        let report = try IndexabilityAuditor.auditModule(
+            module: "tor",
+            archivesRoot: root,
+            currentAllowlist: [],
+            excludedPathPrefixes: ["documentation/tor/controlsocket/"]
+        )
+        #expect(report.newArticles.map(\.path) == ["documentation/tor/torclientarticle"])
+    }
+
+    // MARK: AuditReport aggregation
+
+    @Test("AuditReport.totalNewArticles sums across modules")
+    func auditReportAggregatesNewArticles() {
+        let m1 = IndexabilityAuditor.ModuleReport(
+            module: "event", eligible: [], alreadyAllowed: [], newlyDiscovered: [],
+            newArticles: [
+                .init(path: "documentation/event/a", chars: 500, title: "A"),
+                .init(path: "documentation/event/b", chars: 600, title: "B"),
+            ]
+        )
+        let m2 = IndexabilityAuditor.ModuleReport(
+            module: "tor", eligible: [], alreadyAllowed: [], newlyDiscovered: [],
+            newArticles: [.init(path: "documentation/tor/c", chars: 700, title: "C")]
+        )
+        let report = IndexabilityAuditor.AuditReport(modules: [m1, m2])
+        #expect(report.totalNewArticles == 3)
+    }
+
+    @Test("AuditReport.hasGap is NOT flipped by newArticles alone (advisory only)")
+    func newArticlesDoNotFlipHasGap() {
+        let report = IndexabilityAuditor.AuditReport(modules: [
+            .init(
+                module: "event", eligible: [], alreadyAllowed: [], newlyDiscovered: [],
+                newArticles: [.init(path: "documentation/event/a", chars: 500, title: "A")]
+            )
+        ])
+        // newArticles is editorial drift, not policy drift — must behave like candidates.
+        #expect(!report.hasGap)
+        #expect(report.totalNewArticles == 1)
     }
 }

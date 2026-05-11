@@ -391,22 +391,27 @@ jobs:
 
           # Extract gap counts from the per-entry lines:
           #   "    ⚠ documentation/..." → stale entry
-          #   "    + documentation/..." → newly-discovered entry
+          #   "    + documentation/..." → newly-discovered symbol page
+          #   "    📄 documentation/..." → newly-discovered article (hand-curated)
           stale_count=$(grep -cE '^[[:space:]]+⚠' /tmp/audit.log || true)
           new_count=$(grep -cE '^[[:space:]]+\+' /tmp/audit.log || true)
+          article_count=$(grep -cE '^[[:space:]]+📄' /tmp/audit.log || true)
 
-          if [ "$stale_count" -gt 0 ] || [ "$new_count" -gt 0 ]; then
+          if [ "$stale_count" -gt 0 ] || [ "$new_count" -gt 0 ] || [ "$article_count" -gt 0 ]; then
             {
-              echo "## 🔍 Indexability drift: ${stale_count} stale, ${new_count} new"
+              echo "## 🔍 Indexability drift: ${stale_count} stale, ${new_count} new, ${article_count} new article(s)"
               echo ""
 
               if [ "$stale_count" -gt 0 ]; then
                 echo "### ⚠️ Stale entries (${stale_count}) — SEO priority"
                 echo ""
                 echo "These pages are in \`external-archives.json\`'s \`indexablePages\`"
-                echo "but the authored prose has fallen below policy thresholds. They"
-                echo "are currently in the sitemap as thin content, which can trigger"
-                echo "Google Helpful Content demotion across the whole domain."
+                echo "but the authored prose has fallen below policy thresholds, OR"
+                echo "the upstream archive no longer contains the page (renamed /"
+                echo "deleted symbol — the registry now points at a dead URL). Both"
+                echo "shapes are SEO-relevant: thin content can trigger Google"
+                echo "Helpful Content demotion across the whole domain, and dead"
+                echo "URLs in the sitemap surface as 404s to crawlers."
                 echo ""
                 echo "**Action**: remove from \`indexablePages\` in the next registry PR."
                 echo ""
@@ -431,6 +436,27 @@ jobs:
                 echo ""
               fi
 
+              if [ "$article_count" -gt 0 ]; then
+                echo "### 📄 New articles (${article_count}) — editorial polish"
+                echo ""
+                echo "These are \`role=article\` DocC pages (hand-authored prose,"
+                echo "not symbol references) that ship in the archive but are not"
+                echo "yet in the registry. They are currently \`noindex\` and"
+                echo "excluded from the sitemap. Unlike symbol pages, articles"
+                echo "are not policy-gated — they're hand-curated, so the auditor"
+                echo "surfaces them as drift but never auto-adds."
+                echo ""
+                echo "**Action**: for each article worth indexing, (a) add to"
+                echo "\`indexablePages\` in \`external-archives.json\`, and (b) add a"
+                echo "bullet under \`## Documentation\` in the per-module"
+                echo "\`Resources/docs-21-dev/data/documentation/<module>/llms.txt\`."
+                echo ""
+                echo '```'
+                grep -E '^[[:space:]]+📄' /tmp/audit.log
+                echo '```'
+                echo ""
+              fi
+
               echo "Re-run locally:"
               echo '```'
               echo 'nocorrect swift run util agent-directive audit'
@@ -442,6 +468,9 @@ jobs:
             fi
             if [ "$new_count" -gt 0 ]; then
               echo "📋 ${new_count} newly-eligible page(s) recorded in run summary"
+            fi
+            if [ "$article_count" -gt 0 ]; then
+              echo "📄 ${article_count} newly-discovered article(s) recorded in run summary"
             fi
           else
             echo "✅ Allowlist matches authored prose in both directions — no drift"
