@@ -499,20 +499,27 @@ struct IndexabilityAuditorStaleTests {
         #expect(entry.reason.contains("≥200"))
     }
 
-    @Test("evaluateAllowlistEntry returns .outOfScope when no sidecar exists")
-    func outOfScopeNoSidecar() throws {
+    @Test("evaluateAllowlistEntry returns .stale when sidecar is missing (deleted/renamed upstream)")
+    func staleOnMissingSidecar() throws {
         let root = try Self.makeFixtureRoot(sidecars: [:])
         defer { try? FileManager.default.removeItem(at: root.deletingLastPathComponent()) }
 
+        // An allowlist entry pointing at a non-bare-root path with no sidecar
+        // on disk means the page was renamed or deleted upstream (e.g.,
+        // `socket/connect(to:loop:)` → `socket/connect(to:loop:timeout:)`).
+        // Flag as stale so the registry can be cleaned up — left in place
+        // it would 404 in the sitemap.
         let status = try IndexabilityAuditor.evaluateAllowlistEntry(
             allowlistPath: "documentation/p256k/missing",
             archivesRoot: root
         )
-        guard case .outOfScope(let reason) = status else {
-            Issue.record("expected .outOfScope, got \(status)")
+        guard case .stale(let entry) = status else {
+            Issue.record("expected .stale, got \(status)")
             return
         }
-        #expect(reason.contains("no sidecar"))
+        #expect(entry.path == "documentation/p256k/missing")
+        #expect(entry.reason.contains("no sidecar"))
+        #expect(entry.reason.contains("deleted"))
     }
 
     @Test("evaluateAllowlistEntry returns .outOfScope for article (no symbolKind)")
@@ -585,21 +592,27 @@ struct IndexabilityAuditorStaleTests {
         #expect(report.staleEntries.map(\.path) == ["documentation/p256k/thin"])
     }
 
-    @Test("auditModule does NOT mark hub-like allowlist entries (no sidecar) as stale")
-    func auditModuleSkipsHubsInStaleCheck() throws {
+    @Test("auditModule flags allowlist entries pointing at missing sidecars as stale (deleted upstream)")
+    func auditModuleDetectsDeletedPages() throws {
         let root = try Self.makeFixtureRoot(sidecars: [
             "p256k/big.json": Self.symbolSidecar(roleHeading: "Structure", symbolKind: "struct", textLength: 250),
         ])
         defer { try? FileManager.default.removeItem(at: root.deletingLastPathComponent()) }
 
-        // 'documentation/p256k/p256k' has no sidecar → out-of-scope, NOT stale.
+        // 'documentation/p256k/renamed' has no sidecar in the archive — e.g.,
+        // a method whose signature changed upstream so the old canonical URL
+        // no longer resolves. Must surface as stale so it can be removed
+        // from the registry before the next sitemap publish.
         let report = try IndexabilityAuditor.auditModule(
             module: "p256k",
             archivesRoot: root,
-            currentAllowlist: ["documentation/p256k/big", "documentation/p256k/p256k"]
+            currentAllowlist: ["documentation/p256k/big", "documentation/p256k/renamed"]
         )
-        #expect(report.staleEntries.isEmpty,
-                "Hub entries with no sidecar must not be flagged as stale; got \(report.staleEntries.map(\.path))")
+        #expect(report.staleEntries.map(\.path) == ["documentation/p256k/renamed"])
+        if let entry = report.staleEntries.first {
+            #expect(entry.reason.contains("no sidecar"))
+            #expect(entry.reason.contains("deleted"))
+        }
     }
 
     @Test("auditModule does NOT mark articles (no symbolKind) as stale")

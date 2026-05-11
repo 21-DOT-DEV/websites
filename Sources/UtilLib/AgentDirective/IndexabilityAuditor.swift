@@ -388,13 +388,16 @@ public enum IndexabilityAuditor {
     /// entry into one of three buckets:
     ///
     /// - `.eligible(EligiblePage)` — sidecar is a symbol page that passes policy
-    /// - `.stale(StaleEntry)` — sidecar is a symbol page that fails policy
-    /// - `.outOfScope(reason)` — no sidecar, article, or path outside the root
+    /// - `.stale(StaleEntry)` — sidecar is a symbol page that fails policy,
+    ///   OR the sidecar is missing entirely (page deleted/renamed upstream)
+    /// - `.outOfScope(reason)` — article, bare-root hub, or path outside the root
     ///
     /// The `.stale` case is the SEO-relevant drift signal: the registry says
-    /// this page should be indexed, but the authored prose has fallen below
-    /// the policy thresholds. Helpful Content systems penalize domains with
-    /// too many thin-content pages in the sitemap.
+    /// this page should be indexed, but either the authored prose has fallen
+    /// below the policy thresholds OR the upstream archive no longer contains
+    /// the page at all. Helpful Content systems penalize domains with too
+    /// many thin-content pages in the sitemap, and dead URLs in the sitemap
+    /// surface as 404s to crawlers.
     ///
     /// - Parameters:
     ///   - allowlistPath: Canonical URL form (e.g., `documentation/p256k/foo`).
@@ -419,7 +422,16 @@ public enum IndexabilityAuditor {
         let sidecarURL = archivesRoot.appendingPathComponent(relative + ".json")
 
         guard FileManager.default.fileExists(atPath: sidecarURL.path) else {
-            return .outOfScope("no sidecar at \(sidecarURL.lastPathComponent)")
+            // Missing sidecar at a non-bare-root path means the upstream
+            // archive no longer contains this page — typically a
+            // renamed/deleted symbol (e.g., a method whose signature gained
+            // a new parameter, retiring the old canonical URL). Bare-root
+            // hubs (`documentation/<module>`) are handled earlier via the
+            // `relative.isEmpty` branch and stay outOfScope.
+            return .stale(StaleEntry(
+                path: allowlistPath,
+                reason: "no sidecar at \(sidecarURL.lastPathComponent) (deleted or renamed upstream)"
+            ))
         }
         let data: Data
         do {
