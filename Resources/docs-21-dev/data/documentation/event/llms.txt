@@ -114,6 +114,11 @@ EventLoop.shared.schedule(after: .seconds(1)) {
 - [Production Considerations](https://docs.21.dev/data/documentation/event/productionconsiderations.md): Concurrency model, single-owner handoff invariant, resource-ownership rules, and the MVP-gap list
 - [Backend and Platforms](https://docs.21.dev/data/documentation/event/backendandplatforms.md): Multiplexer backend selection (kqueue on Apple, epoll on Linux) and supported platform matrix
 - [Choosing libevent vs Event](https://docs.21.dev/data/documentation/event/choosinglibeventvsevent.md): Product-selection guide — when to link raw `libevent` instead of the high-level `Event` Swift API
+- [How to Write an Async TCP Server in Swift](https://docs.21.dev/data/documentation/event/asynctcpserverinswift.md): End-to-end walkthrough — bind a `ServerSocket`, iterate `connections`, dispatch each client onto a structured-concurrency child task
+- [Async TCP Client for iOS in Swift](https://docs.21.dev/data/documentation/event/tcpclientforioswithswift.md): iOS-specific client recipe — backgrounding, App Transport Security caveats, and timeout-driven cancellation patterns
+- [Handling Partial Reads in Swift TCP Sockets](https://docs.21.dev/data/documentation/event/partialreadsandmessageframing.md): Length-prefix and delimiter framing strategies for turning a TCP byte stream into discrete application messages
+- [swift-event vs SwiftNIO vs Hummingbird vs Network.framework](https://docs.21.dev/data/documentation/event/swifteventvsswiftniovshummingbirdvsnetworkframework.md): Side-by-side decision table — when each library is the right fit (and when it isn't)
+- [Embedding a C Library in Swift Package Manager](https://docs.21.dev/data/documentation/event/embeddingclibrariesinswiftpm.md): How swift-event vendors libevent through SwiftPM — modulemap shape, C target layout, and the patterns reusable for other C dependencies
 - [Event Module](https://docs.21.dev/data/documentation/event.md): Module overview — platform-optimal event loops, async TCP, libevent interop
 
 ## Symbols

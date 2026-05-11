@@ -187,8 +187,10 @@
       "bundleID": "Event",
       "indexablePages": [
         "documentation/event",
+        "documentation/event/asynctcpserverinswift",
         "documentation/event/backendandplatforms",
         "documentation/event/choosinglibeventvsevent",
+        "documentation/event/embeddingclibrariesinswiftpm",
         "documentation/event/eventloop",
         "documentation/event/eventloop/backendmethod",
         "documentation/event/eventloop/init()",
@@ -197,6 +199,7 @@
         "documentation/event/eventloop/signalstream(_:)",
         "documentation/event/eventloop/sleep(for:)",
         "documentation/event/gettingstarted",
+        "documentation/event/partialreadsandmessageframing",
         "documentation/event/productionconsiderations",
         "documentation/event/serversocket",
         "documentation/event/serversocket/accept()",
@@ -215,7 +218,9 @@
         "documentation/event/socketaddress/ipv6(_:port:)",
         "documentation/event/socketaddress/port",
         "documentation/event/socketerror",
-        "documentation/event/socketerror/timeout"
+        "documentation/event/socketerror/timeout",
+        "documentation/event/swifteventvsswiftniovshummingbirdvsnetworkframework",
+        "documentation/event/tcpclientforioswithswift"
       ],
       "knownNames": {
         "eventloop": "EventLoop",

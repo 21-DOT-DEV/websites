@@ -637,14 +637,15 @@ struct AgentDirectiveTests {
         #expect(action == .skipped)
     }
 
-    @Test("Allowlist has exactly 290 entries (1 globals.hub + 131 P256K + 30 Event + 28 OpenSSL + 2 ZKP + 98 Tor)")
+    @Test("Allowlist has exactly 295 entries (1 globals.hub + 131 P256K + 35 Event + 28 OpenSSL + 2 ZKP + 98 Tor)")
     func allowlistCompleteness() {
         // Count reflects the 2026-04-30 reconciliation: +59 newly-eligible
         // pages added, -25 skeleton stubs removed (disc<150), 12 borderline
         // entries retained as editorial overrides (disc 154–289 in CI audit).
-        // 2026-05-11 swift-event 0.1.4 → 0.2.1 bump: +9 new authored pages
-        // (timer/timeout/signal APIs) -4 renamed signatures = +5 net.
-        #expect(AgentDirectiveInjector.indexablePages.count == 290)
+        // 2026-05-11 swift-event 0.1.4 → 0.2.1 bump: +9 symbol pages +5 new
+        // authored articles (timer/timeout/signal APIs plus long-form prose)
+        // -4 renamed signatures = +10 net.
+        #expect(AgentDirectiveInjector.indexablePages.count == 295)
 
         // Spot-check globals.hubs (truly cross-cutting site root only).
         #expect(AgentDirectiveInjector.indexablePages.contains("documentation"))
