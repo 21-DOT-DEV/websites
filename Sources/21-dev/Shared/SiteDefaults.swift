@@ -64,6 +64,7 @@ public struct SiteDefaults {
         resourceLinks: [
             FooterLink(text: "Documentation", href: SiteIdentity.docsBaseURL + "documentation/", isExternal: true),
             FooterLink(text: "Blog", href: "/blog/"),
+            FooterLink(text: "Packages", href: "/packages/"),
             FooterLink(text: "P256K", href: "/packages/p256k/"),
             FooterLink(text: "Swift Package Index", href: SiteIdentity.spiURL, isExternal: true)
         ],

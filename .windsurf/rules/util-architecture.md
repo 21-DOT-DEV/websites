@@ -79,10 +79,10 @@ import System
 struct CanonicalCLITests {
     let harness = TestHarness()
     
-    @Test("canonical check requires --base-url")
+    @Test("canonical fix --check requires --base-url")
     func testRequiresBaseURL() async throws {
         let result = try await harness.run(
-            arguments: ["canonical", "check", "--path", "/tmp"]
+            arguments: ["canonical", "fix", "--check", "--path", "/tmp"]
         )
         #expect(result.exitCode != 0)
         #expect(result.stderr.contains("base-url"))

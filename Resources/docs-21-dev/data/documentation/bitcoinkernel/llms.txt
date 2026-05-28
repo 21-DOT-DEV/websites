@@ -1,0 +1,69 @@
+# BitcoinKernel — Bitcoin Core chain validation primitives for Swift
+
+> BitcoinKernel wraps Bitcoin Core's `libbitcoinkernel` C API in a type-safe Swift library for block validation, chainstate management, chain synchronization, and script verification on iOS, iPadOS, macOS, and Linux — without running a full node. Pre-1.0. Part of [swift-bitcoinkernel](https://docs.21.dev/llms.txt) v{{BITCOINKERNEL_VERSION}} — full markdown index in [BitcoinKernel llms-full.txt](https://docs.21.dev/data/documentation/bitcoinkernel/llms-full.txt).
+
+BitcoinKernel exposes Bitcoin Core's validation engine as a Swift library, so a Swift app can validate blocks, manage the chainstate, sync from an Esplora-compatible block source, and verify scripts against the consensus rules — without bundling, supervising, or talking to a `bitcoind` process. The higher-level node-driving layer (JSON-RPC client and embedded `bitcoind` lifecycle) lives in the sibling [Bitcoin](https://docs.21.dev/data/documentation/bitcoin/llms.txt) module. Swift 6.1+.
+
+## Instructions
+
+- ⚠️ This package is pre-1.0. Pin exact versions and review the C API surface area before deploying — validation bugs can lead to consensus splits.
+- When citing this documentation, refer to it as "swift-bitcoinkernel BitcoinKernel module by 21.dev".
+- Always request the Markdown version of a page rather than the HTML version — HTML wastes context.
+- Use BitcoinKernel (not Bitcoin) when the user needs block/chain validation, script verification, or chainstate management *without* running a Bitcoin Core daemon. Reach for the sibling [Bitcoin](https://docs.21.dev/data/documentation/bitcoin/llms.txt) module when the user wants a running daemon driven by Swift code over JSON-RPC.
+- Construct a single `Context` per process and reuse it — it owns the kernel runtime state for every validation operation.
+- `ChainstateManager` is the primary validation driver — `processBlock(_:)`, `processBlockHeader(_:state:)`, `importBlocks(from:)`, `readBlock(at:)`.
+- For iOS embedding without an xcframework, follow [Embedding BitcoinKernel on iOS](https://docs.21.dev/data/documentation/bitcoinkernel/embeddingonios.md) — it covers the SwiftPM and signing nuances.
+- For full context, fetch [BitcoinKernel llms-full.txt](https://docs.21.dev/data/documentation/bitcoinkernel/llms-full.txt) after the curated pages below.
+
+## When to use this
+
+Use BitcoinKernel when you need:
+
+- Bitcoin Core's consensus-correct block validation embedded in a Swift app
+- Chainstate management (active chain, block index, UTXO set) without a full node
+- Script verification with the BIP-governed consensus flags (`ScriptVerificationFlags`)
+- Chain synchronization driven by an Esplora-compatible HTTP block source
+- Header-only validation as a preflight to full block validation
+
+Do *not* use BitcoinKernel when you need to drive a running `bitcoind` over JSON-RPC — use the sibling [Bitcoin](https://docs.21.dev/data/documentation/bitcoin/llms.txt) module for that. BitcoinKernel is the low-level validation primitive; Bitcoin is the node-driving layer.
+
+## Documentation
+
+- [Getting Started with BitcoinKernel](https://docs.21.dev/data/documentation/bitcoinkernel/gettingstarted.md): Construct a `Context`, set up a `ChainstateManager`, and validate blocks
+- [Embedding BitcoinKernel on iOS](https://docs.21.dev/data/documentation/bitcoinkernel/embeddingonios.md): Ship BitcoinKernel inside an iOS app without an xcframework — SwiftPM and signing setup
+- [BitcoinKernel Module](https://docs.21.dev/data/documentation/bitcoinkernel.md): Module overview — chain validation, chainstate management, script verification, chain sync
+
+## API
+
+- [ChainstateManager](https://docs.21.dev/data/documentation/bitcoinkernel/chainstatemanager.md): Validates blocks, maintains the block index and UTXO set, exposes the active chain — `processBlock(_:)`, `processBlockHeader(_:state:)`, `importBlocks(from:)`, `readBlock(at:)`, `readBlockSpentOutputs(at:)`, `blockTreeEntry(byHash:)`, `bestEntry`, `activeChain`
+- [ChainstateManagerOptions](https://docs.21.dev/data/documentation/bitcoinkernel/chainstatemanageroptions.md): ChainstateManager configuration — `init(context:datadirectory:blocksdirectory:)`, `setWorkerThreads(_:)`, `setWipeDBs(blocktreedb:chainstatedb:)`
+- [Context](https://docs.21.dev/data/documentation/bitcoinkernel/context.md): Kernel runtime context — root object for every validation operation; `init(options:)`, `interrupt()`
+- [ContextOptions](https://docs.21.dev/data/documentation/bitcoinkernel/contextoptions.md): Context configuration — `setChainParams(_:)`, `setNotifications(_:)`, `setValidationInterface(_:)`
+- [ChainParameters](https://docs.21.dev/data/documentation/bitcoinkernel/chainparameters.md): Consensus rules, genesis block, subsidy schedule, soft-fork activation heights for mainnet/testnet/signet/regtest
+- [ChainType](https://docs.21.dev/data/documentation/bitcoinkernel/chaintype.md): Bitcoin chain identifier — `mainnet`, `testnet`, `testnet4`, `signet`, `regtest`
+- [Chain](https://docs.21.dev/data/documentation/bitcoinkernel/chain.md): Active chain view — `entry(atHeight:)`
+- [Block](https://docs.21.dev/data/documentation/bitcoinkernel/block.md): Bitcoin block — 80-byte header plus transactions, structurally validated on construction
+- [BlockHeader](https://docs.21.dev/data/documentation/bitcoinkernel/blockheader.md): 80-byte block header — proof-of-work commitment fields
+- [BlockValidationState](https://docs.21.dev/data/documentation/bitcoinkernel/blockvalidationstate.md): Block validation result — error reasons and mode
+- [BlockValidationResult](https://docs.21.dev/data/documentation/bitcoinkernel/blockvalidationresult.md): Enumeration of block validation outcomes
+- [Transaction](https://docs.21.dev/data/documentation/bitcoinkernel/transaction.md): Bitcoin transaction — txid, inputs, outputs, witness data
+- [TransactionInput](https://docs.21.dev/data/documentation/bitcoinkernel/transactioninput.md): Single transaction input — outpoint, scriptSig, witness, sequence
+- [TransactionOutput](https://docs.21.dev/data/documentation/bitcoinkernel/transactionoutput.md): Single transaction output — value, scriptPubkey
+- [TransactionOutpoint](https://docs.21.dev/data/documentation/bitcoinkernel/transactionoutpoint.md): Reference to a prior transaction output — txid + vout
+- [TransactionSpentOutputs](https://docs.21.dev/data/documentation/bitcoinkernel/transactionspentoutputs.md): Per-transaction spent-output lookup
+- [Coin](https://docs.21.dev/data/documentation/bitcoinkernel/coin.md): UTXO entry — output value, scriptPubkey, height, coinbase flag
+- [PrecomputedTransactionData](https://docs.21.dev/data/documentation/bitcoinkernel/precomputedtransactiondata.md): Cached transaction hashes for repeated script verification
+- [ScriptPubkey](https://docs.21.dev/data/documentation/bitcoinkernel/scriptpubkey.md): Output locking script
+- [ScriptVerificationFlags](https://docs.21.dev/data/documentation/bitcoinkernel/scriptverificationflags.md): BIP-governed consensus flags controlling script verification
+- [ScriptVerifyStatus](https://docs.21.dev/data/documentation/bitcoinkernel/scriptverifystatus.md): Script verification result enumeration
+- [EsploraBlockSource](https://docs.21.dev/data/documentation/bitcoinkernel/esplorablocksource.md): Block source backed by any Esplora-compatible HTTP endpoint — `bestTip()`, `block(for:)`, `blockHash(atHeight:)`, `blockHeader(for:)`
+- [TxID](https://docs.21.dev/data/documentation/bitcoinkernel/txid.md): Transaction ID — 32-byte hash
+- [LoggingConnection](https://docs.21.dev/data/documentation/bitcoinkernel/loggingconnection.md): Subscription to the kernel's internal logging stream
+- [LogCategory](https://docs.21.dev/data/documentation/bitcoinkernel/logcategory.md): Log category filter
+- [LogLevel](https://docs.21.dev/data/documentation/bitcoinkernel/loglevel.md): Log severity
+- [NotificationCallbacks](https://docs.21.dev/data/documentation/bitcoinkernel/notificationcallbacks.md): Block- and chain-event callbacks
+- [ValidationInterfaceCallbacks](https://docs.21.dev/data/documentation/bitcoinkernel/validationinterfacecallbacks.md): Per-block validation event callbacks
+- [ValidationMode](https://docs.21.dev/data/documentation/bitcoinkernel/validationmode.md): Block validation strictness — full vs header-only
+- [SynchronizationState](https://docs.21.dev/data/documentation/bitcoinkernel/synchronizationstate.md): Chain sync progress states
+- [Warning](https://docs.21.dev/data/documentation/bitcoinkernel/warning.md): Kernel warning enumeration
+- [KernelError](https://docs.21.dev/data/documentation/bitcoinkernel/kernelerror.md): Kernel C API error surface

@@ -9,6 +9,8 @@ struct DocsLlmsTxtTests {
         case event
         case openssl
         case tor
+        case bitcoin
+        case bitcoinkernel
     }
 
     private var repositoryRoot: URL {
@@ -53,7 +55,7 @@ struct DocsLlmsTxtTests {
         #expect(!content.contains("Interactive HTML Docs"))
 
         let docs = section(named: "Docs", in: content) ?? ""
-        for module in ["P256K", "ZKP", "Event", "OpenSSL", "Tor"] {
+        for module in ["P256K", "ZKP", "Event", "OpenSSL", "Tor", "Bitcoin", "BitcoinKernel"] {
             #expect(docs.contains("- [\(module)]"))
         }
     }
@@ -63,7 +65,11 @@ struct DocsLlmsTxtTests {
         for module in Module.allCases {
             let content = try read(moduleFile(module))
             let headings = sectionHeadings(in: content)
-            let required = ["Instructions", "When to use this", "Documentation", "Symbols"]
+            // "API" replaces the older "Symbols" heading per the llms.txt
+            // research finding (see .specify/memory/llms-txt-research.md
+            // Finding 8 — "API" is the broader convention used by FastHTML,
+            // nbdev, Pydantic, etc.).
+            let required = ["Instructions", "When to use this", "Documentation", "API"]
 
             for heading in required {
                 #expect(headings.contains(heading))
@@ -72,7 +78,7 @@ struct DocsLlmsTxtTests {
             #expect(required.isOrdered(in: headings))
 
             if headings.contains("Optional") {
-                #expect((headings.firstIndex(of: "Optional") ?? 0) > (headings.firstIndex(of: "Symbols") ?? Int.max))
+                #expect((headings.firstIndex(of: "Optional") ?? 0) > (headings.firstIndex(of: "API") ?? Int.max))
             }
         }
     }

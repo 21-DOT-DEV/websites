@@ -276,6 +276,9 @@ struct P256KPage {
     
     static let faq = FAQ(items: faqItems)
     
+    // schema.org SoftwareSourceCode does NOT define `softwareVersion` or
+    // `applicationCategory` — those are SoftwareApplication-only properties.
+    // Including them here triggers a schema.org validation error in Site Audit.
     static let softwareSourceCode = SoftwareSourceCodeSchema(
         id: "\(SiteIdentity.url)packages/p256k/#software",
         name: "P256K",
@@ -294,7 +297,6 @@ struct P256KPage {
             SiteIdentity.p256kDocsURL,
             "https://swiftpackageindex.com/21-DOT-DEV/swift-secp256k1"
         ],
-        softwareVersion: "0.23.1",
         keywords: [
             "secp256k1",
             "Swift",
@@ -309,8 +311,7 @@ struct P256KPage {
         potentialAction: [
             PotentialActionSchema(type: .read, target: SiteIdentity.p256kDocsURL),
             PotentialActionSchema(type: .view, target: SiteIdentity.p256kRepoURL)
-        ],
-        applicationCategory: ["DeveloperApplication", "DeveloperTools"]
+        ]
     )
     
     static var page: some View {

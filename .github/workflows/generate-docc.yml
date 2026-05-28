@@ -42,15 +42,17 @@ jobs:
 
           # SECP256K1_VERSION is the docs-site pin (may be a prerelease), used for llms.txt stamping.
           # It is sourced from the P256K archive entry; the ZKP entry is expected to share the same tag.
-          # Keys must match the short-form keys in external-archives.json (p256k/event/openssl/tor).
+          # BITCOINKERNEL_VERSION is shared by both Bitcoin and BitcoinKernel modules (same repo, same tag).
+          # Keys must match the short-form keys in external-archives.json (p256k/event/openssl/tor/bitcoinkernel).
           SECP256K1_VERSION=$(jq -r '.archives["p256k"].tag' "$ARCHIVES_FILE")
           EVENT_VERSION=$(jq -r '.archives["event"].tag' "$ARCHIVES_FILE")
           OPENSSL_VERSION=$(jq -r '.archives["openssl"].tag' "$ARCHIVES_FILE")
           TOR_VERSION=$(jq -r '.archives["tor"].tag' "$ARCHIVES_FILE")
+          BITCOINKERNEL_VERSION=$(jq -r '.archives["bitcoinkernel"].tag' "$ARCHIVES_FILE")
 
           # Fail fast if any required key is missing or null — prevents stamping `vnull`
           # placeholders into llms.txt and shipping broken version strings to the live site.
-          for var in SECP256K1_VERSION EVENT_VERSION OPENSSL_VERSION TOR_VERSION; do
+          for var in SECP256K1_VERSION EVENT_VERSION OPENSSL_VERSION TOR_VERSION BITCOINKERNEL_VERSION; do
             value="${!var}"
             if [ -z "$value" ] || [ "$value" = "null" ]; then
               echo "❌ $var is missing or null in $ARCHIVES_FILE — refusing to stamp llms.txt"
@@ -62,11 +64,13 @@ jobs:
           echo "EVENT_VERSION=$EVENT_VERSION" >> $GITHUB_ENV
           echo "OPENSSL_VERSION=$OPENSSL_VERSION" >> $GITHUB_ENV
           echo "TOR_VERSION=$TOR_VERSION" >> $GITHUB_ENV
+          echo "BITCOINKERNEL_VERSION=$BITCOINKERNEL_VERSION" >> $GITHUB_ENV
 
-          echo "� swift-secp256k1 (docs): $SECP256K1_VERSION"
+          echo "📦 swift-secp256k1 (docs):  $SECP256K1_VERSION"
           echo "📦 swift-event:             $EVENT_VERSION"
           echo "📦 swift-openssl:           $OPENSSL_VERSION"
           echo "📦 swift-tor:               $TOR_VERSION"
+          echo "📦 swift-bitcoinkernel:     $BITCOINKERNEL_VERSION"
 
       - name: Download external DocC archives
         run: |
@@ -293,7 +297,8 @@ jobs:
           project="${{ inputs.project-name }}"
 
           # Find all llms.txt files (root + per-module) and substitute per-package version placeholders.
-          # Placeholders: {{SECP256K1_VERSION}}, {{EVENT_VERSION}}, {{OPENSSL_VERSION}}, {{TOR_VERSION}}.
+          # Placeholders: {{SECP256K1_VERSION}}, {{EVENT_VERSION}}, {{OPENSSL_VERSION}}, {{TOR_VERSION}}, {{BITCOINKERNEL_VERSION}}.
+          # BITCOINKERNEL_VERSION is shared by the Bitcoin and BitcoinKernel modules (same repo).
           stamped=0
           while IFS= read -r llms_file; do
             # NOTE: sed -i '' is macOS-specific (macos-26 runner).
@@ -303,12 +308,13 @@ jobs:
               -e "s/{{EVENT_VERSION}}/${EVENT_VERSION:-MISSING_EVENT_VERSION}/g" \
               -e "s/{{OPENSSL_VERSION}}/${OPENSSL_VERSION:-MISSING_OPENSSL_VERSION}/g" \
               -e "s/{{TOR_VERSION}}/${TOR_VERSION:-MISSING_TOR_VERSION}/g" \
+              -e "s/{{BITCOINKERNEL_VERSION}}/${BITCOINKERNEL_VERSION:-MISSING_BITCOINKERNEL_VERSION}/g" \
               "$llms_file"
 
             # Guard: fail if any known placeholder wasn't substituted.
-            if grep -qE '\{\{(SECP256K1_VERSION|EVENT_VERSION|OPENSSL_VERSION|TOR_VERSION)\}\}' "$llms_file"; then
+            if grep -qE '\{\{(SECP256K1_VERSION|EVENT_VERSION|OPENSSL_VERSION|TOR_VERSION|BITCOINKERNEL_VERSION)\}\}' "$llms_file"; then
               echo "❌ Version placeholder was not substituted in ${llms_file}"
-              grep -nE '\{\{(SECP256K1_VERSION|EVENT_VERSION|OPENSSL_VERSION|TOR_VERSION)\}\}' "$llms_file"
+              grep -nE '\{\{(SECP256K1_VERSION|EVENT_VERSION|OPENSSL_VERSION|TOR_VERSION|BITCOINKERNEL_VERSION)\}\}' "$llms_file"
               exit 1
             fi
             stamped=$((stamped + 1))
@@ -319,10 +325,11 @@ jobs:
             echo "ℹ️  No llms.txt files found for ${project}, skipping version stamp"
           else
             echo "✅ Versions stamped in ${stamped} file(s)"
-            echo "   swift-secp256k1: v${{ env.SECP256K1_VERSION }}"
-            echo "   swift-event: v${EVENT_VERSION:-MISSING}"
-            echo "   swift-openssl: v${OPENSSL_VERSION:-MISSING}"
-            echo "   swift-tor: v${TOR_VERSION:-MISSING}"
+            echo "   swift-secp256k1:      v${{ env.SECP256K1_VERSION }}"
+            echo "   swift-event:          v${EVENT_VERSION:-MISSING}"
+            echo "   swift-openssl:        v${OPENSSL_VERSION:-MISSING}"
+            echo "   swift-tor:            v${TOR_VERSION:-MISSING}"
+            echo "   swift-bitcoinkernel:  v${BITCOINKERNEL_VERSION:-MISSING}"
           fi
       
       - name: Fix canonical URLs
@@ -341,16 +348,29 @@ jobs:
             --path "$output_dir" \
             --base-url "$BASE_URL"
       
+      - name: Rewrite anchor links
+        run: |
+          project="${{ inputs.project-name }}"
+          output_dir="Websites/${project}"
+
+          echo "🔗 Rewriting anchor links for ${project}..."
+          echo "   Path: $output_dir"
+
+          # Strips trailing /index.html from <a href> values so in-page
+          # links match the directory-style canonical URLs already
+          # enforced by the previous step.
+          swift run util links rewrite --path "$output_dir"
+
       - name: Inject agent directives
         run: |
           project="${{ inputs.project-name }}"
           output_dir="Websites/${project}"
           BASE_URL="https://${project//-/.}"
-          
+
           echo "🤖 Injecting agent directives for ${project}..."
           echo "   Base URL: $BASE_URL"
           echo "   Path: $output_dir"
-          
+
           # Inject directives (auto-verifies after injection)
           swift run util agent-directive inject \
             --path "$output_dir" \

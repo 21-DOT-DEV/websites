@@ -63,7 +63,7 @@ struct TestHarnessTests {
         let harness = TestHarness()
         
         // Test with multiple arguments
-        let result = try await harness.run(arguments: ["canonical", "check"])
+        let result = try await harness.run(arguments: ["canonical", "fix", "--check"])
         
         // Should execute without crashing (may have non-zero exit if command not fully implemented)
         #expect(result.exitCode >= 0 || result.exitCode < 0) // Just verify we got an exit code

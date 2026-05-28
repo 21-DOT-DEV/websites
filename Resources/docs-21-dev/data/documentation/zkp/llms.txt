@@ -1,7 +1,6 @@
 # ZKP — Zero-Knowledge Proofs on secp256k1
 
-> Part of the [swift-secp256k1](https://docs.21.dev/llms.txt) package (v{{SECP256K1_VERSION}}).
-> For all markdown files in this module, see [ZKP llms-full.txt](https://docs.21.dev/data/documentation/zkp/llms-full.txt).
+> ZKP wraps the Blockstream Elements `libsecp256k1-zkp` fork with a P256K-compatible Swift API plus ZKP-specific proof primitives: Pedersen commitments, range proofs, surjection proofs, ECDSA adaptors, Schnorr half-aggregation, and whitelist signatures. Pre-1.0. Part of [swift-secp256k1](https://docs.21.dev/llms.txt) v{{SECP256K1_VERSION}} — full markdown index in [ZKP llms-full.txt](https://docs.21.dev/data/documentation/zkp/llms-full.txt).
 
 ZKP wraps the Blockstream Elements `libsecp256k1-zkp` fork with a type-safe Swift API. Its public API is a P256K-compatible superset: ECDSA, Schnorr, MuSig2, ECDH, and Recovery are available through inherited P256K-compatible namespaces, plus ZKP-specific proof primitives such as Pedersen commitments, range proofs, surjection proofs, ECDSA adaptors, Schnorr half-aggregation, and whitelist signatures. Use ZKP only when you need these extensions; otherwise use P256K as the smaller dependency. Swift 6.1+.
 
@@ -31,7 +30,7 @@ Do *not* use ZKP for ordinary secp256k1 signing, verification, ECDH, key recover
 - [ZKP Module](https://docs.21.dev/data/documentation/zkp.md): Module overview — zero-knowledge proofs, Pedersen commitments, range proofs, surjection proofs
 - [Choosing Between P256K and ZKP](https://docs.21.dev/data/documentation/zkp/choosingp256kvszkp.md): Product-selection guide — pick P256K for signing-only workflows, ZKP for zero-knowledge proofs, surjection proofs, ECDSA adaptors, or Schnorr half-aggregation
 
-## Symbols
+## API
 
 - [ZKP.Context](https://docs.21.dev/data/documentation/zkp/p256k/context.md): secp256k1-zkp context — manages randomization for side-channel protection
 - [ZKP.Signing](https://docs.21.dev/data/documentation/zkp/p256k/signing.md): ECDSA signing namespace — PrivateKey, PublicKey, XonlyKey, ECDSASignature
