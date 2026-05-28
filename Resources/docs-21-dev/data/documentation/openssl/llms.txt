@@ -32,7 +32,7 @@ Do *not* use OpenSSL for general-purpose AES, ChaCha20, ECDSA, ECDH, HKDF, or ot
 - [Choosing libcrypto vs OpenSSL](https://docs.21.dev/data/documentation/openssl/choosinglibcryptovsopenssl.md): Product-selection guide — when to link raw `libcrypto`/`libssl` instead of the high-level `OpenSSL` Swift API
 - [OpenSSL Module](https://docs.21.dev/data/documentation/openssl.md): Module overview — SHA-256, Base64URL, RSA PEM, runtime version auditing
 
-## Symbols
+## API
 
 - [SHA256](https://docs.21.dev/data/documentation/openssl/sha256.md): FIPS 180-4 SHA-256 — `SHA256.hash(string:)`, `SHA256.hash(data:)`
 - [Base64URL](https://docs.21.dev/data/documentation/openssl/base64url.md): RFC 4648 §5 Base64URL with the JOSE alphabet — `encode(_:)`, `decode(_:)`

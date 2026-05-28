@@ -1,7 +1,6 @@
 # P256K — secp256k1 Elliptic Curve Cryptography
 
-> Part of the [swift-secp256k1](https://docs.21.dev/llms.txt) package (v{{SECP256K1_VERSION}}).
-> For all markdown files in this module, see [P256K llms-full.txt](https://docs.21.dev/data/documentation/p256k/llms-full.txt).
+> P256K wraps Bitcoin Core's `libsecp256k1` C library with a type-safe Swift API modeled after Apple's `swift-crypto`: ECDSA signing/verification, Schnorr (BIP-340), MuSig2 multi-signatures, ECDH key agreement, and public-key recovery on the secp256k1 curve. Pre-1.0. Part of [swift-secp256k1](https://docs.21.dev/llms.txt) v{{SECP256K1_VERSION}} — full markdown index in [P256K llms-full.txt](https://docs.21.dev/data/documentation/p256k/llms-full.txt).
 
 P256K wraps the Bitcoin Core `libsecp256k1` C library with a type-safe Swift API modeled after Apple's `swift-crypto`. It provides ECDSA signing/verification, Schnorr signatures (BIP-340), MuSig2 multi-signatures, ECDH key agreement, and public key recovery on the secp256k1 curve. Swift 6.1+.
 
@@ -31,14 +30,14 @@ Do *not* use P256K for general-purpose ECDSA on P-256 (secp256r1), AES, ChaCha20
 - [P256K Module](https://docs.21.dev/data/documentation/p256k.md): Module overview — key generation, ECDSA signing, ECDH, public key recovery
 - [Elliptic Curve Diffie-Hellman](https://docs.21.dev/data/documentation/p256k/ellipticcurvediffiehellman.md): Derive a shared secret between two parties over secp256k1 using ECDH key agreement — the foundation of Nostr NIP-04 encryption, BIP-352 Silent Payments, and Lightning's Noise XK handshake
 - [Silent Payments](https://docs.21.dev/data/documentation/p256k/silentpayments.md): Send Bitcoin to a reusable static address without on-chain linkability or sender-receiver interaction, using the BIP-352 Silent Payments protocol
-- [Tweaking Keys](https://docs.21.dev/data/documentation/p256k/tweakingkeys.md): Derive child keys using additive and multiplicative tweaks for BIP-32 key derivation and BIP-341 Taproot
+- [Working with Keys](https://docs.21.dev/data/documentation/p256k/workingwithkeys.md): Encode keys in raw and x-only forms, import from PEM and DER, and derive child keys via additive or multiplicative tweaks — the foundations under wallet storage, BIP-32 derivation, BIP-341 Taproot, and BIP-327 MuSig2 aggregation
 - [MuSig2 Multi-Signatures](https://docs.21.dev/data/documentation/p256k/musig2multisignatures.md): Create a single Schnorr signature from multiple independent signers using the BIP-327 MuSig2 protocol
+- [ECDSA Signing for Bitcoin Transactions](https://docs.21.dev/data/documentation/p256k/ecdsasigningandbitcointransactions.md): Produce ECDSA signatures on secp256k1, encode them in DER and compact form, verify incoming signatures, and assemble the SIGHASH-flagged element Bitcoin script expects
 - [Recovering Public Keys](https://docs.21.dev/data/documentation/p256k/recoveringpublickeys.md): Recover an ECDSA public key from a recoverable signature and its recovery ID (BIP-137, BIP-322)
-- [Serializing Keys](https://docs.21.dev/data/documentation/p256k/serializingkeys.md): Import and export keys in raw bytes, PEM, DER, and other standard formats
+- [Why CryptoKit's P256 Can't Sign Bitcoin or Nostr](https://docs.21.dev/data/documentation/p256k/cryptokitp256andsecp256k1.md): Apple's CryptoKit and swift-crypto cover NIST P-256, P-384, P-521, and Curve25519 — but not secp256k1, the curve Bitcoin, Lightning, and Nostr require
 - [Security Considerations](https://docs.21.dev/data/documentation/p256k/securityconsiderations.md): Security properties of P256K — context randomization, nonce hygiene, comparison timing, secret zeroization, signature malleability
-- [Key Formats](https://docs.21.dev/data/documentation/p256k/keyformats.md): Why secp256k1 has multiple key representations (compressed, uncompressed, x-only, internal) and when to use each
 
-## Symbols
+## API
 
 - [P256K.Signing](https://docs.21.dev/data/documentation/p256k/p256k/signing.md): ECDSA signing namespace — PrivateKey, PublicKey, XonlyKey, ECDSASignature
 - [P256K.Schnorr](https://docs.21.dev/data/documentation/p256k/p256k/schnorr.md): Schnorr signatures (BIP-340) — deterministic signing, partial signatures for MuSig2

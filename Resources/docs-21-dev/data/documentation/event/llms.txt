@@ -1,7 +1,6 @@
 # Event — Swift bindings for libevent
 
-> Part of the [swift-event](https://docs.21.dev/llms.txt) package (v{{EVENT_VERSION}}).
-> For all markdown files in this module, see [Event llms-full.txt](https://docs.21.dev/data/documentation/event/llms-full.txt).
+> Event wraps libevent 2.1.12 with a Swift 6.1 `async`/`await` API providing async TCP client/server primitives over the platform-optimal I/O multiplexer (`kqueue` on Apple, `epoll` on Linux). Pre-1.0. Part of [swift-event](https://docs.21.dev/llms.txt) v{{EVENT_VERSION}} — full markdown index in [Event llms-full.txt](https://docs.21.dev/data/documentation/event/llms-full.txt).
 
 Event wraps [libevent 2.1.12](https://libevent.org) with a type-safe Swift 6.1 `async`/`await` API. It provides async TCP client/server primitives over the platform-optimal I/O multiplexer — `kqueue` on Apple platforms, `epoll` on Linux. Designed as a thin libevent-direct layer rather than a protocol framework (use [SwiftNIO](https://github.com/apple/swift-nio) when you need channel pipelines, HTTP/2, WebSocket, or back-pressure-aware handlers). Swift 6.1+.
 
@@ -121,7 +120,7 @@ EventLoop.shared.schedule(after: .seconds(1)) {
 - [Embedding a C Library in Swift Package Manager](https://docs.21.dev/data/documentation/event/embeddingclibrariesinswiftpm.md): How swift-event vendors libevent through SwiftPM — modulemap shape, C target layout, and the patterns reusable for other C dependencies
 - [Event Module](https://docs.21.dev/data/documentation/event.md): Module overview — platform-optimal event loops, async TCP, libevent interop
 
-## Symbols
+## API
 
 - [EventLoop](https://docs.21.dev/data/documentation/event/eventloop.md): Core event loop — selects `kqueue` on Apple or `epoll` on Linux; `backendMethod` for runtime verification; `.shared`, `init()`, `run()`, `runOnce()`, `stop()`, `sleep(for:)`, `schedule(after:_:)`, `signalStream(_:)`
 - [Socket](https://docs.21.dev/data/documentation/event/socket.md): Async TCP socket — `connect(to:loop:timeout:)`, `connect(to:port:loop:timeout:)`, `listen(port:backlog:loop:)`, `read(maxBytes:timeout:)`, `write(_:timeout:)`, `close()`
