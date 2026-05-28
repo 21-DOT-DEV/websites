@@ -637,15 +637,16 @@ struct AgentDirectiveTests {
         #expect(action == .skipped)
     }
 
-    @Test("Allowlist has exactly 295 entries (1 globals.hub + 131 P256K + 35 Event + 28 OpenSSL + 2 ZKP + 98 Tor)")
+    @Test("Allowlist has exactly 416 entries (1 globals.hub + 127 P256K + 35 Event + 28 OpenSSL + 2 ZKP + 96 Tor + 43 Bitcoin + 84 BitcoinKernel)")
     func allowlistCompleteness() {
-        // Count reflects the 2026-04-30 reconciliation: +59 newly-eligible
-        // pages added, -25 skeleton stubs removed (disc<150), 12 borderline
-        // entries retained as editorial overrides (disc 154–289 in CI audit).
-        // 2026-05-11 swift-event 0.1.4 → 0.2.1 bump: +9 symbol pages +5 new
-        // authored articles (timer/timeout/signal APIs plus long-form prose)
-        // -4 renamed signatures = +10 net.
-        #expect(AgentDirectiveInjector.indexablePages.count == 295)
+        // 2026-05-28 swift-secp256k1 0.23.1 → 0.23.2 bump: -13 stale (3 deleted
+        // articles upstream + 10 thin-prose drift) +6 newly-eligible symbol
+        // pages +3 new authored articles. swift-tor 0.1.0 → 0.1.1 bump: -2
+        // borderline operators dropped below threshold. New swift-bitcoinkernel
+        // 0.1.0 archive ships two .doccarchives: Bitcoin (43 indexable: 41
+        // symbol pages + Getting Started article + module landing) and
+        // BitcoinKernel (84 indexable: 81 symbol pages + 2 articles + landing).
+        #expect(AgentDirectiveInjector.indexablePages.count == 416)
 
         // Spot-check globals.hubs (truly cross-cutting site root only).
         #expect(AgentDirectiveInjector.indexablePages.contains("documentation"))
@@ -661,23 +662,28 @@ struct AgentDirectiveTests {
 
         // Spot-check newly-added authored articles (added in PR fb0c08)
         // ellipticcurvediffiehellman + silentpayments are first shipped in
-        // swift-secp256k1 0.23.1.
+        // swift-secp256k1 0.23.1; tweakingkeys was removed upstream in 0.23.2.
         #expect(AgentDirectiveInjector.indexablePages.contains("documentation/p256k/ellipticcurvediffiehellman"))
         #expect(AgentDirectiveInjector.indexablePages.contains("documentation/p256k/silentpayments"))
-        #expect(AgentDirectiveInjector.indexablePages.contains("documentation/p256k/tweakingkeys"))
         #expect(AgentDirectiveInjector.indexablePages.contains("documentation/p256k/musig2multisignatures"))
+        // swift-secp256k1 0.23.2 added three new authored articles.
+        #expect(AgentDirectiveInjector.indexablePages.contains("documentation/p256k/cryptokitp256andsecp256k1"))
+        #expect(AgentDirectiveInjector.indexablePages.contains("documentation/p256k/ecdsasigningandbitcointransactions"))
+        #expect(AgentDirectiveInjector.indexablePages.contains("documentation/p256k/workingwithkeys"))
 
         // Spot-check Discussion audit entries
         #expect(AgentDirectiveInjector.indexablePages.contains("documentation/p256k/p256k/context/rawrepresentation"))
         #expect(AgentDirectiveInjector.indexablePages.contains("documentation/p256k/p256k/schnorr/privatekey/signature(for:)"))
         #expect(AgentDirectiveInjector.indexablePages.contains("documentation/p256k/sha256/taggedhash(tag:data:)"))
 
-        // Spot-check borderline entries retained as editorial overrides
-        // (disc=154–289 — below the 300-char method threshold but carrying
-        // real authored Parameters / Return Value / aside prose; see
-        // 2026-04-30 reconciliation).
-        #expect(AgentDirectiveInjector.indexablePages.contains("documentation/p256k/p256k/signing/publickey/isvalidsignature(_:for:)-7sttb"))
-        #expect(AgentDirectiveInjector.indexablePages.contains("documentation/p256k/sha256/hash(data:)"))
+        // Stale entries removed in the 2026-05-28 swift-secp256k1 0.23.2 bump
+        // — these articles were deleted upstream OR their authored prose fell
+        // below the policy threshold and the auditor flagged them as drift.
+        #expect(!AgentDirectiveInjector.indexablePages.contains("documentation/p256k/keyformats"))
+        #expect(!AgentDirectiveInjector.indexablePages.contains("documentation/p256k/serializingkeys"))
+        #expect(!AgentDirectiveInjector.indexablePages.contains("documentation/p256k/tweakingkeys"))
+        #expect(!AgentDirectiveInjector.indexablePages.contains("documentation/p256k/p256k/signing/publickey/isvalidsignature(_:for:)-7sttb"))
+        #expect(!AgentDirectiveInjector.indexablePages.contains("documentation/p256k/sha256/hash(data:)"))
         // Removed 2026-04-30 as a skeleton stub (disc=74, well below the
         // 300-char policy threshold) once the counter was fixed to see the
         // full authored prose instead of the first content section only.
@@ -740,6 +746,19 @@ struct AgentDirectiveTests {
         // Protocol conformance stubs excluded (no authored content)
         #expect(!AgentDirectiveInjector.indexablePages.contains("documentation/p256k/p256k/signing/privatekey/==(_:_:)"))
         #expect(!AgentDirectiveInjector.indexablePages.contains("documentation/p256k/p256k/signing/ecdsasignature/withunsafebytes(_:)"))
+
+        // Spot-check Bitcoin archive (swift-bitcoinkernel 0.1.0 — high-level RPC client)
+        #expect(AgentDirectiveInjector.indexablePages.contains("documentation/bitcoin"))
+        #expect(AgentDirectiveInjector.indexablePages.contains("documentation/bitcoin/gettingstarted"))
+        #expect(AgentDirectiveInjector.indexablePages.contains("documentation/bitcoin/rpcclient"))
+        #expect(AgentDirectiveInjector.indexablePages.contains("documentation/bitcoin/daemon"))
+
+        // Spot-check BitcoinKernel archive (swift-bitcoinkernel 0.1.0 — kernel C-binding wrapper)
+        #expect(AgentDirectiveInjector.indexablePages.contains("documentation/bitcoinkernel"))
+        #expect(AgentDirectiveInjector.indexablePages.contains("documentation/bitcoinkernel/gettingstarted"))
+        #expect(AgentDirectiveInjector.indexablePages.contains("documentation/bitcoinkernel/embeddingonios"))
+        #expect(AgentDirectiveInjector.indexablePages.contains("documentation/bitcoinkernel/chainstatemanager"))
+        #expect(AgentDirectiveInjector.indexablePages.contains("documentation/bitcoinkernel/esplorablocksource"))
     }
 
     @Test("force-reinject removes existing noindex without over-deleting adjacent tags")

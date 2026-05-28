@@ -15,112 +15,17 @@ import UtilLib
 struct CanonicalCommand: ParsableCommand {
     static let configuration = CommandConfiguration(
         commandName: "canonical",
-        abstract: "Check and fix canonical URL tags in HTML files",
-        subcommands: [Check.self, Fix.self]
+        abstract: "Add or update canonical URL tags in HTML files",
+        subcommands: [Fix.self],
+        defaultSubcommand: Fix.self
     )
 }
 
 extension CanonicalCommand {
-    struct Check: ParsableCommand {
-        static let configuration = CommandConfiguration(
-            commandName: "check",
-            abstract: "Audit HTML files for canonical URL issues"
-        )
-        
-        @Option(name: .long, help: "Directory containing HTML files to scan")
-        var path: String
-        
-        @Option(name: .long, help: "Base URL for canonical derivation (e.g., https://21.dev)")
-        var baseURL: String
-        
-        @Flag(name: .shortAndLong, help: "Show detailed output for each file")
-        var verbose: Bool = false
-        
-        mutating func validate() throws {
-            // Validate path exists and is a directory
-            var isDirectory: ObjCBool = false
-            guard FileManager.default.fileExists(atPath: path, isDirectory: &isDirectory),
-                  isDirectory.boolValue else {
-                throw ValidationError("Path does not exist or is not a directory: \(path)")
-            }
-            
-            // Validate base URL has scheme
-            guard let url = URL(string: baseURL),
-                  let scheme = url.scheme,
-                  scheme == "http" || scheme == "https" else {
-                throw ValidationError("Invalid base URL. Must include scheme (e.g., https://21.dev)")
-            }
-        }
-        
-        mutating func run() throws {
-            guard let url = URL(string: baseURL) else {
-                throw ExitCode.failure
-            }
-            
-            print("Checking canonicals in \(path)...")
-            print()
-            
-            let report = try CanonicalChecker.checkDirectory(at: path, baseURL: url)
-            
-            if verbose {
-                printVerboseResults(report)
-            }
-            
-            printSummary(report)
-            
-            if !report.isAllValid {
-                let issueCount = report.mismatchCount + report.missingCount + report.errorCount
-                print()
-                print("Result: \(issueCount) issue\(issueCount == 1 ? "" : "s") found")
-                throw ExitCode.failure
-            } else {
-                print()
-                print("Result: All canonicals valid ✓")
-            }
-        }
-        
-        private func printVerboseResults(_ report: CheckReport) {
-            for result in report.results {
-                switch result.status {
-                case .valid:
-                    print("✅ \(result.relativePath) → \(result.expectedURL.absoluteString)")
-                case .missing:
-                    print("❌ \(result.relativePath) (missing)")
-                case .mismatch:
-                    print("⚠️ \(result.relativePath)")
-                    print("   Expected: \(result.expectedURL.absoluteString)")
-                    if let existing = result.existingURL {
-                        print("   Found:    \(existing.absoluteString)")
-                    }
-                case .error:
-                    print("⚠️ \(result.relativePath)")
-                    if let message = result.errorMessage {
-                        print("   Error: \(message)")
-                    }
-                }
-            }
-            print()
-            print("Summary:")
-        }
-        
-        private func printSummary(_ report: CheckReport) {
-            print("✅ \(report.validCount) valid")
-            if report.mismatchCount > 0 {
-                print("⚠️ \(report.mismatchCount) mismatch")
-            }
-            if report.missingCount > 0 {
-                print("❌ \(report.missingCount) missing")
-            }
-            if report.errorCount > 0 {
-                print("⚠️ \(report.errorCount) error\(report.errorCount == 1 ? "" : "s")")
-            }
-        }
-    }
-    
     struct Fix: ParsableCommand {
         static let configuration = CommandConfiguration(
             commandName: "fix",
-            abstract: "Add or update canonical URL tags in HTML files"
+            abstract: "Add or update canonical URL tags in HTML files (use --check for CI verify-only mode)"
         )
         
         @Option(name: .long, help: "Directory containing HTML files to fix")

@@ -15,12 +15,12 @@ import System
 
 @Suite("Canonical Check CLI Tests")
 struct CanonicalCheckCLITests {
-    
-    @Test("Check command requires path argument")
+
+    @Test("canonical fix --check requires path argument")
     func requiresPathArgument() async throws {
         let result = try await Subprocess.run(
             .path(FilePath(".build/debug/util")),
-            arguments: ["canonical", "check", "--base-url", "https://test.dev"],
+            arguments: ["canonical", "fix", "--check", "--base-url", "https://test.dev"],
             output: .string(limit: 4096),
             error: .string(limit: 4096)
         )
@@ -32,11 +32,11 @@ struct CanonicalCheckCLITests {
         #expect(code != 0)
     }
     
-    @Test("Check command requires base-url argument")
+    @Test("canonical fix --check requires base-url argument")
     func requiresBaseURLArgument() async throws {
         let result = try await Subprocess.run(
             .path(FilePath(".build/debug/util")),
-            arguments: ["canonical", "check", "--path", "/tmp"],
+            arguments: ["canonical", "fix", "--check", "--path", "/tmp"],
             output: .string(limit: 4096),
             error: .string(limit: 4096)
         )
@@ -48,11 +48,11 @@ struct CanonicalCheckCLITests {
         #expect(code != 0)
     }
     
-    @Test("Check command validates path exists")
+    @Test("canonical fix --check validates path exists")
     func validatesPathExists() async throws {
         let result = try await Subprocess.run(
             .path(FilePath(".build/debug/util")),
-            arguments: ["canonical", "check", "--path", "/nonexistent/path", "--base-url", "https://test.dev"],
+            arguments: ["canonical", "fix", "--check", "--path", "/nonexistent/path", "--base-url", "https://test.dev"],
             output: .string(limit: 4096),
             error: .string(limit: 4096)
         )
@@ -64,11 +64,11 @@ struct CanonicalCheckCLITests {
         #expect(code != 0)
     }
     
-    @Test("Check command validates base-url has scheme")
+    @Test("canonical fix --check validates base-url has scheme")
     func validatesBaseURLScheme() async throws {
         let result = try await Subprocess.run(
             .path(FilePath(".build/debug/util")),
-            arguments: ["canonical", "check", "--path", "/tmp", "--base-url", "example.com"],
+            arguments: ["canonical", "fix", "--check", "--path", "/tmp", "--base-url", "example.com"],
             output: .string(limit: 4096),
             error: .string(limit: 4096)
         )

@@ -28,6 +28,7 @@ struct Util: AsyncParsableCommand {
             CommentCommand.self,
             SearchConsoleCommand.self,
             AgentDirectiveCommand.self,
+            LinksCommand.self,
         ]
     )
 }

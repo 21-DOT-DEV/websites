@@ -18,7 +18,7 @@ struct CanonicalCICLITests {
     
     // MARK: - Exit Code Tests
     
-    @Test("Check command exits 0 when all canonicals valid")
+    @Test("canonical fix --check exits 0 when all canonicals valid")
     func checkExitsZeroWhenValid() async throws {
         // Create temp directory with valid HTML
         let tempDir = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
@@ -39,7 +39,7 @@ struct CanonicalCICLITests {
         
         let result = try await Subprocess.run(
             .path(FilePath(".build/debug/util")),
-            arguments: ["canonical", "check", "--path", tempDir.path, "--base-url", "https://test.dev"],
+            arguments: ["canonical", "fix", "--check", "--path", tempDir.path, "--base-url", "https://test.dev"],
             output: .string(limit: 4096),
             error: .string(limit: 4096)
         )
@@ -51,7 +51,7 @@ struct CanonicalCICLITests {
         #expect(code == 0, "Expected exit code 0 for valid canonicals, got \(code)")
     }
     
-    @Test("Check command exits 1 when canonicals missing")
+    @Test("canonical fix --check exits 1 when canonicals missing")
     func checkExitsOneWhenMissing() async throws {
         // Create temp directory with HTML missing canonical
         let tempDir = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
@@ -71,7 +71,7 @@ struct CanonicalCICLITests {
         
         let result = try await Subprocess.run(
             .path(FilePath(".build/debug/util")),
-            arguments: ["canonical", "check", "--path", tempDir.path, "--base-url", "https://test.dev"],
+            arguments: ["canonical", "fix", "--check", "--path", tempDir.path, "--base-url", "https://test.dev"],
             output: .string(limit: 4096),
             error: .string(limit: 4096)
         )
@@ -83,7 +83,7 @@ struct CanonicalCICLITests {
         #expect(code == 1, "Expected exit code 1 for missing canonicals, got \(code)")
     }
     
-    @Test("Check command exits 1 when canonicals mismatch")
+    @Test("canonical fix --check exits 1 when canonicals mismatch")
     func checkExitsOneWhenMismatch() async throws {
         // Create temp directory with mismatched canonical
         let tempDir = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
@@ -104,7 +104,7 @@ struct CanonicalCICLITests {
         
         let result = try await Subprocess.run(
             .path(FilePath(".build/debug/util")),
-            arguments: ["canonical", "check", "--path", tempDir.path, "--base-url", "https://test.dev"],
+            arguments: ["canonical", "fix", "--check", "--path", tempDir.path, "--base-url", "https://test.dev"],
             output: .string(limit: 4096),
             error: .string(limit: 4096)
         )
@@ -118,11 +118,11 @@ struct CanonicalCICLITests {
     
     // MARK: - Validation Error Tests
     
-    @Test("Check command exits non-zero for invalid path")
+    @Test("canonical fix --check exits non-zero for invalid path")
     func checkExitsNonZeroForInvalidPath() async throws {
         let result = try await Subprocess.run(
             .path(FilePath(".build/debug/util")),
-            arguments: ["canonical", "check", "--path", "/nonexistent/path/xyz", "--base-url", "https://test.dev"],
+            arguments: ["canonical", "fix", "--check", "--path", "/nonexistent/path/xyz", "--base-url", "https://test.dev"],
             output: .string(limit: 4096),
             error: .string(limit: 4096)
         )
@@ -138,11 +138,11 @@ struct CanonicalCICLITests {
                 "Error message should mention path issue")
     }
     
-    @Test("Check command exits non-zero for invalid URL scheme")
+    @Test("canonical fix --check exits non-zero for invalid URL scheme")
     func checkExitsNonZeroForInvalidURLScheme() async throws {
         let result = try await Subprocess.run(
             .path(FilePath(".build/debug/util")),
-            arguments: ["canonical", "check", "--path", "/tmp", "--base-url", "not-a-valid-url"],
+            arguments: ["canonical", "fix", "--check", "--path", "/tmp", "--base-url", "not-a-valid-url"],
             output: .string(limit: 4096),
             error: .string(limit: 4096)
         )
