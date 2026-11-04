@@ -1,0 +1,56 @@
+# ai-jury repository review policy — maintainer-authored, trusted, and
+# rendered into every reviewer's prompt (ai_jury/policy.py). Keep it short:
+# three models read it on every run. Flat keys only — see that file's
+# ReviewPolicy for the schema.
+
+high_risk_paths = [
+  "Package.swift",              # build graph; targets, deps, plugin wiring
+  "Package.resolved",           # resolved dependency pins
+  ".github/workflows/**",       # CI gates, deploys, secrets usage
+  "Resources/*/_headers.*",     # Cloudflare security-header policy per environment
+  "Resources/*/_redirects",     # Cloudflare redirect rules
+  "Resources/*/_routes.json",   # Cloudflare Pages function routing
+  "Resources/*/wrangler.toml",  # Cloudflare site config
+  "Resources/*/functions/**",   # edge middleware/handlers — live request path
+  "Tailwind/**",                # shared preset every site's config extends
+  "Sources/util/**",            # the CI-facing utility executable
+  "Sources/UtilLib/**",         # library behind sitemap/headers/canonical/links
+]
+
+focus_areas = [
+  "generated output is never hand-edited or committed — Websites/**, .build/**, the deployed _headers, and the generated index tables in Development/{Specs,ADRs}/README.md",
+  "documentation claims match real code and commands — route dict in SiteRoutes, util subcommands in Util.swift, pipeline behavior in workflows",
+  "Slipstream structured APIs preferred over RawHTML; stylesheets linked relatively (./static/style.css), never absolute",
+  "Tailwind plugin-free baseline; per-site tailwind.config.cjs content globs cover generated HTML only, never Swift sources",
+  "swift-testing only — no XCTest; helpers via TestUtils, never @testable",
+  "secret/config hygiene — no tokens, credentials, or environment values committed in workflows, resources, or docs",
+]
+
+forbidden_output = [
+  "suggesting edits to generated output (Websites/**, built _headers, generated index tables) — fix the sources or the generator instead",
+  "suggesting edits inside .build/checkouts/** — dependency sources are read-only; Slipstream's checkout is consulted, not modified",
+  "adding @tailwindcss/* or custom Tailwind plugins, or switching stylesheet links to absolute paths",
+  "suggesting XCTest, @testable imports, or committing Websites//.build/ paths",
+]
+
+severity_overrides = [
+  { glob = "Resources/*/_headers.prod", severity = "critical" },
+  { glob = ".github/workflows/**", severity = "major" },
+  { glob = "Resources/*/_redirects", severity = "major" },
+  { glob = "Resources/*/_routes.json", severity = "major" },
+  { glob = "Resources/*/functions/**", severity = "major" },
+  { glob = "Package.swift", severity = "major" },
+]
+
+checklist = """
+- Generated output is never committed or hand-edited; Websites/ and .build/ are gitignored build products.
+- Cloudflare policy sources live in Resources/<site>/ (_headers.dev/_headers.prod, _redirects); the build pipeline copies the environment source to the deployed _headers — never suggest editing generated copies.
+- Links and file references inside docs must resolve to committed paths — renamed/deleted workflows or specs break agents that follow them.
+- A new page is a struct with `static var page` plus a route entry in the SiteRoutes dictionary; page content stays free of routing logic.
+- Tests are swift-testing (`@Test`/`#expect`) in Tests/<Domain>Tests/ — never XCTest.
+- A `[REDACTED:*]` token inside the diff is the review harness's own secret scrubber, not a defect in the code — verify the line against the working file before filing it.
+- Your seat runs under a process sandbox that blocks nested sandbox-exec: `swift build --disable-sandbox` / `swift test --disable-sandbox` work; the plain invocations do not.
+- Scratch files for compile-verification go under `$TMPDIR` or `mktemp`, never the working tree.
+"""
+
+doc_links = ["AGENTS.md", "Development/README.md"]

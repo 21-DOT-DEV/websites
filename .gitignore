@@ -57,6 +57,7 @@ playground.xcworkspace
 .swiftpm
 
 .build/
+Development/Tools/Package.resolved
 Websites/
 
 # Auto-generated CSS (created by renderSitemap during site generation)
