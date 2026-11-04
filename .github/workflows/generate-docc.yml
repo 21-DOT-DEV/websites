@@ -40,11 +40,14 @@ jobs:
             exit 0
           fi
 
-          # SECP256K1_VERSION is the docs-site pin (may be a prerelease), used for llms.txt stamping.
-          # It is sourced from the P256K archive entry; the ZKP entry is expected to share the same tag.
+          # SECP256K1_VERSION and ZKP_VERSION are sourced independently: ZKP was
+          # removed from swift-secp256k1 in 0.24.0, so the p256k pin tracks the
+          # live package while the zkp pin stays frozen at the last release that
+          # shipped the module (0.23.2). ZKP_VERSION stamps the frozen ZKP docs.
           # BITCOINKERNEL_VERSION is shared by both Bitcoin and BitcoinKernel modules (same repo, same tag).
-          # Keys must match the short-form keys in external-archives.json (p256k/event/openssl/tor/bitcoinkernel).
+          # Keys must match the short-form keys in external-archives.json (p256k/zkp/event/openssl/tor/bitcoinkernel).
           SECP256K1_VERSION=$(jq -r '.archives["p256k"].tag' "$ARCHIVES_FILE")
+          ZKP_VERSION=$(jq -r '.archives["zkp"].tag' "$ARCHIVES_FILE")
           EVENT_VERSION=$(jq -r '.archives["event"].tag' "$ARCHIVES_FILE")
           OPENSSL_VERSION=$(jq -r '.archives["openssl"].tag' "$ARCHIVES_FILE")
           TOR_VERSION=$(jq -r '.archives["tor"].tag' "$ARCHIVES_FILE")
@@ -52,7 +55,7 @@ jobs:
 
           # Fail fast if any required key is missing or null — prevents stamping `vnull`
           # placeholders into llms.txt and shipping broken version strings to the live site.
-          for var in SECP256K1_VERSION EVENT_VERSION OPENSSL_VERSION TOR_VERSION BITCOINKERNEL_VERSION; do
+          for var in SECP256K1_VERSION ZKP_VERSION EVENT_VERSION OPENSSL_VERSION TOR_VERSION BITCOINKERNEL_VERSION; do
             value="${!var}"
             if [ -z "$value" ] || [ "$value" = "null" ]; then
               echo "❌ $var is missing or null in $ARCHIVES_FILE — refusing to stamp llms.txt"
@@ -61,12 +64,14 @@ jobs:
           done
 
           echo "SECP256K1_VERSION=$SECP256K1_VERSION" >> $GITHUB_ENV
+          echo "ZKP_VERSION=$ZKP_VERSION" >> $GITHUB_ENV
           echo "EVENT_VERSION=$EVENT_VERSION" >> $GITHUB_ENV
           echo "OPENSSL_VERSION=$OPENSSL_VERSION" >> $GITHUB_ENV
           echo "TOR_VERSION=$TOR_VERSION" >> $GITHUB_ENV
           echo "BITCOINKERNEL_VERSION=$BITCOINKERNEL_VERSION" >> $GITHUB_ENV
 
           echo "📦 swift-secp256k1 (docs):  $SECP256K1_VERSION"
+          echo "📦 swift-secp256k1 ZKP:     $ZKP_VERSION (frozen)"
           echo "📦 swift-event:             $EVENT_VERSION"
           echo "📦 swift-openssl:           $OPENSSL_VERSION"
           echo "📦 swift-tor:               $TOR_VERSION"
@@ -297,7 +302,7 @@ jobs:
           project="${{ inputs.project-name }}"
 
           # Find all llms.txt files (root + per-module) and substitute per-package version placeholders.
-          # Placeholders: {{SECP256K1_VERSION}}, {{EVENT_VERSION}}, {{OPENSSL_VERSION}}, {{TOR_VERSION}}, {{BITCOINKERNEL_VERSION}}.
+          # Placeholders: {{SECP256K1_VERSION}}, {{ZKP_VERSION}}, {{EVENT_VERSION}}, {{OPENSSL_VERSION}}, {{TOR_VERSION}}, {{BITCOINKERNEL_VERSION}}.
           # BITCOINKERNEL_VERSION is shared by the Bitcoin and BitcoinKernel modules (same repo).
           stamped=0
           while IFS= read -r llms_file; do
@@ -305,16 +310,18 @@ jobs:
             # GNU sed on Linux treats '' as a filename — use sed -i instead if migrating.
             sed -i '' \
               -e "s/{{SECP256K1_VERSION}}/${{ env.SECP256K1_VERSION }}/g" \
+              -e "s/{{ZKP_VERSION}}/${ZKP_VERSION:-MISSING_ZKP_VERSION}/g" \
               -e "s/{{EVENT_VERSION}}/${EVENT_VERSION:-MISSING_EVENT_VERSION}/g" \
               -e "s/{{OPENSSL_VERSION}}/${OPENSSL_VERSION:-MISSING_OPENSSL_VERSION}/g" \
               -e "s/{{TOR_VERSION}}/${TOR_VERSION:-MISSING_TOR_VERSION}/g" \
               -e "s/{{BITCOINKERNEL_VERSION}}/${BITCOINKERNEL_VERSION:-MISSING_BITCOINKERNEL_VERSION}/g" \
               "$llms_file"
 
-            # Guard: fail if any known placeholder wasn't substituted.
-            if grep -qE '\{\{(SECP256K1_VERSION|EVENT_VERSION|OPENSSL_VERSION|TOR_VERSION|BITCOINKERNEL_VERSION)\}\}' "$llms_file"; then
+            # Guard: fail if any known placeholder wasn't substituted, or a
+            # MISSING_*_VERSION sentinel leaked in (env extraction skipped/failed).
+            if grep -qE '(\{\{(SECP256K1_VERSION|ZKP_VERSION|EVENT_VERSION|OPENSSL_VERSION|TOR_VERSION|BITCOINKERNEL_VERSION)\}\}|MISSING_(SECP256K1|ZKP|EVENT|OPENSSL|TOR|BITCOINKERNEL)_VERSION)' "$llms_file"; then
               echo "❌ Version placeholder was not substituted in ${llms_file}"
-              grep -nE '\{\{(SECP256K1_VERSION|EVENT_VERSION|OPENSSL_VERSION|TOR_VERSION|BITCOINKERNEL_VERSION)\}\}' "$llms_file"
+              grep -nE '(\{\{(SECP256K1_VERSION|ZKP_VERSION|EVENT_VERSION|OPENSSL_VERSION|TOR_VERSION|BITCOINKERNEL_VERSION)\}\}|MISSING_(SECP256K1|ZKP|EVENT|OPENSSL|TOR|BITCOINKERNEL)_VERSION)' "$llms_file"
               exit 1
             fi
             stamped=$((stamped + 1))
@@ -326,6 +333,7 @@ jobs:
           else
             echo "✅ Versions stamped in ${stamped} file(s)"
             echo "   swift-secp256k1:      v${{ env.SECP256K1_VERSION }}"
+            echo "   swift-secp256k1 ZKP:  v${ZKP_VERSION:-MISSING} (frozen)"
             echo "   swift-event:          v${EVENT_VERSION:-MISSING}"
             echo "   swift-openssl:        v${OPENSSL_VERSION:-MISSING}"
             echo "   swift-tor:            v${TOR_VERSION:-MISSING}"

@@ -124,19 +124,19 @@ struct P256KPage {
                 title: "Xcode",
                 codeSnippet: SiteIdentity.p256kRepoURL,
                 language: "text",
-                instructions: "In Xcode, go to File → Add Package Dependencies, paste the URL above, select version 0.23.2, and add to your target."
+                instructions: "In Xcode, go to File → Add Package Dependencies, paste the URL above, select version 0.24.0, and add to your target."
             ),
             InstallationOption(
                 title: "Swift Package Manager",
-                codeSnippet: ".package(url: \"\(SiteIdentity.p256kRepoURL)\", exact: \"0.23.2\")",
+                codeSnippet: ".package(url: \"\(SiteIdentity.p256kRepoURL)\", exact: \"0.24.0\")",
                 language: "swift",
                 instructions: "Add this line to your Package.swift dependencies array, then run `swift build` to integrate P256K into your project."
             ),
             InstallationOption(
                 title: "CocoaPods",
-                codeSnippet: "pod 'swift-secp256k1', '0.23.2'",
+                codeSnippet: "pod 'swift-secp256k1', '0.24.0'",
                 language: "ruby",
-                instructions: "Add this line to your Podfile, then run `pod install` to integrate P256K into your Xcode workspace."
+                instructions: "Add this line to your Podfile, then run `pod install` to integrate P256K into your Xcode workspace. The prebuilt XCFramework requires a Swift 6.3+ toolchain (Xcode 27); SPM source builds still work on Swift 6.1."
             )
         ]
     )
@@ -257,6 +257,14 @@ struct P256KPage {
         },
         FAQItem(question: "Is the API stable?", includeInJSONLD: true) {
             Text("P256K is pre-1.0.0, so APIs may change between releases. For production use, pin an exact version in Swift Package Manager to avoid unexpected breaking changes.")
+        },
+        FAQItem(question: "What happened to the ZKP module?", includeInJSONLD: true) {
+            Div {
+                Span("The ZKP module was removed from swift-secp256k1 in 0.24.0 and no longer ships with the package — its documentation remains online, frozen at the 0.23.2 release. See the ")
+                Link("Migrating to P256K", destination: URL(string: "https://docs.21.dev/documentation/p256k/migratingtop256k/")!)
+                    .textColor(.palette(.orange, darkness: 500))
+                Span(" guide for how to move to current APIs.")
+            }
         },
         FAQItem(question: "Where can I find documentation and examples?") {
             Div {

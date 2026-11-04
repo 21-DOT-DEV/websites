@@ -4,7 +4,7 @@
 **Scope:** Pages under `https://docs.21.dev/documentation/p256k/` that are indexed by the registry's `indexablePages` allowlist (`Resources/docs-21-dev/external-archives.json`) but flagged by Ahrefs for SEO content-quality issues.
 **Upstream repo:** [21-DOT-DEV/swift-secp256k1](https://github.com/21-DOT-DEV/swift-secp256k1)
 
-Fixes here land as PRs in the upstream `swift-secp256k1` Swift package — `///` doc-comment edits on the listed Swift symbols. After upstream merges and tags a new release, bump `external-archives.json`'s `p256k` and `zkp` `tag` + `sha256` and re-run `swift run util agent-directive audit` to confirm the issues clear.
+Fixes here land as PRs in the upstream `swift-secp256k1` Swift package — `///` doc-comment edits on the listed Swift symbols. After upstream merges and tags a new release, bump `external-archives.json`'s `p256k` `tag` + `sha256` and re-run `swift run util agent-directive audit` to confirm the issues clear. (The `zkp` entry no longer follows — ZKP was removed from the package in 0.24.0 and its pin stays frozen at 0.23.2.)
 
 ---
 
@@ -151,7 +151,7 @@ Listed here for upstream awareness and as a future post-processor candidate. **N
 
 After upstream `swift-secp256k1` ships fixes:
 
-1. Bump `tag` + `sha256` in `Resources/docs-21-dev/external-archives.json` for both `p256k` and `zkp` entries.
+1. Bump `tag` + `sha256` in `Resources/docs-21-dev/external-archives.json` for the `p256k` entry only — the `zkp` pin is frozen at 0.23.2 (module removed upstream in 0.24.0).
 2. Re-run the local build pipeline (`xcrun docc merge` + `util canonical fix` + `util links rewrite` + `util agent-directive inject` + `util agent-directive audit`).
 3. Confirm with a fresh Ahrefs Site Audit crawl that the issue counts drop. Project ID `9842697`; the next crawl runs on the project's configured schedule.
 4. If the title-too-short/long category still flags pages after upstream improvements, evaluate whether to build the in-repo HTML title-enhancement post-processor (would be a new `util` subcommand, e.g., `util titles enhance`).

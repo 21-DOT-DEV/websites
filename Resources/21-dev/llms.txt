@@ -1,17 +1,17 @@
 # 21.dev
 
-> Swift cryptography project hub for the swift-secp256k1 package — secp256k1 elliptic curve operations, ECDSA/Schnorr signatures, and zero-knowledge proofs. Documentation spans two subdomains; each has its own llms.txt with local context.
+> Swift cryptography project hub for the swift-secp256k1 package — secp256k1 elliptic curve operations and ECDSA/Schnorr signatures (the ZKP zero-knowledge module was removed in 0.24.0; its docs remain frozen at 0.23.2). Documentation spans two subdomains; each has its own llms.txt with local context.
 
-21.dev is the main site for the swift-secp256k1 open-source Swift package (`21-DOT-DEV/swift-secp256k1` on GitHub). The package provides two public modules built on the secp256k1 elliptic curve:
+21.dev is the main site for the swift-secp256k1 open-source Swift package (`21-DOT-DEV/swift-secp256k1` on GitHub). Since 0.24.0 the package ships a single module built on the secp256k1 elliptic curve:
 
-- P256K — wraps libsecp256k1 (Bitcoin Core). High-level API for key generation, ECDSA signing/verification, ECDH shared secrets, and public key recovery. Start here for standard elliptic curve operations.
-- ZKP — wraps libsecp256k1-zkp (Blockstream Elements fork). Provides the same base operations as P256K plus zero-knowledge proof capabilities: Pedersen commitments, range proofs, Schnorr signatures, and surjection proofs.
+- P256K — wraps libsecp256k1 (Bitcoin Core). High-level API for key generation, ECDSA signing/verification, Schnorr signatures, ECDH shared secrets, and public key recovery. Start here for all elliptic curve operations.
+- ZKP (legacy, frozen at 0.23.2) — wrapped libsecp256k1-zkp (Blockstream Elements fork) with P256K's base operations plus zero-knowledge proofs: Pedersen commitments, range proofs, and surjection proofs. Removed from the package in 0.24.0; docs remain on docs.21.dev for legacy consumers.
 
 Things to know when working with this documentation:
 
-- P256K and ZKP are sibling modules wrapping different C libraries — pick one, do not import both. Use P256K for standard operations; use ZKP when you need commitments, range proofs, or surjection proofs
+- ZKP was removed from the package in 0.24.0 — always use P256K for new work; point to the frozen ZKP docs only for zero-knowledge primitives P256K doesn't cover
 - All APIs are Swift 6.1+ with strict concurrency (swift-tools-version: 6.1, swiftLanguageModes: [.v6])
-- Consumers should use only the public Swift APIs in P256K or ZKP, never the underlying C bindings (libsecp256k1, libsecp256k1_zkp) directly
+- Consumers should use only the public Swift APIs in P256K, never the underlying C bindings (libsecp256k1) directly
 - Documentation auto-updates with package releases; the DocC HTML version (docs.21.dev) includes GitHub source links to exact line numbers
 
 Two subdomains serve documentation:
@@ -31,7 +31,7 @@ Two subdomains serve documentation:
 ## API Reference (Markdown — LLM-optimized)
 
 - [P256K Module Overview](https://docs.21.dev/data/documentation/p256k.md): Elliptic curve cryptography — key generation, ECDSA signing, ECDH key agreement, public key recovery
-- [ZKP Module Overview](https://docs.21.dev/data/documentation/zkp.md): Zero-knowledge proofs — Pedersen commitments, range proofs, Schnorr signatures
+- [ZKP Module Overview](https://docs.21.dev/data/documentation/zkp.md) (frozen at 0.23.2): Zero-knowledge proofs — Pedersen commitments, range proofs, Schnorr signatures
 
 ## Source Code
 
@@ -50,5 +50,5 @@ Two subdomains serve documentation:
 - [Example Symbol — Markdown](https://docs.21.dev/data/documentation/p256k/sharedsecret.md): Sample documentation format (plain text, LLM-readable)
 - [Example Symbol — HTML](https://docs.21.dev/documentation/p256k/sharedsecret): Same symbol as interactive DocC page (Vue.js SPA, requires JavaScript to render)
 - [P256K Interactive Docs](https://docs.21.dev/documentation/p256k/): DocC HTML reference with search and type hierarchy
-- [ZKP Interactive Docs](https://docs.21.dev/documentation/zkp/): DocC HTML reference with search and type hierarchy
+- [ZKP Interactive Docs](https://docs.21.dev/documentation/zkp/) (frozen at 0.23.2): DocC HTML reference with search and type hierarchy
 - [Issues](https://github.com/21-DOT-DEV/swift-secp256k1/issues): Bug reports and feature requests

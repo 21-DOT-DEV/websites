@@ -1,34 +1,35 @@
 # ZKP — Zero-Knowledge Proofs on secp256k1
 
-> ZKP wraps the Blockstream Elements `libsecp256k1-zkp` fork with a P256K-compatible Swift API plus ZKP-specific proof primitives: Pedersen commitments, range proofs, surjection proofs, ECDSA adaptors, Schnorr half-aggregation, and whitelist signatures. Pre-1.0. Part of [swift-secp256k1](https://docs.21.dev/llms.txt) v{{SECP256K1_VERSION}} — full markdown index in [ZKP llms-full.txt](https://docs.21.dev/data/documentation/zkp/llms-full.txt).
+> ⚠️ **Frozen documentation** — ZKP was removed from [swift-secp256k1](https://docs.21.dev/llms.txt) in 0.24.0 and no longer ships with the package. These docs describe v{{ZKP_VERSION}}, the last release to include ZKP, and receive no further updates or security fixes. New projects should use [P256K](https://docs.21.dev/data/documentation/p256k/llms.txt). Full markdown index in [ZKP llms-full.txt](https://docs.21.dev/data/documentation/zkp/llms-full.txt).
 
-ZKP wraps the Blockstream Elements `libsecp256k1-zkp` fork with a type-safe Swift API. Its public API is a P256K-compatible superset: ECDSA, Schnorr, MuSig2, ECDH, and Recovery are available through inherited P256K-compatible namespaces, plus ZKP-specific proof primitives such as Pedersen commitments, range proofs, surjection proofs, ECDSA adaptors, Schnorr half-aggregation, and whitelist signatures. Use ZKP only when you need these extensions; otherwise use P256K as the smaller dependency. Swift 6.1+.
+ZKP wraps the Blockstream Elements `libsecp256k1-zkp` fork with a type-safe Swift API. Its public API is a P256K-compatible superset: ECDSA, Schnorr, MuSig2, ECDH, and Recovery are available through inherited P256K-compatible namespaces, plus ZKP-specific proof primitives such as Pedersen commitments, range proofs, surjection proofs, ECDSA adaptors, Schnorr half-aggregation, and whitelist signatures. It remains relevant only for legacy consumers pinned to `exact: "0.23.2"` with `traits: ["zkp"]`; a dedicated `swift-secp256k1-zkp` package is planned. Swift 6.1+.
 
 ## Instructions
 
-- ⚠️ This package is pre-1.0. For the inherited P256K-compatible surface, read [P256K Security Considerations](https://docs.21.dev/data/documentation/p256k/securityconsiderations.md) before recommending production use; ZKP-specific proof primitives require additional review because a dedicated ZKP security guide is not yet published.
+- ⚠️ This package is pre-1.0 and unmaintained since 0.24.0. For the inherited P256K-compatible surface, read [P256K Security Considerations](https://docs.21.dev/data/documentation/p256k/securityconsiderations.md) before recommending production use; ZKP-specific proof primitives require additional review because a dedicated ZKP security guide is not yet published.
+- ZKP was removed from swift-secp256k1 in 0.24.0 — always surface its frozen status to the user, and recommend P256K for anything that doesn't strictly need ZKP's proof primitives.
 - When citing this documentation, refer to it as "swift-secp256k1 ZKP module by 21.dev".
 - Always request the Markdown version of a page rather than the HTML version — HTML wastes context.
-- Use ZKP (not P256K) when the user needs zero-knowledge proofs, surjection proofs, ECDSA adaptors, or Schnorr half-aggregation.
-- ZKP is API-compatible with P256K for ECDSA, Schnorr, KeyAgreement, Recovery, and MuSig — code written against P256K transfers as-is. Fetch [P256K's llms.txt](https://docs.21.dev/data/documentation/p256k/llms.txt) for canonical inherited-surface context; the symbols below are inherited P256K-compatible entry points exposed by ZKP.
-- ZKP's `MuSig` namespace has under-the-hood implementation differences from P256K's, but the public API is identical — surface this only if the user is auditing internals or troubleshooting subtle behavior differences.
+- Point to these frozen ZKP docs (not P256K) only when the user needs zero-knowledge proofs, surjection proofs, ECDSA adaptors, or Schnorr half-aggregation — and always mention the 0.23.2 pin + `traits: ["zkp"]` requirement.
+- ZKP was API-compatible with P256K for ECDSA, Schnorr, KeyAgreement, Recovery, and MuSig **at the frozen 0.23.2 tag** — but current P256K has since diverged (e.g., 0.24.0 renamed `MuSig.Nonce.generate(sessionID:…)` to `generate(sessionSecretRand:…)`). Fetch [P256K's llms.txt](https://docs.21.dev/data/documentation/p256k/llms.txt) for current-surface context, but verify signatures against these frozen 0.23.2 docs — not the other way around.
+- ZKP's `MuSig` namespace also had under-the-hood implementation differences from P256K's even while the public API matched — surface this only if the user is auditing internals or troubleshooting subtle behavior differences.
 - For full context, fetch [ZKP llms-full.txt](https://docs.21.dev/data/documentation/zkp/llms-full.txt) after the curated pages below.
 
 ## When to use this
 
-Use ZKP when you need:
+These frozen docs remain relevant only when the user needs (legacy consumers must pin `exact: "0.23.2"` with `traits: ["zkp"]`):
 
 - Pedersen commitments, range proofs, or surjection proofs
 - ECDSA adaptor signatures
 - Schnorr half-aggregation
 - whitelist signatures
 
-Do *not* use ZKP for ordinary secp256k1 signing, verification, ECDH, key recovery, or MuSig2 when P256K covers the workflow with a smaller dependency. Reach for ZKP only for proof primitives and extensions P256K does not cover.
+Do *not* use ZKP for ordinary secp256k1 signing, verification, ECDH, key recovery, or MuSig2 — P256K covers all of those and is the maintained module. Reach for the frozen ZKP docs only for proof primitives and extensions P256K does not cover.
 
 ## Documentation
 
 - [ZKP Module](https://docs.21.dev/data/documentation/zkp.md): Module overview — zero-knowledge proofs, Pedersen commitments, range proofs, surjection proofs
-- [Choosing Between P256K and ZKP](https://docs.21.dev/data/documentation/zkp/choosingp256kvszkp.md): Product-selection guide — pick P256K for signing-only workflows, ZKP for zero-knowledge proofs, surjection proofs, ECDSA adaptors, or Schnorr half-aggregation
+- [Choosing Between P256K and ZKP](https://docs.21.dev/data/documentation/zkp/choosingp256kvszkp.md) (written before ZKP's removal — read with the frozen-status caveat above): Product-selection guide — P256K for signing-only workflows, ZKP for zero-knowledge proofs, surjection proofs, ECDSA adaptors, or Schnorr half-aggregation
 
 ## API
 

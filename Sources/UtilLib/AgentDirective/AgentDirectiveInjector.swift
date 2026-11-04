@@ -112,8 +112,9 @@ public enum AgentDirectiveInjector {
     /// - **globals.hubs** — site-wide hub pages (docs root, namespace hubs)
     /// - **p256k** — P256K llms.txt + audit-derived (Discussion / Parameters /
     ///   Return Value / aside / type-page Overview entries via hybrid policy)
-    /// - **zkp** — ZKP-unique authored articles only. ZKP symbol pages are
-    ///   re-exports of P256K and remain `noindex` (SEO duplicate prevention).
+    /// - **zkp** — nothing. The ZKP module was removed from swift-secp256k1
+    ///   in 0.24.0; its docs are frozen at the 0.23.2 archive and the whole
+    ///   tree stays `noindex` (reachable for legacy users, out of search).
     /// - **event** — Event llms.txt + audit-derived entries
     /// - **openssl** — OpenSSL llms.txt + audit-derived entries
     /// - **tor** — TorClient/TorSession entry-points + audit-derived entries
@@ -154,7 +155,7 @@ public enum AgentDirectiveInjector {
     /// per-module gap report against this allowlist. Manually review and
     /// merge new entries into the per-archive `indexablePages` array in
     /// `external-archives.json`. Project-specific exclusions (Tor's internal
-    /// protocol-plumbing children, ZKP's P256K re-exports) are pre-applied
+    /// protocol-plumbing children, ZKP's entire frozen tree) are pre-applied
     /// via `IndexabilityAuditor.defaultModuleExclusions`.
     static let indexablePages: Set<String> = registry.allIndexablePages
 
