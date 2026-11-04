@@ -1,0 +1,59 @@
+name: development-docs
+
+# Advisory gate — failures are visible on pull requests, but this workflow is
+# intentionally not a required check while the Development/ system beds in.
+# Promoting it to a required check needs an always-running wrapper job (a
+# path-filtered required check stays "Pending" forever on unrelated PRs and
+# blocks them); that follow-up is tracked in Development/Roadmap/backlog.md.
+on:
+  push:
+    branches:
+      - 'main'
+    paths: &paths
+      - 'Development/**'
+      - '.vale.ini'
+      - '.vale/**'
+      - '.github/workflows/development-docs.yml'
+
+  pull_request:
+    branches:
+      - 'main'
+    paths: *paths
+
+  workflow_dispatch:
+
+permissions: {}
+
+env:
+  VALE_VERSION: "3.24.0"
+  VALE_SHA256: "87b513f26499f6657c15cf7175ba5b058a7c1ff2bb2d4e07265db2dd43451e44"
+
+jobs:
+  development-docs:
+    name: Development Documentation
+    runs-on: macos-26
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    env:
+      DEVELOPER_DIR: "/Applications/Xcode_26.4.app/Contents/Developer"
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+
+      - name: Download Vale
+        run: |
+          curl -sSfL -o vale.tgz "https://github.com/errata-ai/vale/releases/download/v${VALE_VERSION}/vale_${VALE_VERSION}_macOS_arm64.tar.gz"
+          echo "${VALE_SHA256}  vale.tgz" | shasum -a 256 -c -
+          tar -xzf vale.tgz vale
+
+      - name: Lint planning documents
+        run: ./vale Development/ADRs Development/Specs Development/README.md
+
+      - name: Test the checker
+        run: swift test --package-path Development/Tools --disable-dependency-cache
+
+      - name: Check plan and ADR indexes
+        run: swift run --package-path Development/Tools plans --check

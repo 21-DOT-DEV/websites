@@ -1,0 +1,21 @@
+# Auto-detect text files and normalize line endings
+* text=auto
+
+# Swift files
+*.swift text diff=swift
+
+# Build artifacts, documentation tooling, and agent/config directories
+# are not part of the shipped package source
+.build/**                   export-ignore linguist-vendored
+.swiftpm/**                 export-ignore linguist-vendored
+.github/**                  export-ignore linguist-vendored
+Development/**              export-ignore linguist-vendored
+.vale/**                    export-ignore linguist-vendored
+.vale.ini                   export-ignore
+.jury/**                    export-ignore linguist-vendored
+jury.toml                   export-ignore
+
+# Git and editor files
+.gitignore                  export-ignore
+.gitattributes              export-ignore
+.DS_Store                   export-ignore

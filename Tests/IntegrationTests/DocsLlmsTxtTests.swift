@@ -66,7 +66,7 @@ struct DocsLlmsTxtTests {
             let content = try read(moduleFile(module))
             let headings = sectionHeadings(in: content)
             // "API" replaces the older "Symbols" heading per the llms.txt
-            // research finding (see .specify/memory/llms-txt-research.md
+            // research finding (see Development/Research/llms-txt-research.md
             // Finding 8 — "API" is the broader convention used by FastHTML,
             // nbdev, Pydantic, etc.).
             let required = ["Instructions", "When to use this", "Documentation", "API"]

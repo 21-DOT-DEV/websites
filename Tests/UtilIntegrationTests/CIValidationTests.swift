@@ -96,7 +96,7 @@ struct CIValidationTests {
         #expect(FileManager.default.fileExists(atPath: utilIntegrationPath), "SC-005: UtilIntegrationTests should exist")
         
         // SC-006: Architecture documentation exists
-        let archDocPath = baseDir + "/.windsurf/rules/util-architecture.md"
+        let archDocPath = baseDir + "/Development/Specs/004-utilities-cli/util-architecture.md"
         #expect(FileManager.default.fileExists(atPath: archDocPath), "SC-006: Architecture documentation should exist")
     }
     

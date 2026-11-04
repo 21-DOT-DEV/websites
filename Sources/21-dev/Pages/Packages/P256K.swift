@@ -124,17 +124,17 @@ struct P256KPage {
                 title: "Xcode",
                 codeSnippet: SiteIdentity.p256kRepoURL,
                 language: "text",
-                instructions: "In Xcode, go to File → Add Package Dependencies, paste the URL above, select version 0.23.1, and add to your target."
+                instructions: "In Xcode, go to File → Add Package Dependencies, paste the URL above, select version 0.23.2, and add to your target."
             ),
             InstallationOption(
                 title: "Swift Package Manager",
-                codeSnippet: ".package(url: \"\(SiteIdentity.p256kRepoURL)\", exact: \"0.23.1\")",
+                codeSnippet: ".package(url: \"\(SiteIdentity.p256kRepoURL)\", exact: \"0.23.2\")",
                 language: "swift",
                 instructions: "Add this line to your Package.swift dependencies array, then run `swift build` to integrate P256K into your project."
             ),
             InstallationOption(
                 title: "CocoaPods",
-                codeSnippet: "pod 'swift-secp256k1', '0.23.1'",
+                codeSnippet: "pod 'swift-secp256k1', '0.23.2'",
                 language: "ruby",
                 instructions: "Add this line to your Podfile, then run `pod install` to integrate P256K into your Xcode workspace."
             )

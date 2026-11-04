@@ -1,0 +1,71 @@
+# ai-jury panel: three `devin -p` seats, one pinned model each.
+# `vendor` holds a synthetic diversity token per seat — the schema's vendor
+# enum doesn't name the real providers behind these models, so
+# protocol-shaped labels stand in and min_vendors measures the model
+# diversity that exists. `adapter = "cli"` is the protocol that builds the
+# argv, so extra_args pass through untouched (an unlabeled-vendor seat would
+# get agy's --sandbox mangling).
+# Reference: https://ai-jury.dev + docs/configuration.md in that repo.
+
+[jury]
+rounds = 2            # ceiling; auto_depth shrinks this on small diffs
+auto_depth = true     # risk-aware: docs-only -> shallow, security-touching -> full
+chair = "opus"        # the opus seat verifies findings and synthesizes the verdict
+verify = true
+decision = "chair"
+timeout = 1500        # per-agent wall clock — devin sessions are slower than API calls
+total_timeout = 7200  # >= 4 phases (r1, debate, verify, synthesis) x phase_timeout,
+                      # so a full-depth run can't be capped mid-deliberation
+phase_timeout = 1500
+retries = 1
+
+[jury.diff]
+# Large staged sets (like a whole migration) exceed the 200KB diff budget;
+# chunk by file instead of failing. Per-item diffs never trigger this.
+chunk = true
+
+[jury.ci]
+fail_on = ["critical", "major"]
+# Fail-closed: a surviving finding blocks whether or not verify ran. The
+# shipped default (true) only lets *verified* findings fail — and auto_depth
+# skips verify on shallow diffs, which would make this gate dead code on the
+# small per-item diffs it exists for (ai_jury/ci.py evaluate_ci).
+ignore_unverified = false
+# min_vendors defaults to 2; the seats below carry three distinct vendor
+# identities (anthropic / openai-compatible / cli), so the gate is satisfied.
+
+[jury.context]
+# All three seats are `devin` sessions against the same backend that already
+# reads this tree, and no vocabulary in this repo trips the scrubber's
+# secret-assignment patterns — so the default secret redaction stays ON and
+# no scripted preflight is needed (the crypto sibling repos disable it; we
+# don't).
+# redact_secrets defaults to true.
+
+[[agent]]
+name = "opus"
+vendor = "anthropic"
+adapter = "cli"
+command = "devin"
+model = "claude-opus-5-high"  # provenance for reports; --model in argv does the pinning
+prompt_mode = "arg"           # whole prompt appended as one argv element, after the "--"
+extra_args = ["-p", "--model", "claude-opus-5-high", "--sandbox", "--"]
+
+[[agent]]
+name = "kimi"
+vendor = "openai-compatible"
+adapter = "cli"
+command = "devin"
+model = "kimi-k3-max"  # -high ended a real review mid-investigation (14s, no
+                       # verdict); -max is the top effort tier at the same price
+prompt_mode = "arg"
+extra_args = ["-p", "--model", "kimi-k3-max", "--sandbox", "--"]
+
+[[agent]]
+name = "swe"
+vendor = "cli"
+adapter = "cli"
+command = "devin"
+model = "swe-1-7"
+prompt_mode = "arg"
+extra_args = ["-p", "--model", "swe-1-7", "--sandbox", "--"]
