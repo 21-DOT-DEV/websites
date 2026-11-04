@@ -144,15 +144,15 @@ struct SiteGenerator {
         resourcesURL: URL,
         outputURL: URL
     ) throws {
-        let summary = "Swift cryptography project hub for the swift-secp256k1 package — secp256k1 elliptic curve operations, ECDSA/Schnorr signatures, and zero-knowledge proofs."
+        let summary = "Swift cryptography project hub for the swift-secp256k1 package — secp256k1 elliptic curve operations and ECDSA/Schnorr signatures (the ZKP zero-knowledge module was removed in 0.24.0; its docs remain frozen at 0.23.2)."
         
         var out = """
         <project title="21.dev" summary='\(summary)'>
         Things to know when working with this documentation:
         
-        - P256K and ZKP are sibling modules wrapping different C libraries — pick one, do not import both
+        - P256K is the only module shipped by swift-secp256k1 since 0.24.0 — the former ZKP module's docs remain on docs.21.dev, frozen at 0.23.2
         - All APIs are Swift 6.1+ with strict concurrency (swift-tools-version: 6.1, swiftLanguageModes: [.v6])
-        - Consumers should use only the public Swift APIs in P256K or ZKP, never the underlying C bindings directly
+        - Consumers should use only the public Swift APIs in P256K, never the underlying C bindings directly
         - Documentation auto-updates with package releases; the DocC HTML version (docs.21.dev) includes GitHub source links
         
         <docs>
@@ -192,7 +192,7 @@ struct SiteGenerator {
         
         Swift Package Manager (recommended):
         ```swift
-        .package(url: "https://github.com/21-DOT-DEV/swift-secp256k1", exact: "0.23.2")
+        .package(url: "https://github.com/21-DOT-DEV/swift-secp256k1", exact: "0.24.0")
         ```
         
         ## FAQ
@@ -217,6 +217,9 @@ struct SiteGenerator {
         
         **Is the API stable?**
         P256K is pre-1.0.0, so APIs may change between releases. For production use, pin an exact version in Swift Package Manager to avoid unexpected breaking changes.
+        
+        **What happened to the ZKP module?**
+        The ZKP module was removed from swift-secp256k1 in 0.24.0 and no longer ships with the package — its documentation remains online, frozen at the 0.23.2 release. See https://docs.21.dev/documentation/p256k/migratingtop256k/ for how to move to current APIs.
         </doc>
         
         """

@@ -637,7 +637,7 @@ struct AgentDirectiveTests {
         #expect(action == .skipped)
     }
 
-    @Test("Allowlist has exactly 416 entries (1 globals.hub + 127 P256K + 35 Event + 28 OpenSSL + 2 ZKP + 96 Tor + 43 Bitcoin + 84 BitcoinKernel)")
+    @Test("Allowlist has exactly 417 entries (1 globals.hub + 130 P256K + 35 Event + 28 OpenSSL + 0 ZKP + 96 Tor + 43 Bitcoin + 84 BitcoinKernel)")
     func allowlistCompleteness() {
         // 2026-05-28 swift-secp256k1 0.23.1 → 0.23.2 bump: -13 stale (3 deleted
         // articles upstream + 10 thin-prose drift) +6 newly-eligible symbol
@@ -646,7 +646,11 @@ struct AgentDirectiveTests {
         // 0.1.0 archive ships two .doccarchives: Bitcoin (43 indexable: 41
         // symbol pages + Getting Started article + module landing) and
         // BitcoinKernel (84 indexable: 81 symbol pages + 2 articles + landing).
-        #expect(AgentDirectiveInjector.indexablePages.count == 416)
+        // 2026-10-26 swift-secp256k1 0.23.2 → 0.24.0 bump: -1 renamed symbol
+        // (MuSig sessionID→sessionSecretRand) +3 newly-eligible symbol pages
+        // +1 new authored article (migratingtop256k) -2 ZKP pages (module
+        // removed upstream; its 0.23.2 docs are frozen and noindex'd).
+        #expect(AgentDirectiveInjector.indexablePages.count == 417)
 
         // Spot-check globals.hubs (truly cross-cutting site root only).
         #expect(AgentDirectiveInjector.indexablePages.contains("documentation"))
@@ -689,6 +693,15 @@ struct AgentDirectiveTests {
         // full authored prose instead of the first content section only.
         #expect(!AgentDirectiveInjector.indexablePages.contains("documentation/p256k/p256k/recovery/publickey/init(_:signature:format:)-4311g"))
 
+        // swift-secp256k1 0.24.0: MuSig.Nonce.generate(sessionID:…) was
+        // renamed to generate(sessionSecretRand:…) — stale slug must be gone.
+        #expect(!AgentDirectiveInjector.indexablePages.contains("documentation/p256k/p256k/musig/nonce/generate(sessionid:secretkey:publickey:msg32:extrainput32:)"))
+        // Newly eligible pages from the 0.24.0 archive audit.
+        #expect(AgentDirectiveInjector.indexablePages.contains("documentation/p256k/p256k/musig/nonce/generate(sessionsecretrand:secretkey:publickey:msg32:extrainput32:)"))
+        #expect(AgentDirectiveInjector.indexablePages.contains("documentation/p256k/p256k/musig/sessionsecretrand"))
+        #expect(AgentDirectiveInjector.indexablePages.contains("documentation/p256k/p256k/musig/sessionsecretrand/init(bytes:)"))
+        #expect(AgentDirectiveInjector.indexablePages.contains("documentation/p256k/migratingtop256k"))
+
         // Spot-check Event llms.txt entries
         #expect(AgentDirectiveInjector.indexablePages.contains("documentation/event"))
         #expect(AgentDirectiveInjector.indexablePages.contains("documentation/event/gettingstarted"))
@@ -701,9 +714,11 @@ struct AgentDirectiveTests {
         #expect(AgentDirectiveInjector.indexablePages.contains("documentation/openssl/sha256"))
         #expect(AgentDirectiveInjector.indexablePages.contains("documentation/openssl/rsa/privatekey"))
 
-        // ZKP-unique authored articles allowlisted (module overview + product-selection guide)
-        #expect(AgentDirectiveInjector.indexablePages.contains("documentation/zkp"))
-        #expect(AgentDirectiveInjector.indexablePages.contains("documentation/zkp/choosingp256kvszkp"))
+        // ZKP was removed from swift-secp256k1 in 0.24.0 — the whole frozen
+        // tree is noindex (module landing + authored article). URLs still
+        // resolve; they're just out of search and sitemap.
+        #expect(!AgentDirectiveInjector.indexablePages.contains("documentation/zkp"))
+        #expect(!AgentDirectiveInjector.indexablePages.contains("documentation/zkp/choosingp256kvszkp"))
 
         // ZKP symbol pages still excluded — they re-export P256K and would be SEO dupes
         #expect(!AgentDirectiveInjector.indexablePages.contains("documentation/zkp/p256k/signing"))
@@ -811,7 +826,10 @@ struct AgentDirectiveTests {
                 // capitalize-first fallback would produce wrong casing.
                 // Use known word-boundary patterns that indicate compound names.
                 let compoundSuffixes = ["key", "secret", "digest", "error", "signature",
-                                        "proof", "started", "only", "kit"]
+                                        "proof", "started", "only", "kit", "size", "bytes",
+                                        "prefix", "id", "representation", "nonce", "rand",
+                                        "count", "endian", "url", "hellman", "payments",
+                                        "description", "transactions", "keys", "256"]
                 let isLikelyCompound = compoundSuffixes.contains(where: { suffix in
                     segment.hasSuffix(suffix) && segment != suffix
                 })

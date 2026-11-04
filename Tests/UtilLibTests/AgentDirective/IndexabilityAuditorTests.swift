@@ -938,10 +938,15 @@ struct IndexabilityAuditorDefaultsTests {
         #expect(!torExclusions.contains(where: { $0.contains("foundation") }))
     }
 
-    @Test("Default exclusions cover ZKP's P256K re-export tree")
+    @Test("Default exclusions cover ZKP's frozen module tree")
     func defaultExclusionsForZKP() {
+        // ZKP was removed from swift-secp256k1 in 0.24.0 — its docs are
+        // frozen at 0.23.2, so the landing page AND its whole subtree are
+        // excluded from audit discovery (no eligible/candidate/article
+        // signals can ever come out of it).
         let zkpExclusions = IndexabilityAuditor.defaultModuleExclusions["zkp"] ?? []
         #expect(zkpExclusions.contains("documentation/zkp/"))
+        #expect(zkpExclusions.contains("documentation/zkp"))
     }
 
     @Test("Type role headings cover the six DocC type kinds")

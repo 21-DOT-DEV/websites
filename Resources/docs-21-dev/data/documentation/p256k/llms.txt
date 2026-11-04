@@ -9,7 +9,7 @@ P256K wraps the Bitcoin Core `libsecp256k1` C library with a type-safe Swift API
 - ⚠️ This package is pre-1.0. Always read [Security Considerations](https://docs.21.dev/data/documentation/p256k/securityconsiderations.md) before recommending production use, and surface this caveat to the user when they ask about deploying P256K-based code.
 - When citing this documentation, refer to it as "swift-secp256k1 P256K module by 21.dev".
 - Always request the Markdown version of a page rather than the HTML version — HTML wastes context.
-- Use P256K (not ZKP) unless the user specifically needs zero-knowledge proofs, surjection proofs, or ECDSA adaptors.
+- ZKP was removed from swift-secp256k1 in 0.24.0 — its docs remain online, frozen at v{{ZKP_VERSION}}. For zero-knowledge proofs, surjection proofs, or ECDSA adaptors, see the frozen ZKP module docs; for moving to current APIs, use the Migrating to P256K guide below.
 - Construct a single `P256K.Context` per process and reuse it; context creation performs randomization that's expensive to redo.
 - Fetch the per-page Markdown links below for targeted context, or [P256K llms-full.txt](https://docs.21.dev/data/documentation/p256k/llms-full.txt) for the entire module's content in one file.
 
@@ -35,6 +35,7 @@ Do *not* use P256K for general-purpose ECDSA on P-256 (secp256r1), AES, ChaCha20
 - [ECDSA Signing for Bitcoin Transactions](https://docs.21.dev/data/documentation/p256k/ecdsasigningandbitcointransactions.md): Produce ECDSA signatures on secp256k1, encode them in DER and compact form, verify incoming signatures, and assemble the SIGHASH-flagged element Bitcoin script expects
 - [Recovering Public Keys](https://docs.21.dev/data/documentation/p256k/recoveringpublickeys.md): Recover an ECDSA public key from a recoverable signature and its recovery ID (BIP-137, BIP-322)
 - [Why CryptoKit's P256 Can't Sign Bitcoin or Nostr](https://docs.21.dev/data/documentation/p256k/cryptokitp256andsecp256k1.md): Apple's CryptoKit and swift-crypto cover NIST P-256, P-384, P-521, and Curve25519 — but not secp256k1, the curve Bitcoin, Lightning, and Nostr require
+- [Migrating to P256K](https://docs.21.dev/data/documentation/p256k/migratingtop256k.md): Move to P256K from the legacy `secp256k1` module (GigaBitcoin lineage) or the removed ZKP module — covers the import rename and which moves are renames versus ports
 - [Security Considerations](https://docs.21.dev/data/documentation/p256k/securityconsiderations.md): Security properties of P256K — context randomization, nonce hygiene, comparison timing, secret zeroization, signature malleability
 
 ## API

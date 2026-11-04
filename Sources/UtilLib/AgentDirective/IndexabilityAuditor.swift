@@ -47,8 +47,10 @@ import Foundation
 ///
 /// ## Project-specific exclusions
 ///
-/// - `documentation/zkp/<symbol>/...` (excluding the two ZKP-unique authored
-///   articles) re-exports P256K and stays `noindex` for SEO de-duplication.
+/// - `documentation/zkp` — the whole ZKP tree, landing included, stays
+///   `noindex`. ZKP was removed from swift-secp256k1 in 0.24.0; its docs are
+///   frozen at the 0.23.2 archive and never change, so it produces no audit
+///   signals at all.
 /// - `documentation/tor/controlprotocolparser/...` and
 ///   `documentation/tor/controlsocket/...` are internal protocol plumbing and
 ///   stay `noindex`. (Tor's `Foundation/URLSessionConfiguration/*` extensions
@@ -136,18 +138,17 @@ public enum IndexabilityAuditor {
     /// any of these prefixes never appear in audit results, even when they
     /// satisfy the hybrid policy.
     ///
-    /// - **zkp**: All `documentation/zkp/` symbol pages are P256K re-exports
-    ///   and stay `noindex` for SEO de-duplication. (The two ZKP-unique
-    ///   authored articles — `documentation/zkp` and
-    ///   `documentation/zkp/choosingp256kvszkp` — don't have `symbolKind`
-    ///   set and are filtered out earlier; they're hand-curated via
-    ///   `external-archives.json`'s `indexablePages`.)
+    /// - **zkp**: The entire `documentation/zkp` tree — landing page and all
+    ///   children — stays `noindex`. ZKP was removed from swift-secp256k1 in
+    ///   0.24.0; its docs are frozen at the 0.23.2 archive (reachable but
+    ///   unmaintained), so nothing under it is ever audit-eligible.
     /// - **tor**: Internal control-protocol plumbing trees stay `noindex`.
     ///   `Foundation/URLSessionConfiguration/*` extensions remain indexable
     ///   per the swift-tor README's user-facing API surface.
     public static let defaultModuleExclusions: [String: [String]] = [
         "zkp": [
             "documentation/zkp/",
+            "documentation/zkp",
         ],
         "tor": [
             "documentation/tor/controlprotocolparser/",
