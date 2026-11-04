@@ -25,8 +25,8 @@ on:
 permissions: {}
 
 env:
-  VALE_VERSION: "3.13.1"
-  VALE_SHA256: "35c0efe377e06e6b88f4f94e5dca33ff7b5b1a128ed80e82679f7976b0d03f2c"
+  VALE_VERSION: "3.24.0"
+  VALE_SHA256: "87b513f26499f6657c15cf7175ba5b058a7c1ff2bb2d4e07265db2dd43451e44"
 
 jobs:
   development-docs:
@@ -45,7 +45,7 @@ jobs:
 
       - name: Download Vale
         run: |
-          curl -sSfL -o vale.tgz "https://github.com/errata-ai/vale/releases/download/v${VALE_VERSION}/vale_${VALE_VERSION}_macOS_64-bit.tar.gz"
+          curl -sSfL -o vale.tgz "https://github.com/errata-ai/vale/releases/download/v${VALE_VERSION}/vale_${VALE_VERSION}_macOS_arm64.tar.gz"
           echo "${VALE_SHA256}  vale.tgz" | shasum -a 256 -c -
           tar -xzf vale.tgz vale
 
