@@ -32,4 +32,6 @@ between the markers is rewritten, not edited by hand.
 | 003 | Cloudflare header policy as version-controlled configuration | 1 · Foundation &amp; Discoverability | Implemented | [plan.md](003-cloudflare-headers/plan.md) |
 | 004 | UtilLib library and util CLI executable for CI utilities | 2 · Utilities Library Refactoring | Implemented | [plan.md](004-utilities-cli/plan.md) |
 | 005 | Sticky deployment comments on pull requests | 2 · Utilities Library Refactoring | Implemented | [plan.md](005-pr-deployment-comments/plan.md) |
+| 006 | Internal link checking for generated HTML output | 3 · Performance &amp; Delivery Optimization | In Progress | [plan.md](006-internal-link-check/plan.md) |
+| 007 | Verify _redirects rules against deployed URLs | 2 · Utilities Library Refactoring | Planned | [plan.md](007-redirects-verify/plan.md) |
 <!-- END GENERATED INDEX -->

@@ -2,7 +2,7 @@
 
 **Status:** In Progress
 **Priority:** High (Next Priority)
-**Last Updated:** 2025-12-29
+**Last Updated:** 2026-11-04
 
 ## Phase Goal
 
@@ -13,9 +13,9 @@ Extract sitemap utilities and reusable workflow logic into a dedicated `Utilitie
 | Feature | Status | Progress |
 |---------|--------|----------|
 | Feature 1 — Utilities Library Extraction | ✅ Complete | 100% |
-| Feature 2 — Workflow Migration | 🚧 In Progress | 4/9 commands |
+| Feature 2 — Workflow Migration | 🚧 In Progress | 7 commands shipped; `redirects verify` scoped (Specs/007) |
 | Feature 3 — Canonical URL Management | ✅ Complete | 100% |
-| Feature 4 — Architecture Alignment | ❌ Not Started | 0% |
+| Feature 4 — Architecture Alignment | ✅ Complete | 100% |
 
 ---
 
@@ -38,23 +38,24 @@ Extract sitemap utilities and reusable workflow logic into a dedicated `Utilitie
 - **Notes:** Extracted from 001-sitemap-infrastructure T057. Follows subtree pattern (library + executable).
 
 ### Feature 2 — Workflow Migration to Utilities CLI 🚧
-- **Status:** In Progress (3/9 commands implemented)
+- **Status:** In Progress (one scoped command remaining)
 - **Purpose & user value:** Replace inline bash scripts in workflows with type-safe `swift run util` commands, providing consistent error handling, better debugging, and reduced maintenance burden through centralized logic.
 - **Implemented:**
-  - ✅ `util sitemap generate --site docs-21-dev` (generate-docc.yml migrated)
-  - ✅ `util sitemap generate --site md-21-dev` (generate-markdown.yml migrated)
+  - ✅ `util sitemap generate --site <site>` (generate-docc.yml)
   - ✅ `util headers validate --site <site> --env <env>`
+  - ✅ `util canonical check|fix` (generate-docc.yml)
+  - ✅ `util links rewrite` (generate-docc.yml)
+  - ✅ `util agent-directive inject|audit` (generate-docc.yml)
+  - ✅ `util search-console submit --site <site>` (deploy-cloudflare.yml — covers the former `sitemap submit` item)
+  - ✅ `util comment` (deploy-cloudflare.yml PR comments)
 - **Retired:**
   - 🗑️ `util state validate` and `util state update` — retired alongside the removal of `Resources/sitemap-state.json` and the lefthook post-checkout automation. The state file was never read by sitemap generation (the `.packageVersionState` strategy was a stub that fell through to `Date()`). docs.21.dev now emits sitemap entries without `<lastmod>` via the `.none` strategy; a future reintroduction (if warranted) should use content-hashing or a git commit date anchored to `Resources/docs-21-dev/external-archives.json`.
 - **Remaining:**
-  - *Sitemap:*
-    - ❌ `util sitemap submit --site <site>` — submit sitemap to Google/Bing
-  - *Validation:*
-    - ❌ `util redirects verify --site <site>` — verify redirect rules
-    - ❌ `util headers select --site <site> --env <env>` — environment-specific header selection
-    - ❌ `util build verify --site <site>` — verify build output
-  - *Infrastructure:*
-    - ❌ Pre-built release binary via git LFS — avoids rebuilding util on every CI run
+  - ❌ `util redirects verify --site <site>` — parse `_redirects` and verify each rule against a deployed URL. Scoped in Specs/007; replaces the hardcoded curl list in `deploy-cloudflare.yml` so new redirect rules can't ship unverified.
+- **Decisions (won't be commands):**
+  - `util headers select` — stays as inline bash. Selecting `_headers.<env>` is file copying with a branch conditional, inside this feature's own carve-out ("bash remains for simple operations"); the only real cost is ~10 duplicated lines across two workflows.
+  - `util build verify` — folded into Phase 3 Feature 8 (Performance Budgets); output verification is the same concern as size-budget enforcement.
+  - Pre-built release binary via git LFS — deferred; CI build times remain acceptable.
 - **Deferred:**
   - ⏸️ `util headers scaffold` — not needed for current workflows
 - **Quality gates:**
@@ -80,21 +81,13 @@ Extract sitemap utilities and reusable workflow logic into a dedicated `Utilitie
 - **Dependencies:** Utilities Library Extraction (library must exist first).
 - **Notes:** Post-generation injection approach works for all subdomains including DocC-generated docs.21.dev. Two-mode design (check/fix) follows industry best practice for safe automation.
 
-### Feature 4 — Architecture Alignment ❌
-- **Status:** Not Started
+### Feature 4 — Architecture Alignment ✅
+- **Status:** Complete
 - **Purpose & user value:** Align the `util` CLI architecture with industry-standard library + executable pattern, improving testability by separating unit tests (library internals) from integration tests (black-box CLI execution).
-- **Planned changes:**
-  - Rename `Utilities` → `UtilLib` (library containing all business logic)
-  - Rename `UtilitiesTests` → `UtilLibTests` (unit tests with `@testable import`)
-  - Rename `UtilitiesCLITests` → `UtilIntegrationTests` (black-box CLI tests)
-  - Remove `UtilLib` dependency from `UtilIntegrationTests` (tests only via `Subprocess`)
-  - Add `TestHarness` to `UtilIntegrationTests` for CLI execution and output capture
-- **Success criteria:**
-  - `UtilLibTests` tests library internals via `@testable import UtilLib`
-  - `UtilIntegrationTests` has zero dependency on `UtilLib` (pure black-box testing)
-  - `TestHarness` provides CLI execution with stdout/stderr/exit code capture
-  - All existing tests continue to pass after migration
-  - Clear separation: unit tests for logic, integration tests for CLI behavior
+- **Completed:**
+  - ✅ `UtilLib` target holds all business logic; `util` is a thin ArgumentParser shell
+  - ✅ `UtilLibTests` uses `@testable import UtilLib` for internals
+  - ✅ `UtilIntegrationTests` has zero dependency on `UtilLib` — runs the CLI via `Subprocess` only (see `Package.swift`)
 - **Dependencies:** Utilities Library Extraction (library must exist first).
 - **Notes:** Follows industry-standard CLI testing pattern (library + executable with separate test layers). `TestUtils` remains for DesignSystem HTML rendering tests; `UtilIntegrationTests` uses its own inline `TestHarness`.
 
@@ -102,7 +95,7 @@ Extract sitemap utilities and reusable workflow logic into a dedicated `Utilitie
 
 - **Upstream dependency:** Phase 1 — Sitemap Infrastructure Overhaul (utilities must exist before extraction).
 - **Internal sequencing:**
-  1. ✅ Utilities Library Extraction → 2. 🚧 Workflow Migration → 3. ✅ Canonical URL Management → 4. ❌ Architecture Alignment
+  1. ✅ Utilities Library Extraction → 2. 🚧 Workflow Migration → 3. ✅ Canonical URL Management → 4. ✅ Architecture Alignment
 
 ## Phase Metrics
 

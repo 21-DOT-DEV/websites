@@ -1,8 +1,8 @@
 # Phase 3 — Performance & Delivery Optimization
 
-**Status:** Not Started
+**Status:** In Progress
 **Priority:** Medium-High
-**Last Updated:** 2026-01-01
+**Last Updated:** 2026-11-04
 
 ## Phase Goal
 
@@ -12,7 +12,7 @@ Optimize caching, delivery, and site structure to achieve excellent Core Web Vit
 
 ### Feature 1 — Open Graph & Twitter Card Meta Tags
 - **Name:** Open Graph & Twitter Card Meta Tags
-- **Status:** Not Started
+- **Status:** Completed
 - **Purpose & user value:** Control how links appear when shared on social media (LinkedIn, Twitter, Facebook) with proper titles, descriptions, and preview images. Increases click-through rates by 2-3x and creates professional appearance in link previews.
 - **Success metrics:**
   - 100% of pages have proper Open Graph tags (og:title, og:description, og:url, og:type)
@@ -21,11 +21,11 @@ Optimize caching, delivery, and site structure to achieve excellent Core Web Vit
   - Social media link previews render correctly across all platforms
   - Zero missing meta tag warnings in social media debugger tools
 - **Dependencies:** Brand Assets & Favicons (for og:image generation)
-- **Notes:** All required data already exists (title, description, canonical URL from Phase 1 work). Only missing component is og:image assets. Can start with simple programmatic generation, enhance with professional design later.
+- **Notes:** Shipped via `OpenGraphConfig` (DesignSystem) + `SiteDefaults.openGraphConfig` with `summary_large_image` cards and `Resources/21-dev/images/og-image.png` (1200×600).
 
 ### Feature 2 — Theme Color Meta Tag
 - **Name:** Theme Color Meta Tag
-- **Status:** Not Started
+- **Status:** Completed
 - **Purpose & user value:** Enables mobile browser UI theming to match site branding. Improves mobile UX by coloring browser chrome with brand color (#f97316 orange).
 - **Success metrics:**
   - Theme color meta tag present on all pages
@@ -36,6 +36,7 @@ Optimize caching, delivery, and site structure to achieve excellent Core Web Vit
 
 ### Feature 3 — Core Web Vitals Optimization
 - **Name:** Core Web Vitals Optimization
+- **Status:** Not Started
 - **Purpose & user value:** Systematically improve Largest Contentful Paint (LCP), Interaction to Next Paint (INP), and Cumulative Layout Shift (CLS) to provide faster, smoother user experiences and improve search rankings.
 - **Success metrics:**
   - LCP: 100% of pages achieve "Good" (< 2.5s)
@@ -48,25 +49,24 @@ Optimize caching, delivery, and site structure to achieve excellent Core Web Vit
 
 ### Feature 4 — HTML `<head>` Hygiene & SEO
 - **Name:** HTML `<head>` Hygiene & SEO
-- **Status:** Partially Complete
+- **Status:** Completed
 - **Purpose & user value:** Implement comprehensive meta tags, structured data, and proper head elements to maximize search visibility and discoverability.
 - **Success metrics:**
   - ✅ All pages have unique meta descriptions (140-160 chars)
   - ✅ Language tag (lang="en") on HTML element
   - ✅ Article metadata (published_time, author, tags) for blog posts
-  - ⏳ Schema.org JSON-LD structured data for Organization, Website, BlogPosting
+  - ✅ Schema.org JSON-LD structured data for Organization, Website, BlogPosting
   - ✅ Canonical URLs prevent duplicate content issues
 - **Dependencies:** Open Graph & Twitter Cards (Features 1-2 handle social meta tags).
-- **Completed (2026-01-01):**
+- **Completed:**
   - Meta descriptions on all pages (Homepage, P256K, Blog listing, Blog posts)
   - Article metadata using BlogMetadata with adapter pattern
   - Language attribute for accessibility and SEO
-- **Remaining:**
-  - Schema.org JSON-LD structured data
-- **Notes:** Basic SEO foundation complete; Open Graph/Twitter moved to Features 1-2, structured data remains.
+  - Schema.org JSON-LD via the `SchemaLib` target (Organization, WebSite, WebPage, BlogPosting, TechArticle, BreadcrumbList, FAQ, SoftwareApplication)
 
 ### Feature 5 — Brand Assets & Favicons
 - **Name:** Brand Assets & Favicons
+- **Status:** Completed
 - **Purpose & user value:** Provide professional favicon suite, app icons, and Open Graph images to improve brand recognition, mobile home screen experience, and social media presence.
 - **Success metrics:**
   - Favicons present in all required formats (16x16, 32x32, ico, svg)
@@ -75,10 +75,11 @@ Optimize caching, delivery, and site structure to achieve excellent Core Web Vit
   - Web app manifest with PWA icons (192x192, 512x512)
   - Theme color meta tag for mobile browsers
 - **Dependencies:** None (can use placeholder assets initially).
-- **Notes:** Currently zero brand assets exist; all missing.
+- **Notes:** Shipped — `favicon.ico`, `favicon-96x96.png`, `apple-touch-icon.png`, `site.webmanifest` with 192/512 icons, and `og-image.png` all live in `Resources/21-dev/`; `FaviconConfig` emits the tags with cache-busting versions.
 
 ### Feature 6 — Content Security Policy (CSP) & Security Headers
 - **Name:** Content Security Policy (CSP) & Security Headers
+- **Status:** Completed
 - **Purpose & user value:** Implement strict Content Security Policy headers to prevent XSS attacks and other injection vulnerabilities, protecting users and maintaining trust in the platform.
 - **Success metrics:**
   - CSP headers deployed via _headers file
@@ -87,10 +88,11 @@ Optimize caching, delivery, and site structure to achieve excellent Core Web Vit
   - Zero XSS vulnerabilities reported
   - Security headers present (X-Frame-Options, X-Content-Type-Options, Referrer-Policy)
 - **Dependencies:** Cloudflare _headers Optimization (shares same file).
-- **Notes:** OWASP Top 10 mitigation; critical for security-conscious developer tools.
+- **Notes:** Shipped in `_headers.prod`/`.dev` for both sites and verified via Google CSP Evaluator (Phase 1 Feature 3 notes).
 
 ### Feature 7 — security.txt & Vulnerability Disclosure
 - **Name:** security.txt & Vulnerability Disclosure
+- **Status:** Not Started
 - **Purpose & user value:** Provide RFC 9116 compliant security.txt file for responsible vulnerability disclosure, enabling security researchers to report issues properly.
 - **Success metrics:**
   - security.txt deployed at /.well-known/security.txt
@@ -103,6 +105,7 @@ Optimize caching, delivery, and site structure to achieve excellent Core Web Vit
 
 ### Feature 8 — Performance Budgets & CI Enforcement
 - **Name:** Performance Budgets & CI Enforcement
+- **Status:** Not Started
 - **Purpose & user value:** Establish and enforce performance budgets in CI to prevent regressions, ensuring fast load times remain consistent across all deployments.
 - **Success metrics:**
   - Lighthouse CI integrated with performance budgets
@@ -115,6 +118,7 @@ Optimize caching, delivery, and site structure to achieve excellent Core Web Vit
 
 ### Feature 9 — Broken Link Detection & Monitoring
 - **Name:** Broken Link Detection & Monitoring
+- **Status:** In Progress (spec'd — Specs/006)
 - **Purpose & user value:** Automatically detect and prevent broken internal/external links through CI checks and scheduled scans, maintaining documentation quality and user trust.
 - **Success metrics:**
   - CI blocks PRs with broken internal links (100% catch rate)
@@ -123,10 +127,11 @@ Optimize caching, delivery, and site structure to achieve excellent Core Web Vit
   - Automated alerts for external link decay
   - Link check runs in < 2 minutes
 - **Dependencies:** None.
-- **Notes:** Use lychee or htmlproofer; critical for docs site credibility.
+- **Notes:** Approach settled and spec'd (Specs/006), implementation pending — build a `util links check` command rather than adopting lychee: internal links resolve against generated output on disk at build time (no HTTP), matching the DocC warnings-as-errors and Docusaurus `onBrokenLinks: 'throw'` model. External checks are deferred to a `--external` scheduled scan (backlog) — external probes need bot-handling (UA, 429/403 grading, retries) that has no place in a blocking gate.
 
 ### Feature 10 — Social Proof & Metrics Display
 - **Name:** Social Proof & Metrics Display
+- **Status:** Not Started
 - **Purpose & user value:** Display GitHub stars, download counts, and usage statistics to build trust and social proof, increasing package adoption through visible community validation.
 - **Success metrics:**
   - GitHub stars badge displayed on package page

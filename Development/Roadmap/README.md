@@ -1,7 +1,7 @@
 # Product Roadmap
 
-**Version:** v1.3.5  
-**Last Updated:** 2025-12-29
+**Version:** v1.3.6  
+**Last Updated:** 2026-11-04
 
 ## Vision & Goals
 
@@ -28,9 +28,9 @@ This roadmap is now split into a **slim index** (this file) and detailed per-pha
 
 | Phase | Name / Goal                                | Priority          | Status       | Phase File Path                                                                 |
 |-------|--------------------------------------------|-------------------|-------------|-------------------------------------------------------------------------------|
-| 1     | Foundation & Discoverability               | High              | In Progress | `phase-1-foundation-discoverability.md`              |
+| 1     | Foundation & Discoverability               | High              | Completed   | `phase-1-foundation-discoverability.md`              |
 | 2     | Utilities Library Refactoring              | High (Next)       | In Progress | `phase-2-utilities-library-refactoring.md`           |
-| 3     | Performance & Delivery Optimization        | Medium-High       | Not Started | `phase-3-performance-delivery-optimization.md`       |
+| 3     | Performance & Delivery Optimization        | Medium-High       | In Progress | `phase-3-performance-delivery-optimization.md`       |
 | 4     | DesignSystem Foundation & Refactoring      | Medium            | Not Started | `phase-4-designsystem-foundation-refactoring.md`     |
 | 5     | Content & Accessibility                    | Medium            | Not Started | `phase-5-content-accessibility.md`                   |
 | 6     | Dark Mode & Theme Support                  | Medium            | Not Started | `phase-6-dark-mode-and-theming.md`                   |
@@ -69,7 +69,7 @@ Detailed feature descriptions, metrics, and sequencing for each phase now live i
 **Performance & Security Track** (Phase 3):
 1. Brand Assets → HTML `<head>` Hygiene (OG images needed) → Social Proof Metrics
 2. Phase 1 Cloudflare `_headers` baseline → CSP & Security Headers → Core Web Vitals Optimization
-3. **[INVESTIGATE]** DocC CSS/JS content-based hashes — Verify whether DocC-generated `/css/*` and `/js/*` assets use content-based hashes (e.g., `app.12345abc.js`). If confirmed, update `Resources/docs-21-dev/_headers.prod` to cache these assets for 1 year (`max-age=31536000, immutable`) instead of current 1-day policy.
+3. ~~[INVESTIGATE] DocC CSS/JS content-based hashes~~ — **Resolved 2026-11-04.** Confirmed: DocC emits content-hashed filenames for all `/css/*` and `/js/*` assets (verified in generated output). `_headers.prod` already caches them for 1 year (`max-age=31536000, immutable`).
 4. Hashed asset filenames for all static builds (Slipstream + DocC + Markdown) → enables immutable/year-long Cache-Control policies without stale assets
 5. Performance Budgets → Core Web Vitals (establishes baseline)
 6. Phase 1 Cloudflare `_redirects` baseline (independent)
@@ -223,6 +223,7 @@ Detailed feature descriptions, metrics, and sequencing for each phase now live i
 
 ## Change Log
 
+- v1.3.6 (2026-11-04): **Status reconciliation to shipped reality.** Phase 1 marked Completed (Feature 4 `_redirects` shipped and verified in `deploy-cloudflare.yml`). Phase 2 Feature 4 (architecture alignment) marked Complete; Feature 2 reduced to one scoped command (`util redirects verify`, Specs/007) with `headers select`/`build verify`/LFS decisions recorded. Phase 3 moved to In Progress: OG/Twitter cards, theme-color, brand assets, JSON-LD head hygiene, and CSP all marked Completed; DocC asset-hash [INVESTIGATE] resolved (confirmed hashed, already cached immutable). Phase 5 Feature 3 (Search) rescoped — DocC ships catalog search on docs.21.dev; 21.dev-scoped search moved to backlog. — **PATCH** (factual status corrections, no feature changes)
 - v1.3.5 (2025-12-29): **Phase 2 Feature 3 Added** — Canonical URL Management feature added to Phase 2. Provides `util canonical check` and `util canonical fix` commands for SEO validation and remediation across all generated HTML output. Site-agnostic design works on any subdomain post-generation. — **PATCH** (new feature in existing phase)
 - v1.3.4 (2025-12-17): **Phase 2 Feature 1 Complete** — Utilities Library Extraction finished (specs/004-utilities-library). Created `Utilities` library target + `util` CLI executable with sitemap, headers, and state subcommands. Migrated sitemap generation in generate-docc.yml and generate-markdown.yml. Feature 2 (full workflow migration) remains in progress — additional commands needed for redirect verification, sitemap submission, header selection, build verification. — **PATCH** (feature 1 completion, phase continues)
 - v1.3.3 (2025-12-12): Added **[INVESTIGATE]** item for DocC CSS/JS content-based hashes in Performance & Security Track. If DocC assets use content hashes, enables 1-year cache policy for `/css/*` and `/js/*` in docs.21.dev headers. — **PATCH** (investigation item, potential quick win for cache performance)
@@ -245,20 +246,20 @@ Unphased ideas live in `backlog.md`.
 
 Candidates, in roadmap order:
 
-- **Phase 1 — Foundation & Discoverability**: robots.txt Standardization;
-  Cloudflare `_redirects` Implementation; Core Web Vitals Optimization; HTML
-  `<head>` Hygiene & SEO; Brand Assets & Favicons; CSP & Security Headers;
+- **Phase 2 — Utilities Library Refactoring**: `util redirects verify`
+  (Specs/007 — last remaining command; other leftovers are decided, see phase
+  file)
+- **Phase 3 — Performance & Delivery**: Core Web Vitals Optimization;
   security.txt & Vulnerability Disclosure; Performance Budgets & CI
-  Enforcement; Broken Link Detection & Monitoring; Social Proof & Metrics
-  Display
-- **Phase 3 — Performance & Delivery**: (performance-track items listed with
-  Phase 1 above; see phase file)
+  Enforcement; Broken Link Detection & Monitoring (spec'd — Specs/006);
+  Social Proof & Metrics Display. (OG/Twitter, theme-color, brand assets,
+  CSP, and head hygiene are shipped.)
 - **Phase 3.5 — DesignSystem Foundation**: Token System Expansion; Layout
   Component Library
 - **Phase 4 — Content & Accessibility**: RSS Feed; Blog Tags & Filtering;
-  Search Functionality (Pagefind or lunr.js); Mobile Usability Fixes;
-  Changelog & Release Notes; Automated Accessibility Testing; Accessibility
-  Audit & Remediation
+  Mobile Usability Fixes; Changelog & Release Notes; Automated Accessibility
+  Testing; Accessibility Audit & Remediation. (Search rescoped — DocC ships
+  catalog search on docs.21.dev; a 21.dev-scoped search is in `backlog.md`.)
 - **Phase 4.5 — Dark Mode**: Dark Mode Support
 - **Phase 5 — Future**: Privacy Policy & Legal Pages; Plausible Analytics
   Migration; Documentation Versioning; Internationalization Foundation

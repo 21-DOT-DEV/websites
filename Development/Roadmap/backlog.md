@@ -19,6 +19,17 @@ plan first (copy `../Specs/_template/` to `../Specs/NNN-slug/`) and set its
 - **PR-comment validation** (left over from `Specs/005-pr-deployment-comments`):
   exercise `util comment` on a real deployment PR — now covered by normal PR
   flow, remove when observed working.
+- **`util links check --external`** (follow-up to the planned `util links
+  check` — see Phase 3 Feature 9): scheduled, non-blocking external-link
+  scan. Needs bot-handling before it can report
+  honestly — contact-bearing user agent, HEAD→GET fallback, retries, and
+  severity grading (only 404/410/DNX are errors; 403/429/5xx are warnings).
+  Never a required check; weekly cron at most.
+- **FR/SC citation checks in `Development/Tools`**: port the sibling repos'
+  cross-reference validation — every `FR-NNN` a `spec.md` defines cited in
+  `plan.md`/`tasks.md`, every `SC-NNN` cited in the plan's Verification, no
+  dangling cites. Today `spec.md` is an unchecked companion (Specs/006 and
+  007 are the first); the format's accuracy rests on writer discipline.
 
 ## Unphased ideas (industry-practice survey)
 
@@ -50,7 +61,7 @@ Based on static site infrastructure analysis, here are additional features to co
 
 **Content Discovery**:
 - **Related posts algorithm** based on tags or content similarity
-- **Search functionality** (client-side with lunr.js or Pagefind, no server required)
+- **21.dev-scoped search** — Pagefind index + search box for the main site only (~a dozen pages; genuinely low effort). Rescoped 2026-11-04: docs.21.dev's catalog search is already covered by DocC's built-in index, and unified cross-site search was deliberately skipped (see `phase-5-content-accessibility.md` Feature 3).
 - **Table of contents** auto-generation for long-form content
 - **Reading progress indicator** for blog posts
 
