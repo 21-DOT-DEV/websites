@@ -2,7 +2,7 @@
 
 **Status:** Not Started
 **Priority:** Medium
-**Last Updated:** 2025-11-20
+**Last Updated:** 2026-11-04
 
 ## Phase Goal
 
@@ -12,6 +12,7 @@ Improve content discovery, documentation usability, and accessibility through fe
 
 ### Feature 1 — RSS Feed Implementation
 - **Name:** RSS Feed Implementation
+- **Status:** Not Started
 - **Purpose & user value:** Enable developers to subscribe to blog updates via RSS readers, increasing return visits and reducing reliance on social media for content distribution.
 - **Success metrics:**
   - Valid Atom/RSS 2.0 feed at /blog/feed.xml
@@ -24,6 +25,7 @@ Improve content discovery, documentation usability, and accessibility through fe
 
 ### Feature 2 — Blog Enhancement - Tags & Filtering
 - **Name:** Blog Enhancement - Tags & Filtering
+- **Status:** Not Started
 - **Purpose & user value:** Surface existing tag metadata on blog posts and provide tag-based filtering/archives to help developers find relevant content faster.
 - **Success metrics:**
   - Tags displayed on all blog posts
@@ -36,6 +38,7 @@ Improve content discovery, documentation usability, and accessibility through fe
 
 ### Feature 3 — Search Functionality
 - **Name:** Search Functionality
+- **Status:** Partially Complete (rescoped 2026-11-04)
 - **Purpose & user value:** Implement instant client-side search for documentation to enable developers to quickly find specific APIs, methods, and concepts without slow server queries or leaving the page.
 - **Success metrics:**
   - Search deployed on docs.21.dev with < 200ms query response time
@@ -44,11 +47,13 @@ Improve content discovery, documentation usability, and accessibility through fe
   - 30%+ of docs visitors use search within 90 days
   - Zero search downtime (client-side, no server dependency)
 - **Dependencies:** None (use Pagefind or lunr.js - zero-dependency, static).
-- **Notes:** Critical missing feature for docs.21.dev; documentation without search is effectively unusable.
+- **Notes:** Verified 2026-11-04 — DocC's rendered app ships its own catalog search on docs.21.dev (`/index/index.json`, `navigator.index`, `data.mdb` covering all seven packages), so the original premise ("documentation without search is effectively unusable") no longer holds for the docs corpus. Remaining gap is small: a 21.dev-scoped search over ~a dozen pages, moved to `backlog.md` as a low-effort Pagefind item. Unified cross-site search deliberately skipped — not worth a build while the blog has one post.
 
 ### Feature 4 — Mobile Usability Fixes
 - **Name:** Mobile Usability Fixes
+- **Status:** Not Started
 - **Purpose & user value:** Eliminate mobile-specific layout issues and navigation problems that currently make the site difficult to use on smartphones and tablets, ensuring seamless experience across all devices.
+- **Notes:** Premise softened since this was written — `SiteHeader` already ships a responsive hamburger menu, so the "difficult to use" claim is overstated. Audit against Google Search Console mobile-usability errors before scoping real work.
 - **Success metrics:**
   - Zero mobile usability errors in Google Search Console
   - Touch targets meet 48px minimum size requirement
@@ -60,6 +65,7 @@ Improve content discovery, documentation usability, and accessibility through fe
 
 ### Feature 5 — Changelog & Release Notes
 - **Name:** Changelog & Release Notes
+- **Status:** Not Started
 - **Purpose & user value:** Provide structured changelog for swift-secp256k1 releases distinct from blog, following Keep a Changelog format for easy version upgrade planning.
 - **Success metrics:**
   - Changelog page at /changelog/ with all versions
@@ -72,6 +78,7 @@ Improve content discovery, documentation usability, and accessibility through fe
 
 ### Feature 6 — Automated Accessibility Testing
 - **Name:** Automated Accessibility Testing
+- **Status:** Not Started
 - **Purpose & user value:** Integrate automated WCAG checks in CI to prevent new accessibility violations from being introduced, maintaining high accessibility standards continuously.
 - **Success metrics:**
   - axe-core integrated in CI (automated WCAG checks)
@@ -84,6 +91,7 @@ Improve content discovery, documentation usability, and accessibility through fe
 
 ### Feature 7 — Accessibility Audit & Remediation
 - **Name:** Accessibility Audit & Remediation
+- **Status:** Not Started
 - **Purpose & user value:** Conduct comprehensive WCAG audit and fix all accessibility issues to ensure developers with disabilities can fully access documentation and site features.
 - **Success metrics:**
   - Lighthouse Accessibility score ≥ 95 on all pages

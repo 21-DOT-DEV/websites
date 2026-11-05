@@ -1,8 +1,8 @@
 # Phase 1 — Foundation & Discoverability
 
-**Status:** In Progress
+**Status:** Completed
 **Priority:** High
-**Last Updated:** 2025-12-12
+**Last Updated:** 2026-11-04
 
 ## Phase Goal
 
@@ -64,7 +64,7 @@ Ensure all content across 21.dev, docs.21.dev, and md.21.dev is discoverable, mo
 
 ### Feature 4 — Cloudflare _redirects for All Subdomains
 - **Name:** Cloudflare _redirects Implementation
-- **Status:** Not Started
+- **Status:** Completed
 - **Purpose & user value:** Handle URL redirects efficiently at the edge (not requiring manual Cloudflare Rules) for cleaner migrations, short URLs, and legacy path support without performance penalty across all subdomains.
 - **Success metrics:**
   - All redirects execute in < 10ms at edge
@@ -73,7 +73,11 @@ Ensure all content across 21.dev, docs.21.dev, and md.21.dev is discoverable, mo
   - Redirect configuration lives in version control
   - Support for 50+ redirect rules without performance impact
 - **Dependencies:** None
-- **Notes:** Currently no `_redirects` file exists; using manual Cloudflare Rules (harder to maintain). Moving this into Phase 1 ensures URL hygiene and canonicalization are in place alongside sitemaps and robots.txt.
+- **Completed work:**
+  - `Resources/21-dev/_redirects` ships the `/.well-known/*` rewrite plus `/docs` and `/api` aliases to the docs site
+  - `Resources/docs-21-dev/_redirects` ships root and `index.html` redirects to `/documentation/`
+  - `deploy-cloudflare.yml` verifies both sites' redirects against live preview deployments (see "Verify redirects" steps)
+- **Notes:** The www → apex redirect stays in Cloudflare Rules (requires dynamic expressions `_redirects` can't express). Post-deploy verification is currently an inline curl list in the workflow; Specs/007 scopes `util redirects verify` to derive checks from `_redirects` itself.
 
 ## Phase Metrics
 
