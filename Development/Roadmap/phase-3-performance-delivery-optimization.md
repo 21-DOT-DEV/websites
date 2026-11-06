@@ -2,7 +2,7 @@
 
 **Status:** In Progress
 **Priority:** Medium-High
-**Last Updated:** 2026-11-04
+**Last Updated:** 2026-11-05
 
 ## Phase Goal
 
@@ -142,6 +142,18 @@ Optimize caching, delivery, and site structure to achieve excellent Core Web Vit
 - **Dependencies:** Brand Assets & Favicons (badges are visual elements).
 - **Notes:** Use shields.io or static snapshots; npm, PyPI, crates.io all show download counts.
 
+### Feature 11 — AI/GEO Readiness Verification & Gap Closure
+- **Name:** AI/GEO Readiness Verification & Gap Closure
+- **Status:** Not Started
+- **Purpose & user value:** Verify the shipped AI-readiness surface can't regress and close the remaining known gaps, so search and citation agents (Googlebot, OAI-SearchBot, PerplexityBot, ClaudeBot-class crawlers) can reliably reach, parse, and cite the sites. "GEO" here means generative-engine optimization — being citable in AI answers, not keyword SEO.
+- **Success metrics:**
+  - `util agent-directive audit` extended with GEO assertions: robots.txt declares an explicit retrieval-vs-training crawler policy, `llms.txt` links resolve, JSON-LD present on indexable pages, freshness signals (visible dates / accurate `lastmod`) verified
+  - GEO assertions run in CI so the shipped surface can't silently regress
+  - Documented Cloudflare AI Crawl Control dashboard review (covers the CDN-layer case file checks can't see: a WAF rule can deny AI bots even when `robots.txt` allows them)
+  - `robots.txt` on all three sites explicitly allows retrieval/search agents and declares a training-crawler policy (allow or disallow — the decision is recorded, not implicit)
+- **Dependencies:** None (`agent-directive` command already exists).
+- **Notes:** Verify-first, extensible by design — newly established conventions (Content Signals, future AI-agent formats) land as added assertions/items here rather than new features. Honest framing: the shipped `llms.txt`/`context7.json`/content-negotiation work is cheap deployed optionality (independent studies show platforms rarely fetch it yet); the proven surface is crawler access + semantic HTML + JSON-LD + speed, which is what the checks emphasize. Schema types worth extracting (HowTo, Review) are gap items, not prerequisites.
+
 ## Phase Dependencies & Sequencing
 
 - Brand Assets & Favicons (Feature 5) → Open Graph & Twitter Cards (Feature 1) → Social Proof & Metrics Display (Feature 10).
@@ -150,6 +162,7 @@ Optimize caching, delivery, and site structure to achieve excellent Core Web Vit
 - Performance Budgets & CI Enforcement (Feature 8) builds on Core Web Vitals Optimization (Feature 3) to enforce baselines.
 - security.txt (Feature 7) and Broken Link Detection & Monitoring (Feature 9) can proceed independently.
 - HTML `<head>` Hygiene (Feature 4) partially complete; JSON-LD can proceed after Open Graph implementation.
+- AI/GEO Readiness Verification (Feature 11) is independent — verification builds on the already-shipped `agent-directive` command; gap items land as they're established.
 
 ## Phase Metrics
 

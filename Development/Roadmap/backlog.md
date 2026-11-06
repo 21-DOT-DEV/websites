@@ -25,6 +25,16 @@ plan first (copy `../Specs/_template/` to `../Specs/NNN-slug/`) and set its
   honestly — contact-bearing user agent, HEAD→GET fallback, retries, and
   severity grading (only 404/410/DNX are errors; 403/429/5xx are warnings).
   Never a required check; weekly cron at most.
+- **Plausible (contingent fallback)** — self-hosted beacon analytics,
+  activated only if a concrete need for custom-event/funnel measurement
+  appears that edge analytics can't answer. Demoted from Phase 7 Feature 1
+  when analytics was rescoped to server-side edge collection (2026-11-05);
+  see `phase-7-advanced-features-and-analytics.md`.
+- **21.dev asset hashing → `immutable` caching** — extend the `?v=`
+  cache-busting pattern (already used for favicons) to `style.css`, images,
+  and SVG, then flip `/static/*` `/assets/*` `/images/*` to `immutable`.
+  `_headers.prod`'s own comment marks this "daily caching until filenames
+  are hashed"; Now-tier item, see `README.md` Performance Track item 4.
 - **FR/SC citation checks in `Development/Tools`**: port the sibling repos'
   cross-reference validation — every `FR-NNN` a `spec.md` defines cited in
   `plan.md`/`tasks.md`, every `SC-NNN` cited in the plan's Verification, no
@@ -56,8 +66,8 @@ Based on static site infrastructure analysis, here are additional features to co
 - **Resource hints** (preconnect, dns-prefetch, preload) for critical assets
 - **Critical CSS inlining** for above-the-fold content
 - **WebP/AVIF image formats** with fallbacks
-- **Brotli compression** for text assets
-- **HTTP/2 Server Push** for critical resources (via Cloudflare)
+- **Brotli compression** for text assets (Cloudflare serves it automatically — verify, don't build)
+- **103 Early Hints** via `rel=preload` Link headers on `/*` — the `_headers.prod` Link infrastructure already exists; enable Early Hints in the Cloudflare dashboard. (Replaces HTTP/2 Server Push — removed from Chrome 106 / Firefox 132 and deprecated by Cloudflare itself.)
 
 **Content Discovery**:
 - **Related posts algorithm** based on tags or content similarity
@@ -66,7 +76,7 @@ Based on static site infrastructure analysis, here are additional features to co
 - **Reading progress indicator** for blog posts
 
 **Analytics & Monitoring**:
-- **Real User Monitoring (RUM)** for actual performance data
+- **CWV field baseline** — CrUX (Chrome UX Report real-user data) + Search Console + PSI (PageSpeed Insights) readings before any client beacon (field data beats lab; `util search-console` already exists; aligns with the server-side analytics direction in Phase 7)
 - **Error tracking** (client-side JavaScript errors)
 - **Uptime monitoring** via external service (e.g., UptimeRobot)
 - **Core Web Vitals dashboard** in analytics

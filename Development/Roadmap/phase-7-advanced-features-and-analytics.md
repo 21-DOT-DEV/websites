@@ -1,26 +1,26 @@
 # Phase 7 — Advanced Features & Analytics
 
 **Status:** Not Started
-**Priority:** Future
-**Last Updated:** 2025-11-20
+**Priority:** Medium (Features 1–2 elevated to the Next tier — see `README.md` priority tiers)
+**Last Updated:** 2026-11-05
 
 ## Phase Goal
 
-Layer in advanced analytics, legal foundations, sitemap enhancements, and internationalization groundwork once the core site experience is mature.
+Layer in privacy-preserving server-side analytics, legal foundations, sitemap enhancements, and internationalization groundwork once the core site experience is mature.
 
 ## Features
 
-### Feature 1 — Plausible Analytics Migration
-- **Name:** Plausible Analytics Migration
-- **Purpose & user value:** Replace Cloudflare Analytics with self-hosted Plausible for cookie-free, privacy-respecting analytics with better insights into conversion funnels and user journeys.
+### Feature 1 — Server-Side Edge Analytics
+- **Name:** Server-Side Edge Analytics
+- **Purpose & user value:** Collect privacy-preserving traffic and performance analytics at the Cloudflare edge — requests measured at the CDN with zero client-side JavaScript. Aligns with the private-by-design, server-side priority: nothing is downloaded to or executed in the visitor's browser, ad-blockers can't remove the signal, and the `static.cloudflareinsights.com` CSP exception can be dropped (tighter `script-src`).
 - **Success metrics:**
-  - Self-hosted Plausible instance deployed and operational
-  - Cookie-free tracking active on all three subdomains
-  - Custom event goals configured (GitHub clicks, docs visits, CTA interactions)
-  - Outbound link tracking for conversion measurement
-  - Zero GDPR consent popups required (privacy-first design)
-- **Dependencies:** Privacy Policy & Legal Pages (required before collecting analytics data).
-- **Notes:** Currently Cloudflare-only; future goal for better conversion insights.
+  - Cloudflare edge (proxied) analytics enabled on all three subdomains — no JS beacon deployed
+  - `static.cloudflareinsights.com` removed from `connect-src`/`script-src` in `_headers.prod` once no beacon remains
+  - Optional Worker-side event writer evaluated only if edge data proves insufficient (URL, referrer, country, device class; IP hashed at edge)
+  - Zero GDPR consent popups required (no client-side identifiers, no cookies, no fingerprinting)
+  - Documented review cadence for the dashboards (traffic + AI Crawl Control overlap with Phase 3 Feature 11)
+- **Dependencies:** Privacy Policy & Legal Pages (edge collection still processes IP-derived request data — the policy must describe it).
+- **Notes:** Rescoped 2026-11-05 from "Plausible Analytics Migration." Research: self-hosted Plausible is still a client-side beacon — richer (custom events, funnels, unsampled data) but contradicts the server-side/performance/security priorities. **Plausible is demoted to a contingent fallback**, activated only if a concrete need for custom-event/funnel measurement appears; record it in `backlog.md` rather than delete it. Caveat on the free tier: edge analytics is sampled with ~6-month retention — acceptable for traffic trends at current volume.
 
 ### Feature 2 — Privacy Policy & Legal Pages
 - **Name:** Privacy Policy & Legal Pages
@@ -28,7 +28,7 @@ Layer in advanced analytics, legal foundations, sitemap enhancements, and intern
 - **Success metrics:**
   - Privacy policy page deployed at /privacy/
   - Explains what data is collected (IP, page views, referrer)
-  - Data retention policy documented (Plausible defaults)
+  - Data retention policy documented (edge-collection defaults; update if a beacon is ever added)
   - GDPR compliance statement included
   - Contact information for data deletion requests
 - **Dependencies:** None (but must complete before analytics launch).
@@ -80,7 +80,7 @@ Layer in advanced analytics, legal foundations, sitemap enhancements, and intern
   - Important pages indexed within 24 hours of publication
   - lastmod dates accurate and automatically updated
 - **Dependencies:** Sitemap Infrastructure Overhaul.
-- **Notes:** Enhancement to basic sitemap behavior; not critical but improves crawl efficiency.
+- **Notes:** Enhancement to basic sitemap behavior; not critical but improves crawl efficiency. **Rescoped 2026-11-05:** Phase 2's backlog note records that Google ignores `<changefreq>` and `<priority>` — this feature's measurable value is near-zero as designed. Candidate to close as Won't-Do or reshape around accurate `<lastmod>` (which crawlers do use) — decision deferred to the next roadmap review; do not schedule as written.
 
 ### Feature 7 — GitHub Actions Workflow Validation with actionlint
 - **Name:** GitHub Actions Workflow Validation with actionlint
@@ -98,13 +98,13 @@ Layer in advanced analytics, legal foundations, sitemap enhancements, and intern
 
 ## Phase Dependencies & Sequencing
 
-- Privacy Policy & Legal Pages → Plausible Analytics Migration.
-- Sitemap Infrastructure Overhaul → Documentation Versioning, Sitemap Index Generation, Sitemap Priority & Change Frequency Optimization.
+- Privacy Policy & Legal Pages → Server-Side Edge Analytics.
+- Phase 1 sitemap infrastructure (shipped) → Documentation Versioning, Sitemap Index Generation, Sitemap Priority & Change Frequency Optimization.
 - HTML `<head>` Hygiene & SEO → Internationalization Foundation.
 
 ## Phase Metrics
 
 This phase primarily contributes to product-level metrics for **Privacy & Compliance**, **Analytics & Insights**, **Search & Discoverability**, and **Infrastructure Reliability**, especially:
 - Privacy compliance without consent banners.
-- Richer analytics for conversion and usage.
+- Traffic and performance visibility with zero client-side code.
 - Improved crawl efficiency and content discovery.
