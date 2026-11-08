@@ -2,7 +2,7 @@
 feature: 006
 title: Internal link checking for generated HTML output
 phase: 3 · Performance & Delivery Optimization
-status: In Progress
+status: Implemented
 updated: 2026-11-08
 adrs: [0004, 0005]
 ---
@@ -67,9 +67,4 @@ Adds unit coverage for resolution variants (exact file, directory index,
 redirect-source exemption (literal, splat, and placeholder sources;
 edge-honored statuses only), `srcset` parsing, and report aggregation.
 
-## Tasks
 
-- [ ] CI wiring verified on real `build-slipstream` and
-  `generate-docc` runs — owner: maintainer; exit: both workflow steps
-  run `util links check` and pass (`.github/workflows/build-slipstream.yml`,
-  `.github/workflows/generate-docc.yml`).
