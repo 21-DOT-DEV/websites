@@ -55,13 +55,11 @@ Configuration for a specific site/subdomain.
 public enum SiteName: String, CaseIterable, Codable {
     case dev21 = "21-dev"
     case docs21dev = "docs-21-dev"
-    case md21dev = "md-21-dev"
     
     public var baseURL: String {
         switch self {
         case .dev21: return "https://21.dev"
         case .docs21dev: return "https://docs.21.dev"
-        case .md21dev: return "https://md.21.dev"
         }
     }
     
@@ -93,7 +91,7 @@ public enum LastmodStrategy {
 
 ### StateFile
 
-Tracks package version and generation dates for docs/md sitemaps.
+Tracks package version and generation dates for the docs sitemap.
 
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|

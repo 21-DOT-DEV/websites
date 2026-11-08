@@ -32,7 +32,7 @@ This feature requires API credentials for automated sitemap submission to search
 
 5. **Add Service Account to Search Console**:
    - Go to [Google Search Console](https://search.google.com/search-console)
-   - For each property (21.dev, docs.21.dev, md.21.dev):
+   - For each property (21.dev, docs.21.dev):
      - Go to Settings → Users and permissions
      - Click "Add user"
      - Enter service account email (from JSON: `client_email`)
@@ -47,7 +47,7 @@ This feature requires API credentials for automated sitemap submission to search
    - Sign in with your Microsoft account
 
 2. **Add/Verify Your Sites**:
-   - Add 21.dev, docs.21.dev, and md.21.dev
+   - Add 21.dev and docs.21.dev
    - Complete verification process (DNS, meta tag, or file)
 
 3. **Submit Sitemaps Manually**:
@@ -56,7 +56,6 @@ This feature requires API credentials for automated sitemap submission to search
    - Enter sitemap URL:
      - `https://21.dev/sitemap.xml`
      - `https://docs.21.dev/sitemap.xml`
-     - `https://md.21.dev/sitemap.xml`
    - Click "Submit"
 
 **Important**: After initial manual submission, Bing will automatically discover sitemap updates via the `robots.txt` file and the `lastmod` dates in your sitemaps.
@@ -97,7 +96,6 @@ export GOOGLE_SERVICE_ACCOUNT_JSON="$(cat path/to/service-account.json)"
 # 3. Test all sitemaps
 ./scripts/test-sitemap-submission.sh https://21.dev/sitemap.xml
 ./scripts/test-sitemap-submission.sh https://docs.21.dev/sitemap.xml
-./scripts/test-sitemap-submission.sh https://md.21.dev/sitemap.xml
 ```
 
 **Expected Output**:
@@ -142,7 +140,7 @@ Use this checklist to verify sitemap infrastructure health after deployments.
 
 **Google Search Console** (https://search.google.com/search-console):
 
-For each property (21.dev, docs.21.dev, md.21.dev):
+For each property (21.dev, docs.21.dev):
 - [ ] Navigate to Sitemaps section
 - [ ] Verify sitemap.xml is listed with "Success" status
 - [ ] Check last read date is recent (within 7 days)
@@ -151,7 +149,7 @@ For each property (21.dev, docs.21.dev, md.21.dev):
 
 **Bing Webmaster Tools** (https://www.bing.com/webmasters/):
 
-For each site (21.dev, docs.21.dev, md.21.dev):
+For each site (21.dev, docs.21.dev):
 - [ ] Navigate to Sitemaps section
 - [ ] Verify sitemap.xml shows recent "Last Crawled" date
 - [ ] Review URL count matches submitted sitemap
@@ -162,7 +160,6 @@ For each site (21.dev, docs.21.dev, md.21.dev):
 For each subdomain sitemap (view in browser or curl):
 - [ ] **21.dev/sitemap.xml**: Verify all static pages included
 - [ ] **docs.21.dev/sitemap.xml**: Verify all documentation pages included
-- [ ] **md.21.dev/sitemap.xml**: Verify all markdown files included
 - [ ] Check `<lastmod>` dates are accurate and updating correctly
 - [ ] Validate XML structure with https://www.xml-sitemaps.com/validate-xml-sitemap.html
 
@@ -171,7 +168,6 @@ For each subdomain sitemap (view in browser or curl):
 For each subdomain (view in browser):
 - [ ] **21.dev/robots.txt**: Contains `Sitemap: https://21.dev/sitemap.xml`
 - [ ] **docs.21.dev/robots.txt**: Contains `Sitemap: https://docs.21.dev/sitemap.xml`
-- [ ] **md.21.dev/robots.txt**: Contains `Sitemap: https://md.21.dev/sitemap.xml`
 
 ### Indexing Health (7-day check)
 

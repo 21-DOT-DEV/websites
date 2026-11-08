@@ -3,7 +3,7 @@ feature: 007
 title: Verify _redirects rules against deployed URLs
 phase: 2 · Utilities Library Refactoring
 status: Planned
-updated: 2026-11-04
+updated: 2026-11-07
 adrs: [0004, 0005]
 ---
 
@@ -24,9 +24,12 @@ rejected alternatives: [research.md](research.md); ordered work:
 
 1. Parse `_redirects` — `source target status` columns, `#` comments,
    `*` wildcard sources, and `:placeholder` targets (FR-001). The parser
-   is written here but shaped for reuse by the planned `util links
-   check` (Phase 3 Feature 9), which needs the same rule model for
-   redirect-source resolution.
+   is consumed from `Sources/UtilLib/Links/` (`RedirectRule.swift` /
+   `RedirectsParser`), landing with Specs/006's `util links check` or
+   this feature, whichever ships first; it implements Cloudflare's
+   documented source syntax — greedy `*` splats anywhere in the source
+   and `:placeholder` segments — which both rule verification and
+   link-source resolution depend on.
 2. Static rules are verified directly: request `base-url + source`
    (HEAD, GET fallback), assert the response status equals the declared
    status and, for 3xx rules, that `Location` matches the declared

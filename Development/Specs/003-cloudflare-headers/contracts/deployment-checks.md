@@ -4,7 +4,7 @@
 After Cloudflare Pages publishes each subdomain, GitHub Actions runs this contract to confirm headers in production.
 
 ## Inputs
-- `SITE` (required): `21-dev`, `docs-21-dev`, or `md-21-dev`
+- `SITE` (required): `21-dev` or `docs-21-dev`
 - `TARGET_URLS` (array): list of canonical URLs defined in repo (home page, representative HTML, static asset, download)
 - `EXPECTED_PROFILES`: mapping of URL → `HeaderProfile.id`
 

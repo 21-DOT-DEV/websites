@@ -123,7 +123,7 @@ Optimize caching, delivery, and site structure to achieve excellent Core Web Vit
 - **Success metrics:**
   - CI blocks PRs with broken internal links (100% catch rate)
   - Weekly scheduled scans for external links
-  - Zero broken links across all three subdomains
+  - Zero broken links across all subdomains
   - Automated alerts for external link decay
   - Link check runs in < 2 minutes
 - **Dependencies:** None.
@@ -150,7 +150,7 @@ Optimize caching, delivery, and site structure to achieve excellent Core Web Vit
   - `util agent-directive audit` extended with GEO assertions: robots.txt declares an explicit retrieval-vs-training crawler policy, `llms.txt` links resolve, JSON-LD present on indexable pages, freshness signals (visible dates / accurate `lastmod`) verified
   - GEO assertions run in CI so the shipped surface can't silently regress
   - Documented Cloudflare AI Crawl Control dashboard review (covers the CDN-layer case file checks can't see: a WAF rule can deny AI bots even when `robots.txt` allows them)
-  - `robots.txt` on all three sites explicitly allows retrieval/search agents and declares a training-crawler policy (allow or disallow — the decision is recorded, not implicit)
+  - `robots.txt` on all sites explicitly allows retrieval/search agents and declares a training-crawler policy (allow or disallow — the decision is recorded, not implicit)
 - **Dependencies:** None (`agent-directive` command already exists).
 - **Notes:** Verify-first, extensible by design — newly established conventions (Content Signals, future AI-agent formats) land as added assertions/items here rather than new features. Honest framing: the shipped `llms.txt`/`context7.json`/content-negotiation work is cheap deployed optionality (independent studies show platforms rarely fetch it yet); the proven surface is crawler access + semantic HTML + JSON-LD + speed, which is what the checks emphasize. Schema types worth extracting (HowTo, Review) are gap items, not prerequisites.
 

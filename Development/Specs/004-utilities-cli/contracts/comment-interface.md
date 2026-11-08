@@ -21,7 +21,7 @@ swift run util comment \
 | Flag | Type | Required | Description |
 |------|------|----------|-------------|
 | `--pr` | Int | Yes | Pull request number |
-| `--project` | String | Yes | Project name (e.g., "21-dev", "docs-21-dev", "md-21-dev") |
+| `--project` | String | Yes | Project name (e.g., "21-dev", "docs-21-dev") |
 | `--status` | String | Yes | Deployment status: "success", "failure", or "pending" |
 | `--preview-url` | String | Yes | Cloudflare preview URL |
 | `--alias-url` | String | Yes | Cloudflare alias URL |

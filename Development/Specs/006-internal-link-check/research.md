@@ -74,16 +74,51 @@ about.
 
 ## 4. The `_redirects` exemption — edge-resolved paths aren't broken
 
-**Decision: links matching a `_redirects` rule's source count as
-valid.** Without this, every legitimate link to a redirected path
-(e.g. `/docs` → the docs site) reports broken — the file provably
-doesn't exist, yet the URL works because the edge answers it. The
-parser handles literal sources and `*` splats; matching is
-approximate-first-match, and it only ever *grants* an exemption — it
-can hide a link that the edge would also answer, which both the checker
-and production see as working. The same parser (`RedirectRule.swift`)
-is reused by Specs/007's `redirects verify`, which checks the rules
-themselves.
+**Decision: links matching a `_redirects` rule's source count as valid
+when the edge would answer them.** Without this, every legitimate link
+to a redirected path (e.g. `/docs` → the docs site) reports broken —
+the file provably doesn't exist, yet the URL works because the edge
+answers it.
+
+The matcher implements Cloudflare's documented source syntax rather
+than an approximation: a `*` splat compiles to a greedy `.*` anywhere
+in the source — the real `docs-21-dev` file already uses a mid-path
+splat (`/p256k/*/index.html`) that a suffix-only matcher would miss —
+and `:placeholder` segments each match exactly one `[^/]+` segment.
+Exemption is status-aware because that is what the edge honors: rules
+declaring a supported redirect status (`301`, `302`, `303`, `307`,
+`308`) always grant (a redirect answers the link even when its target
+is absent), `200` proxy rules grant only when the substituted target
+resolves on disk — the edge serves the target's content at the source
+path and does not chain proxies — and statuses the edge ignores,
+including unsupported `3xx` codes, grant nothing. An absent status
+column defaults to `302`, so an undeclared rule exempts like any
+supported redirect. When several rules match, the first in file order
+governs — the edge applies the top-most match (`docs-21-dev` places
+`/p256k/*/index.html` ahead of `/*/index.html`; verified live that
+`/p256k/x/index.html` follows the p256k rule, `301` to
+`/documentation/p256k/x/`).
+
+The exemption's premise was also verified against the sites' Pages
+Functions: both sites run `_middleware.ts` on `/*` routes, and
+`_redirects` does not apply to responses a Function serves — but
+every current handler delegates via `context.next()` to the asset
+pipeline where `_redirects` is evaluated (the same live `301` above
+passed through docs-21-dev's middleware; 21-dev's
+`/.well-known/nostr.json` likewise returns `200` through its `200`
+proxy rule).
+
+Loop refusal models Wrangler/Pages deploy error 10021 verbatim —
+"Infinite loop detected in this rule and has been ignored. This will
+cause a redirect to strip `.html` or `/index` and end up triggering
+this rule again" (cloudflare/workers-sdk#11824). Canonicalization
+(`x/index.html` → `x/`, `x.html` → `x`) is the loop mechanism; the
+spec-mandated catch-all-to-root refusal is a checker policy on top.
+
+The same parser (`RedirectRule.swift` / `RedirectsParser` in
+`Sources/UtilLib/Links/`) is shared with Specs/007's `redirects
+verify`, which checks the rules themselves — whichever feature lands
+first provides it, and both plans describe consuming it.
 
 ## 5. What stays out
 

@@ -38,7 +38,7 @@ util sitemap generate --site <site-name> [--output <path>] [--verbose]
 **Options**:
 | Option | Short | Type | Required | Default | Description |
 |--------|-------|------|----------|---------|-------------|
-| `--site` | `-s` | String | Yes | — | Site name: `21-dev`, `docs-21-dev`, `md-21-dev` |
+| `--site` | `-s` | String | Yes | — | Site name: `21-dev`, `docs-21-dev` |
 | `--output` | `-o` | String | No | `Websites/<site>/sitemap.xml` | Output file path |
 | `--verbose` | `-v` | Flag | No | false | Show detailed progress |
 
@@ -123,7 +123,7 @@ util headers validate --site <site-name> --env <environment> [--input <path>] [-
 **Options**:
 | Option | Short | Type | Required | Default | Description |
 |--------|-------|------|----------|---------|-------------|
-| `--site` | `-s` | String | Yes | — | Site name: `21-dev`, `docs-21-dev`, `md-21-dev` |
+| `--site` | `-s` | String | Yes | — | Site name: `21-dev`, `docs-21-dev` |
 | `--env` | `-e` | String | Yes | — | Environment: `prod`, `dev` |
 | `--input` | `-i` | String | No | `Resources/<site>/_headers.<env>` | Headers file to validate |
 | `--verbose` | `-v` | Flag | No | false | Show all validated rules |

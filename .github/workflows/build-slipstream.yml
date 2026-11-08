@@ -112,6 +112,16 @@ jobs:
           echo "✅ Required files present"
           echo "✅ Build output verified successfully"
       
+      - name: Check internal links
+        run: |
+          website="${{ inputs.website }}"
+          echo "🔗 Checking internal links for ${website}..."
+
+          # Last gate before the artifact ships: fail on any internal
+          # reference that resolves to no file, directory index, or
+          # _redirects rule (Specs/006).
+          swift run util links check --path "Websites/${website}"
+      
       - name: Upload build artifacts
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:

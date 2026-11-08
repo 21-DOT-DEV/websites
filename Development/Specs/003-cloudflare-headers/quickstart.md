@@ -14,19 +14,19 @@
 2. **Edit `_headers` files**
    - Update `Resources/<site>/_headers` for any subdomain
    - Add/adjust patterns for HTML, static, and download profiles
-3. **Run HeadersValidator** (will be added in feature implementation)
+3. **Run headers validation**
    ```bash
-   nocorrect swift run headers-validator --site 21-dev --environment production
+   nocorrect swift run util headers validate --site 21-dev --env prod
    ```
 4. **Execute tests**
    ```bash
    nocorrect swift test --filter HeadersValidatorTests
-   nocorrect swift test --filter DeploymentHeaderChecksTests
+   nocorrect swift test --filter HeadersCommandTests
    ```
 5. **Preview site locally**
    ```bash
    nocorrect swift run 21-dev
-   # or docs/md equivalents, ensuring SiteGenerator copies updated _headers
+   # docs-21-dev assembles via generate-docc.yml — no local equivalent
    ```
 
 ## Verification Commands (curl)
@@ -69,25 +69,9 @@ curl -sI https://docs.21.dev/.well-known/security.txt | grep -E 'Cache-Control|P
 # Expected: Cache-Control no-store / Pragma no-cache
 ```
 
-### md.21.dev
-
-```bash
-# Markdown HTML
-curl -sI https://md.21.dev/index.md | grep -E 'Content-Security|Cache-Control'
-# Expected: Cache-Control public, max-age=300, must-revalidate
-
-# Markdown static asset
-curl -sI https://md.21.dev/assets/theme.css | grep -E 'Cache-Control'
-# Expected: Cache-Control public, max-age=31536000, immutable
-
-# JSON download
-curl -sI https://md.21.dev/releases.json | grep -E 'Cache-Control|Pragma'
-# Expected: Cache-Control no-store / Pragma no-cache
-```
-
 ## CI/CD Expectations
-- GitHub Actions will run `headers-validator` for each site on PRs.
-- Deployment workflows (21-DEV.yml, DOCS-21-DEV.yml, MD-21-DEV.yml) will:
+- GitHub Actions will run `util headers validate` for each site on PRs.
+- Deployment workflows (21-DEV.yml, DOCS-21-DEV.yml) will:
   1. Copy `_headers` into `Websites/<site>/_headers`
   2. Deploy to Cloudflare Pages
   3. Hit canonical URLs with `curl -I` and record headers
@@ -96,6 +80,6 @@ curl -sI https://md.21.dev/releases.json | grep -E 'Cache-Control|Pragma'
 - Failures block merges; warnings appear as annotations.
 
 ## Troubleshooting
-- **Validator missing**: ensure target added to Package.swift and built via `swift run headers-validator`.
+- **Validator missing**: it ships in the existing `util` target — run `swift run util headers validate --site <site> --env <env>`.
 - **Curl mismatch**: check if Cloudflare still caching older `_headers`; purge cache or wait for TTL.
 - **Preview builds**: confirm HSTS is disabled (FR-004.1) by verifying header absence.

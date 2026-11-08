@@ -385,10 +385,6 @@ secrets:
     .github/workflows/submit-sitemap.sh \
       "https://docs.21.dev/sitemap.xml" \
       "https://docs.21.dev"
-    
-    .github/workflows/submit-sitemap.sh \
-      "https://md.21.dev/sitemap.xml" \
-      "https://md.21.dev"
 ```
 
 ---

@@ -29,7 +29,7 @@
 
 **Validation Rules**:
 - URL must include protocol (`https://`)
-- URL must include domain (21.dev, docs.21.dev, or md.21.dev)
+- URL must include domain (21.dev or docs.21.dev)
 - Special characters must be XML-escaped: `& → &amp;`, `< → &lt;`, `> → &gt;`, `" → &quot;`, `' → &apos;`
 - lastmod must be parseable as ISO 8601 date
 - No future dates allowed in lastmod
@@ -94,12 +94,6 @@
   <loc>https://docs.21.dev/sitemap.xml</loc>
   <lastmod>2025-11-13T14:20:00-08:00</lastmod>
 </sitemap>
-
-<!-- md.21.dev sitemap -->
-<sitemap>
-  <loc>https://md.21.dev/sitemap.xml</loc>
-  <lastmod>2025-11-13T14:20:00-08:00</lastmod>
-</sitemap>
 ```
 
 ---
@@ -123,10 +117,10 @@
 | Field | Type | Required | Format | Description |
 |-------|------|----------|--------|-------------|
 | `package_version` | String | Yes | Semver | swift-secp256k1 version from Package.resolved |
-| `generated_date` | String | Yes | ISO 8601 timestamp | When docs/md sitemaps were last generated |
+| `generated_date` | String | Yes | ISO 8601 timestamp | When the docs sitemap was last generated |
 
 **Lifecycle**:
-1. **Created**: First time docs or md sitemap is generated
+1. **Created**: First time the docs sitemap is generated
 2. **Read**: During sitemap generation to determine if lastmod should be preserved
 3. **Updated**: When swift-secp256k1 version changes (via Lefthook hook)
 4. **Committed**: Alongside Package.resolved changes
@@ -196,10 +190,6 @@ ELSE:
     <loc>https://docs.21.dev/sitemap.xml</loc>
     <lastmod>2025-11-13T14:20:00-08:00</lastmod>
   </sitemap>
-  <sitemap>
-    <loc>https://md.21.dev/sitemap.xml</loc>
-    <lastmod>2025-11-13T14:20:00-08:00</lastmod>
-  </sitemap>
 </sitemapindex>
 ```
 
@@ -211,9 +201,8 @@ ELSE:
 **Generation Strategy**:
 1. Fetch `https://21.dev/sitemap-main.xml` → Parse for lastmod (or use current timestamp)
 2. Fetch `https://docs.21.dev/sitemap.xml` → Parse for lastmod
-3. Fetch `https://md.21.dev/sitemap.xml` → Parse for lastmod
-4. Generate index with all three entries
-5. If any fetch fails → Log warning, omit from index (partial index OK)
+3. Generate index with all entries
+4. If any fetch fails → Log warning, omit from index (partial index OK)
 
 ---
 
@@ -223,13 +212,11 @@ ELSE:
 Sitemap Index (21.dev/sitemap.xml)
 ├── References: 21.dev/sitemap-main.xml (Sitemap Document)
 │   └── Contains: Multiple URL Entries (21.dev pages)
-├── References: docs.21.dev/sitemap.xml (Sitemap Document)
-│   └── Contains: Multiple URL Entries (documentation pages)
-└── References: md.21.dev/sitemap.xml (Sitemap Document)
-    └── Contains: Multiple URL Entries (markdown files)
+└── References: docs.21.dev/sitemap.xml (Sitemap Document)
+    └── Contains: Multiple URL Entries (documentation pages)
 
 Sitemap State File (Resources/sitemap-state.json)
-└── Controls lastmod for: docs.21.dev + md.21.dev sitemaps
+└── Controls lastmod for: docs.21.dev sitemap
 ```
 
 ---
@@ -245,14 +232,14 @@ Source file modified (git commit)
   → lastmod updated in sitemap
 ```
 
-**docs.21.dev / md.21.dev pages**:
+**docs.21.dev pages**:
 ```
 Package.resolved changes (swift-secp256k1 version bump)
   → Lefthook detects change
   → Updates sitemap-state.json
   → Developer commits state file
   → Next sitemap generation uses new timestamp
-  → All docs/md page lastmod values update
+  → All docs page lastmod values update
 ```
 
 ### Sitemap Index lastmod Lifecycle
@@ -273,8 +260,7 @@ Subdomain sitemap regenerated
 **Current Scale** (as of 2025-11-14):
 - 21.dev: ~5 pages (homepage, package page, blog posts)
 - docs.21.dev: ~20-30 documentation pages
-- md.21.dev: ~20-30 markdown files
-- **Total**: ~50-65 URLs across all sitemaps
+- **Total**: ~25-35 URLs across all sitemaps
 
 **Growth Projections**:
 - Year 1: ~100-200 URLs (more blog posts, package pages)
