@@ -46,7 +46,7 @@ generated output for both generated sites (21-dev, docs-21-dev).
 
 ## Phase 2 — The gate
 
-- [ ] T005 Restore the two post-generation workflow steps that run the
+- [x] T005 Restore the two post-generation workflow steps that run the
   check (SC-001) · `.github/workflows/build-slipstream.yml`,
   `.github/workflows/generate-docc.yml`
 

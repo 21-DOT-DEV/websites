@@ -16,8 +16,10 @@ is touched.
 ## User journey
 
 A maintainer edits a page, generates the site, and CI runs
-`util links check --path Websites/<site>` alongside the existing
-post-generation steps (`canonical`, `links rewrite`, `agent-directive`).
+`util links check --path Websites/<site>` on the finished output —
+after generation and, where they run, the post-generation steps
+(`canonical`, `links rewrite`, `agent-directive` — docs pipeline
+only) — as the last gate before the output ships.
 Every internal reference is checked against the output on disk —
 directory-style URLs resolve through their `index.html`, and paths a
 `_redirects` rule will answer count as valid. A reference that resolves
@@ -130,6 +132,14 @@ non-zero naming each broken one otherwise.
   before the catch-all `/*/index.html`, so `/p256k/x/index.html`
   follows the p256k rule — verified live, it `301`s to
   `/documentation/p256k/x/`.
+- **Redirect exemption narrows coverage** — a supported redirect
+  exempts without checking its target, so `docs-21-dev`'s catch-all
+  `/*/index.html /:splat/ 301` means a reference ending in
+  `…/index.html` is never verified against disk. That is the
+  declared model — the edge answers with a redirect regardless of
+  what the target serves — and `links rewrite` already strips
+  `index.html` spellings from anchors, which bounds the gap to
+  non-anchor attributes in practice.
 - **Non-canonical URL forms** — `/file/` resolving through `file.html`
   or `/dir` through `dir/index.html` count as valid because Pages
   redirects non-canonical spellings to the canonical URL rather than

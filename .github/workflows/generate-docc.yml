@@ -674,6 +674,20 @@ jobs:
           
           echo "✅ All ${checked} links verified across llms.txt files"
       
+      - name: Check internal links
+        run: |
+          project="${{ inputs.project-name }}"
+          output_dir="Websites/${project}"
+
+          echo "🔗 Checking internal links for ${project}..."
+          echo "   Path: $output_dir"
+
+          # Last gate before the output is archived: fail on any internal
+          # reference that resolves to no file, directory index, or
+          # _redirects rule. Runs after every step that adds or edits
+          # output so the checked tree is the shipped tree (Specs/006).
+          swift run util links check --path "$output_dir"
+      
       - name: Create documentation archive
         run: |
           project="${{ inputs.project-name }}"

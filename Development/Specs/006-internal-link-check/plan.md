@@ -3,7 +3,7 @@ feature: 006
 title: Internal link checking for generated HTML output
 phase: 3 · Performance & Delivery Optimization
 status: In Progress
-updated: 2026-11-07
+updated: 2026-11-08
 adrs: [0004, 0005]
 ---
 
@@ -44,8 +44,9 @@ rejected alternatives: [research.md](research.md); ordered work:
    source file and exits non-zero on any failure; `--verbose` lists
    every checked reference (FR-007, FR-008).
 6. Wire into `build-slipstream.yml` and `generate-docc.yml` after site
-   generation, beside the existing `util canonical` / `util links
-   rewrite` / `util agent-directive` steps (SC-001).
+   generation and all HTML post-processing — the last verification
+   before the output is uploaded or archived, so the gate checks the
+   exact tree that ships (SC-001).
 
 ## Verification
 
@@ -68,6 +69,7 @@ edge-honored statuses only), `srcset` parsing, and report aggregation.
 
 ## Tasks
 
-- [ ] CI wiring verified on a real `build-slipstream` run — owner:
-  maintainer; exit: workflow step runs `util links check` and passes
-  (`.github/workflows/build-slipstream.yml`).
+- [ ] CI wiring verified on real `build-slipstream` and
+  `generate-docc` runs — owner: maintainer; exit: both workflow steps
+  run `util links check` and pass (`.github/workflows/build-slipstream.yml`,
+  `.github/workflows/generate-docc.yml`).
