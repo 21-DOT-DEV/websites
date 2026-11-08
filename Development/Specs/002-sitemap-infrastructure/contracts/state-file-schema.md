@@ -40,7 +40,7 @@ jq -r '.pins[] | select(.identity == "swift-secp256k1") | .state.version' Packag
 **Type**: String  
 **Format**: ISO 8601 timestamp with timezone  
 **Required**: Yes  
-**Value**: Timestamp when docs/md sitemaps were last generated with this package version
+**Value**: Timestamp when the docs sitemap was last generated with this package version
 
 **Format**: `YYYY-MM-DDTHH:MM:SS±HH:MM`  
 **Example**: `2025-11-14T19:30:00-08:00`
@@ -76,7 +76,7 @@ date -u +"%Y-%m-%dT%H:%M:%S%z"
 
 ### 1. File Creation (First Time)
 
-**Trigger**: First docs or md sitemap generation when file doesn't exist
+**Trigger**: First docs sitemap generation when file doesn't exist
 
 **Process**:
 1. Check if `Resources/sitemap-state.json` exists
@@ -149,14 +149,14 @@ fi
 
 ### 3. Sitemap Generation (Read)
 
-**Trigger**: docs.21.dev or md.21.dev sitemap generation during CI
+**Trigger**: docs.21.dev sitemap generation during CI
 
 **Process**:
 1. Read sitemap-state.json
 2. Extract package_version and generated_date
 3. Compare package_version with current Package.resolved version
 4. If versions match:
-   - Use generated_date as lastmod for all docs/md pages
+   - Use generated_date as lastmod for all docs pages
    - Preserve existing timestamps (no change)
 5. If versions differ (state file stale):
    - Log warning
@@ -166,7 +166,7 @@ fi
 **Script Pseudocode**:
 ```bash
 #!/bin/bash
-# Extract lastmod for docs/md sitemap
+# Extract lastmod for the docs sitemap
 
 STATE_FILE="Resources/sitemap-state.json"
 CURRENT_VERSION=$(jq -r '.pins[] | select(.identity == "swift-secp256k1") | .state.version' Package.resolved)
@@ -296,13 +296,4 @@ Update sitemap state for swift-secp256k1 v0.23.0
 }
 ```
 
-### Per-Sitemap Timestamps (if docs/md diverge)
-```json
-{
-  "package_version": "0.22.0",
-  "docs_generated_date": "2025-11-14T19:30:00-08:00",
-  "md_generated_date": "2025-11-14T19:30:00-08:00"
-}
-```
-
-**Current Implementation**: Single shared state is sufficient since both docs and md are generated from same package.
+**Current Implementation**: Single shared state is sufficient — one package drives the docs sitemap.

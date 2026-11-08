@@ -62,16 +62,29 @@ non-zero naming each broken one otherwise.
 - **FR-004** Resolves relative references against the containing file's
   directory; a reference escaping the site root is reported as broken.
 - **FR-005** Parses `_redirects` at the output root and treats a
-  reference matching a rule's source — literal or `*` splat — as valid
-  (the edge answers it).
+  reference matching a rule's source as valid when the edge would
+  answer it. Source matching implements Cloudflare's documented
+  syntax — one `*` splat greedily matching any characters anywhere in
+  the source, `:placeholder` segments each matching exactly one path
+  segment, literal text otherwise; when several sources match, the
+  first rule in file order governs (the edge applies the top-most
+  match). A rule's effective status decides the exemption — a
+  supported redirect status (`301`, `302`, `303`, `307`, `308`)
+  exempts outright (the edge answers with a redirect); `200` exempts
+  only when its substituted target itself resolves on disk, without
+  re-applying `_redirects` (the edge serves the target's content and
+  does not chain proxies); any other declared status grants nothing.
+  An absent status column defaults to `302`, so an undeclared rule
+  exempts like any supported redirect.
 - **FR-006** Skips without checking: URLs with any scheme
   (`https?://`, `mailto:`, `tel:`, `data:`, `javascript:`),
   protocol-relative `//` URLs, fragment-only `#x` references, and empty
   attribute values; fragments are never checked for target existence.
 - **FR-007** Reports each broken reference with its source file, raw
-  attribute value, resolved path, and reason; prints checked and
-  skipped totals; exits non-zero when any internal reference fails to
-  resolve.
+  attribute value, resolved path, and reason; files that cannot be
+  parsed are counted as skipped and named in warnings; prints checked
+  and skipped totals; exits non-zero when any internal reference
+  fails to resolve.
 - **FR-008** The CLI accepts `--path <dir>` (must exist and be a
   directory) and `--verbose` (lists every checked reference per file).
 
@@ -80,8 +93,8 @@ non-zero naming each broken one otherwise.
 - **SC-001** `build-slipstream.yml` and `generate-docc.yml` run
   `util links check` after site generation; a broken internal reference
   fails the workflow before deploy.
-- **SC-002** Zero false positives on real generated output across all
-  three sites (21-dev, docs-21-dev, md-21-dev).
+- **SC-002** Zero false positives on real generated output across both
+  generated sites (21-dev, docs-21-dev).
 - **SC-003** A full run completes in under 2 minutes on the largest
   site (~4,000 HTML files).
 
@@ -91,14 +104,53 @@ non-zero naming each broken one otherwise.
   `My%20File.html` matches `My File.html` on disk.
 - **`srcset` candidates** — each URL checked; descriptors (`1x`, `2x`,
   `800w`) are not URLs.
-- **Redirect splat sources** — a rule `/*/index.html /:splat/ 301`
-  exempts `/anything/index.html`, matching the edge's own behavior.
+- **Redirect splat and placeholder sources** — a rule
+  `/p256k/*/index.html /documentation/p256k/:splat/ 301` exempts
+  `/p256k/anything/index.html`: the splat is not required to end the
+  source, matching the edge's greedy `.*` semantics; `:placeholder`
+  segments each match exactly one segment.
+- **Redirect status handling** — a supported redirect status (`301`,
+  `302`, `303`, `307`, `308`) exempts because the edge answers with a
+  redirect regardless of what the target serves; a `200` proxy rule
+  exempts only when its substituted target also resolves on disk —
+  `_redirects` is not re-applied to the rewrite (the edge does not
+  chain proxies); other declared statuses — including unsupported
+  `3xx` codes like `300`, and non-redirect codes like `404` — exempt
+  nothing; an absent status column defaults to `302` and exempts like
+  any supported redirect.
+- **Overlapping redirect sources** — the first matching rule in file
+  order governs: `docs-21-dev`'s file places `/p256k/*/index.html`
+  before the catch-all `/*/index.html`, so `/p256k/x/index.html`
+  follows the p256k rule — verified live, it `301`s to
+  `/documentation/p256k/x/`.
+- **Non-canonical URL forms** — `/file/` resolving through `file.html`
+  or `/dir` through `dir/index.html` count as valid because Pages
+  redirects non-canonical spellings to the canonical URL rather than
+  404ing (the documented direction: `/contact.html` → `/contact`,
+  `/about/index.html` → `/about/`). The question answered is "would
+  the edge serve this URL," not "is this the canonical spelling" —
+  canonical form is `util canonical`'s concern.
+- **SPA fallback not honored** — Pages documents serving the site
+  root for unmatched paths on projects without a top-level
+  `404.html`; a reference that would only "resolve" through such a
+  shell still reports broken — the shell is not the page.
+- **Unparseable HTML** — a file that cannot be read or parsed is
+  counted as skipped and named in a warning, never dropped silently —
+  a quiet skip would let a parse regression green the gate; the check
+  verifies servable markup, not markup validity.
+- **Pages Functions** — both sites run `_middleware.ts` on every HTML
+  route (`_routes.json` includes `/*`), and `_redirects` does not
+  apply to responses a Function *serves*. The exemption premise holds
+  because every current handler delegates to `context.next()`, so
+  HTML requests reach the asset pipeline where `_redirects` is
+  evaluated — verified live: `/p256k/x/index.html` returns `301`
+  through docs-21-dev's middleware. Today's only Function-served
+  response is docs-21-dev's `Accept: text/markdown` negotiation —
+  outside the checker's HTML-link model; a handler that starts
+  serving HTML paths directly would bypass `_redirects` for those
+  paths — revisit the exemption premise if one stops delegating.
 - **Out-of-root relative escape** — `../../x` past the output root is
   broken, not silently clamped.
-- **Redirect-source approximation** — source matching is best-effort
-  and only ever *grants* an exemption; it can hide a genuinely broken
-  link the edge would also answer, which is acceptable (both see a
-  working path).
 
 ## Assumptions and dependencies
 

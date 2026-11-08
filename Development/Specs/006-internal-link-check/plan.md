@@ -3,7 +3,7 @@ feature: 006
 title: Internal link checking for generated HTML output
 phase: 3 · Performance & Delivery Optimization
 status: In Progress
-updated: 2026-11-04
+updated: 2026-11-07
 adrs: [0004, 0005]
 ---
 
@@ -31,8 +31,12 @@ rejected alternatives: [research.md](research.md); ordered work:
    paths; query strings and fragments stripped; relative references
    resolve against the containing directory (FR-003, FR-004).
 3. The checker parses `_redirects` at the output root and treats links
-   matching a redirect rule's source (including `*` splats) as valid —
-   they resolve at the edge, not on disk (FR-005).
+   matching a rule's source as valid — matching implements Cloudflare's
+   documented syntax (greedy `*` splats anywhere in the source,
+   `:placeholder` segments, first matching rule in file order), a
+   supported redirect (`301`/`302`/`303`/`307`/`308`) exempts outright,
+   and a `200` proxy rule exempts only when its substituted target
+   resolves on disk without re-applying `_redirects` (FR-005).
 4. Skipped by design: `https?://` and protocol-relative URLs, `mailto:`,
    `tel:`, `data:`, `javascript:`, fragment-only (`#x`) references, and
    fragment existence checks (FR-006).
@@ -59,8 +63,8 @@ rejected alternatives: [research.md](research.md); ordered work:
 
 Adds unit coverage for resolution variants (exact file, directory index,
 `.html` fallback), skip rules (external, mailto, fragment-only),
-redirect-source exemption (exact and splat), `srcset` parsing, and
-report aggregation.
+redirect-source exemption (literal, splat, and placeholder sources;
+edge-honored statuses only), `srcset` parsing, and report aggregation.
 
 ## Tasks
 

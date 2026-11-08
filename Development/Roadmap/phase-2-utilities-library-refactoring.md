@@ -72,7 +72,7 @@ Extract sitemap utilities and reusable workflow logic into a dedicated `Utilitie
   - ✅ `util canonical check --path <dir> --base-url <url>` — reports missing, valid, and mismatched canonicals
   - ✅ `util canonical fix --path <dir> --base-url <url>` — adds missing canonicals (skips mismatches by default)
   - ✅ `util canonical fix --force` — overwrites all canonicals to match derived URLs
-  - ✅ Works site-agnostically on any HTML output directory (21.dev, docs.21.dev, md.21.dev)
+  - ✅ Works site-agnostically on any HTML output directory (21.dev, docs.21.dev)
   - ✅ Canonical URL derived from `base-url + relative path` (normalizes `index.html` → `/`)
   - ✅ Check mode outputs three categories: ✅ Valid, ⚠️ Mismatch (shows both URLs), ❌ Missing
   - ✅ CI integration: exit code 1 when canonicals are missing (fails builds)

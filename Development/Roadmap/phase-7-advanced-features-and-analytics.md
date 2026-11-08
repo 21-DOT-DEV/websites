@@ -14,7 +14,7 @@ Layer in privacy-preserving server-side analytics, legal foundations, sitemap en
 - **Name:** Server-Side Edge Analytics
 - **Purpose & user value:** Collect privacy-preserving traffic and performance analytics at the Cloudflare edge — requests measured at the CDN with zero client-side JavaScript. Aligns with the private-by-design, server-side priority: nothing is downloaded to or executed in the visitor's browser, ad-blockers can't remove the signal, and the `static.cloudflareinsights.com` CSP exception can be dropped (tighter `script-src`).
 - **Success metrics:**
-  - Cloudflare edge (proxied) analytics enabled on all three subdomains — no JS beacon deployed
+  - Cloudflare edge (proxied) analytics enabled on all subdomains — no JS beacon deployed
   - `static.cloudflareinsights.com` removed from `connect-src`/`script-src` in `_headers.prod` once no beacon remains
   - Optional Worker-side event writer evaluated only if edge data proves insufficient (URL, referrer, country, device class; IP hashed at edge)
   - Zero GDPR consent popups required (no client-side identifiers, no cookies, no fingerprinting)
@@ -50,9 +50,9 @@ Layer in privacy-preserving server-side analytics, legal foundations, sitemap en
 - **Name:** Sitemap Index Generation
 - **Purpose & user value:** Aggregate all subdomain sitemaps into a unified sitemap index at 21.dev/sitemap.xml for centralized search engine discovery, following sitemap protocol 0.9 best practices for multi-subdomain sites.
 - **Success metrics:**
-  - Daily cron job fetches all subdomain sitemaps (21.dev, docs.21.dev, md.21.dev)
+  - Daily cron job fetches all subdomain sitemaps (21.dev, docs.21.dev)
   - SHA-256 content hashing detects changes and regenerates index only when needed
-  - Sitemap index properly references all three subdomain sitemaps with lastmod values
+  - Sitemap index properly references all subdomain sitemaps with lastmod values
   - Graceful degradation if any subdomain sitemap fetch fails
   - Index submitted to Google/Bing APIs when regenerated (24-hour lag acceptable)
 - **Dependencies:** Sitemap Infrastructure Overhaul (individual subdomain sitemaps must exist first).

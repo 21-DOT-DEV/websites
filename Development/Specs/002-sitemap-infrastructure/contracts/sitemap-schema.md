@@ -155,10 +155,6 @@ http://www.sitemaps.org/schemas/sitemap/0.9
     <loc>https://docs.21.dev/sitemap.xml</loc>
     <lastmod>2025-11-13T14:20:00-08:00</lastmod>
   </sitemap>
-  <sitemap>
-    <loc>https://md.21.dev/sitemap.xml</loc>
-    <lastmod>2025-11-13T14:20:00-08:00</lastmod>
-  </sitemap>
 </sitemapindex>
 ```
 
