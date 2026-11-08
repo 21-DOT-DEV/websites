@@ -108,6 +108,13 @@ passed through docs-21-dev's middleware; 21-dev's
 `/.well-known/nostr.json` likewise returns `200` through its `200`
 proxy rule).
 
+Loop refusal models Wrangler/Pages deploy error 10021 verbatim —
+"Infinite loop detected in this rule and has been ignored. This will
+cause a redirect to strip `.html` or `/index` and end up triggering
+this rule again" (cloudflare/workers-sdk#11824). Canonicalization
+(`x/index.html` → `x/`, `x.html` → `x`) is the loop mechanism; the
+spec-mandated catch-all-to-root refusal is a checker policy on top.
+
 The same parser (`RedirectRule.swift` / `RedirectsParser` in
 `Sources/UtilLib/Links/`) is shared with Specs/007's `redirects
 verify`, which checks the rules themselves — whichever feature lands

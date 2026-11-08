@@ -74,8 +74,15 @@ non-zero naming each broken one otherwise.
   only when its substituted target itself resolves on disk, without
   re-applying `_redirects` (the edge serves the target's content and
   does not chain proxies); any other declared status grants nothing.
-  An absent status column defaults to `302`, so an undeclared rule
-  exempts like any supported redirect.
+  A rule whose target loops back through its own source applies to
+  nothing and exempts nothing: a `3xx` target re-requested under the
+  same pattern, a `200` proxy target whose canonical form
+  (`x/index.html` → `x/`, `x.html` → `x`) re-matches — proxy fetches
+  never re-run `_redirects` otherwise — or a catch-all proxying the
+  site root, the SPA-shell fallback. A source that fails to compile
+  (more than one `*`) can never match. An absent status column
+  defaults to `302`, so an undeclared rule exempts like any
+  supported redirect.
 - **FR-006** Skips without checking: URLs with any scheme
   (`https?://`, `mailto:`, `tel:`, `data:`, `javascript:`),
   protocol-relative `//` URLs, fragment-only `#x` references, and empty
@@ -137,7 +144,39 @@ non-zero naming each broken one otherwise.
 - **Unparseable HTML** — a file that cannot be read or parsed is
   counted as skipped and named in a warning, never dropped silently —
   a quiet skip would let a parse regression green the gate; the check
-  verifies servable markup, not markup validity.
+  verifies servable markup, not markup validity. A directory whose
+  every file fails to parse exits non-zero like an empty scan.
+- **Root config files are not assets** — `_redirects`, `_headers`,
+  `_routes.json`, and `_worker.js` sit in the output root but the
+  edge never serves them, so a link to one reports broken even though
+  the file is on disk. The same name under a subdirectory is an
+  ordinary file and is served.
+- **URL normalization follows WHATWG** — ASCII tab/newline are
+  removed from attribute values and `\` resolves as `/` (special-scheme
+  rule), so `a\b` checks `a/b` and `\\host` counts as protocol-relative.
+  Percent-decoding is per-segment after splitting on `/`: `%2F`/`%5C`
+  inside a segment are *not* separators (the edge requests the encoded
+  path), so a segment decoding to one reports broken rather than
+  resolving to a different file; `%2e`-style encoded dots still
+  normalize. A query-only `?x` reference resolves to the containing
+  page itself.
+- **Deliberate catch-all proxies are honored but named** — a `200`
+  catch-all like `/* /shell` genuinely serves at the edge, so matching
+  references count as resolved — but it also masks the entire gate, so
+  the scan emits a warning naming the rule. The refusal model covers
+  only the ambient root-proxy SPA-fallback shape (`/* /`/`/index.html`),
+  not deliberate shell proxies.
+- **Dot-directories are not scanned** — the shared walker skips
+  hidden paths (`.skipsHiddenFiles`), so HTML under `.well-known/` or
+  other dot-directories goes unchecked while CF does serve it.
+  Generated output emits no such files today; revisit if that
+  changes.
+- **Case-insensitive filesystems** — `FileManager` follows the
+  volume's case semantics, so on case-insensitive APFS (local dev and
+  the macOS CI runners) a link whose case differs from the file's
+  still passes even though the edge serves paths case-sensitively. A
+  case-mismatched link is a latent false pass until checked on a
+  case-sensitive volume.
 - **Pages Functions** — both sites run `_middleware.ts` on every HTML
   route (`_routes.json` includes `/*`), and `_redirects` does not
   apply to responses a Function *serves*. The exemption premise holds

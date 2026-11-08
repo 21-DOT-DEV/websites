@@ -21,7 +21,7 @@ reimplement — `git checkout "stash@{0}^3" -- <paths>` for the new files,
 is gone, reimplement per [spec.md](spec.md) — FR-001..008 describe the
 same behavior.
 
-- [ ] T002 Restore `Sources/UtilLib/Links/` — `ExtractedLink.swift`,
+- [x] T002 Restore `Sources/UtilLib/Links/` — `ExtractedLink.swift`,
   `BrokenLink.swift`, `LinkCheckReport.swift`, `InternalLinkChecker.swift`,
   `RedirectRule.swift` (the shared `_redirects` parser — **lands here,
   and 007 consumes it**; if 007's code ships first, this file comes from
@@ -33,10 +33,10 @@ same behavior.
   `301`/`302`/`303`/`307`/`308` outright, `200` when the substituted
   target resolves without re-applying `_redirects`) — covers
   FR-001..FR-006 · `Sources/UtilLib/Links/`
-- [ ] T003 Restore the `check` subcommand and extend `--verbose` to
+- [x] T003 Restore the `check` subcommand and extend `--verbose` to
   FR-008's per-reference listing — the stashed version prints per-file
   counts (FR-007, FR-008) · `Sources/util/Commands/LinksCommand.swift`
-- [ ] T004 Restore the test suites — `verifies FR-001..FR-008` ·
+- [x] T004 Restore the test suites — `verifies FR-001..FR-008` ·
   `Tests/UtilLibTests/Links/InternalLinkCheckerTests.swift`,
   `Tests/UtilIntegrationTests/LinksCheckCLITests.swift`
 
