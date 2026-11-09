@@ -21,10 +21,13 @@ on:
         type: string
         default: 'Websites'
     secrets:
+      # Not `required: true`: untrusted PRs reach this workflow with empty
+      # secret values and the deploy job self-skips; a genuinely missing
+      # token on a trusted run fails loudly in the preflight step instead.
       cloudflare-api-token:
-        required: true
+        required: false
       cloudflare-account-id:
-        required: true
+        required: false
       cloudflare-zone-id:
         description: 'Cloudflare zone ID (21.dev) for edge cache purge on production deploys'
         required: false
@@ -38,6 +41,22 @@ on:
 jobs:
   deploy:
     name: Deploy to Cloudflare Pages
+    # Deploy only on trusted events: push, manual dispatch, or a pull_request
+    # that can actually hold secrets. Dependabot- and fork-authored PRs get
+    # no repository secrets and a read-only GITHUB_TOKEN (GitHub treats them
+    # like forks), so the wrangler deploy and PR comment can never succeed —
+    # skip rather than fail. Author login is used instead of github.actor,
+    # which Dependabot commands can influence. Events are whitelisted so a
+    # future pull_request_target caller (which WOULD see secrets on fork
+    # code) can't silently widen the deploy surface.
+    # Keep this condition in exact inverse sync with deploy-skip-notice's
+    # gate at the bottom of this file — review any change to one in the other.
+    if: >-
+      github.event_name == 'push' ||
+      github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'pull_request' &&
+       github.event.pull_request.user.login != 'dependabot[bot]' &&
+       github.event.pull_request.head.repo.full_name == github.repository)
     runs-on: macos-26
     env:
       DEPLOYMENT_BRANCH: preview
@@ -50,8 +69,21 @@ jobs:
       url: ${{ steps.cloudflare.outputs.deployment-url }}
     
     steps:
+      - name: "Preflight: verify deploy secrets are configured"
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.cloudflare-api-token }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.cloudflare-account-id }}
+        run: |
+          if [ -z "$CLOUDFLARE_API_TOKEN" ] || [ -z "$CLOUDFLARE_ACCOUNT_ID" ]; then
+            echo "::error::CLOUDFLARE_API_TOKEN / CLOUDFLARE_ACCOUNT_ID not configured for this run — deploy cannot proceed"
+            exit 1
+          fi
+          echo "✅ Cloudflare credentials present"
+      
       - name: Checkout repository
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       
       - name: Determine deployment branch
         run: |
@@ -82,7 +114,9 @@ jobs:
           fi
       
       - name: Install wrangler
-        run: npm install -g wrangler@3
+        # Exact pin — this job holds the Cloudflare deploy token, so the
+        # CLI is pinned like the actions are. Bump deliberately via PR.
+        run: npm install -g wrangler@3.114.17
       
       - name: Copy Functions to repo root
         run: |
@@ -294,3 +328,37 @@ jobs:
         env:
           GOOGLE_SERVICE_ACCOUNT_JSON: ${{ secrets.google-service-account-json }}
         run: swift run util search-console submit --site ${{ inputs.project-name }} --verbose
+
+  deploy-skip-notice:
+    name: Preview deploy skipped (untrusted PR)
+    # Inverse of the deploy job's pull_request gate above — keep the two in
+    # sync: any change to one's trusted-PR test must be mirrored in the
+    # other. Runs only on Dependabot- or fork-authored PRs to document why
+    # the deploy check shows skipped.
+    if: >-
+      github.event_name == 'pull_request' &&
+      (github.event.pull_request.user.login == 'dependabot[bot]' ||
+       github.event.pull_request.head.repo.full_name != github.repository)
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Record skip reason
+        env:
+          PR_AUTHOR: ${{ github.event.pull_request.user.login }}
+          HEAD_REPO: ${{ github.event.pull_request.head.repo.full_name }}
+        run: |
+          {
+            echo "## Preview deploy skipped — by design"
+            echo ""
+            echo "**PR author:** \`${PR_AUTHOR}\` · **Head repo:** \`${HEAD_REPO}\`"
+            echo ""
+            echo "GitHub gives Dependabot- and fork-authored pull requests a read-only"
+            echo "token and no repository secrets, so the Cloudflare deploy and preview"
+            echo "comment can never succeed on this PR. The build/test/documentation"
+            echo "jobs are the coverage for this change."
+            echo ""
+            echo "Trusted pull requests (same-repo, non-Dependabot) still get preview"
+            echo "deploys; pushes to \`main\` deploy to production as usual."
+          } >> "$GITHUB_STEP_SUMMARY"
+          echo "::notice title=Preview deploy skipped::Untrusted PRs receive no repository secrets — Cloudflare deploy skipped by design (see job summary)."
