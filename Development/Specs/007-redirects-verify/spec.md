@@ -18,9 +18,12 @@ A maintainer edits `Resources/<site>/_redirects` and opens a PR. On
 preview deploy, the workflow runs `util redirects verify --site <site>
 --base-url <preview>`; every literal rule is requested and asserted
 (status and `Location`), every 3xx wildcard rule is probed with a fixed
-token, and any rule that cannot be proven by request is listed as
-skipped. A disagreement — wrong status, wrong `Location`, unreachable
-host — fails the deploy with the offending rule named.
+token, and every non-3xx wildcard is probed through a deployed file its
+target expands to when one exists — skipped with a stated reason when
+none does. A rule the edge ignores outright fails with the refusal
+named, before any request fires. A disagreement — wrong status, wrong
+`Location`, unreachable host — fails the deploy with the offending
+rule named.
 
 **Independent test:** run the command against any deployment of either
 site; it exits 0 when the file's rules match observed behavior and
@@ -43,36 +46,65 @@ non-zero naming the broken rule otherwise.
    runs, **then** a probe request with a fixed token substituted for `*`
    asserts `Location` equals `/documentation/p256k/<token>/` — covers
    FR-003.
-5. **Given** `/.well-known/* /well-known/:splat 200`, **when** verify
-   runs, **then** the rule is reported as skipped with a stated reason —
-   neither passed nor failed — covers FR-004, FR-005.
+5. **Given** `/.well-known/* /well-known/:splat 200` and a deployed
+   `well-known/nostr.json`, **when** verify runs, **then** the source
+   form of that file is requested and its `200` asserted — a live `200`
+   on a dot-directory path exists only through the rewrite — covers
+   FR-004.
 6. **Given** a new rule committed to `_redirects` with no workflow edit,
    **when** the next preview deploy runs, **then** the rule is verified —
    covers SC-002.
+7. **Given** a rule declaring a status the edge does not support (e.g.
+   `404`), **when** verify runs, **then** it exits non-zero naming the
+   edge refusal — no request fires — covers FR-005.
+8. **Given** a wildcard `200` rule whose splat-expanded target matches
+   no deployed file, **when** verify runs, **then** the rule is reported
+   as skipped with a stated reason — neither passed nor failed — covers
+   FR-004, FR-005.
 
 ## Functional requirements
 
 - **FR-001** Parses `_redirects`: `source target status` columns, `#`
   comments and blank lines ignored; targets may be site-relative paths or
   absolute URLs.
-- **FR-002** For every rule with a literal source, requests
+- **FR-002** For every edge-applied rule with a literal source, requests
   `base-url + source`, asserts the response status equals the declared
   status, and — for redirect statuses — asserts `Location` equals the
-  declared target after normalization (relative targets resolve against
-  the base URL).
-- **FR-003** For every rule with a `*` source or `:`-placeholder target
-  declaring a 3xx status, substitutes a fixed probe token for each
-  wildcard and applies the FR-002 assertions to the probe response.
-- **FR-004** Wildcard rules declaring a non-3xx status are reported as
-  skipped with a stated reason — a rewrite cannot be proven by status
-  alone when the probed target may not exist.
-- **FR-005** Reports every rule as passed, failed (with expected and
-  observed values), or skipped (with reason); exits non-zero when any
-  rule fails.
+  declared target verbatim (the edge echoes targets as written:
+  relative stays relative, absolute stays absolute, query strings and
+  fragments included).
+- **FR-003** For every edge-applied rule with a `*` source or
+  `:`-placeholder target declaring a 3xx status, substitutes a fixed
+  probe token for each wildcard and applies the FR-002 assertions to the
+  probe response.
+- **FR-004** Edge-applied wildcard rules declaring a non-3xx status get
+  an opportunistic real-target probe: when a splat-expanded target
+  resolves to an existing file under the deployed output root
+  (`Websites/<site>/`; the `--file` parent directory for fixtures) and
+  the probed source path maps to no file under that root, the source
+  form is requested and a `200` asserted — a `200` provable only by
+  the rewrite (dot-directory sources can never be deployed assets, so
+  `/.well-known/*` is always probeable). When no deployed target is
+  derivable, or the source path could itself be a deployed asset — a
+  `200` there would come from the file, not the rule — the rule is
+  reported as skipped with a stated reason.
+- **FR-005** Reports every rule as passed, failed, or skipped (with
+  reason). Rules the edge would not apply — a status Cloudflare
+  doesn't support, a source that can't compile (e.g. more than one
+  `*`), or a target that loops back through its own source — are
+  reported failed naming the refusal, before any request is issued; a
+  declaration the platform ignores is broken configuration, not
+  unverifiable coverage. The verifier exposes this as a dedicated
+  refusal reason, not the link checker's `isAppliedByEdge` flag — that
+  flag also refuses deliberate SPA-shell catch-all proxies as checker
+  policy, and the edge does serve those. All other failures report
+  expected and observed values. Exits non-zero when any rule fails.
 - **FR-006** Issues HEAD requests, falling back to GET on 405/501; each
   request is bounded by a per-request timeout.
-- **FR-007** The CLI accepts `--site <site>` resolving to
-  `Resources/<site>/_redirects` and `--base-url <url>` accepting any
+- **FR-007** The CLI accepts `--site <site>` — validated against the
+  known site names and resolving to `Resources/<site>/_redirects` — or
+  `--file <path>` for an explicit `_redirects` file (mutually
+  exclusive, one required), and `--base-url <url>` accepting any
   deployment origin (preview or production).
 
 ## Measurable outcomes
@@ -97,6 +129,25 @@ non-zero naming the broken rule otherwise.
 - **First-match semantics** — `_redirects` applies rules in file order;
   shadowed rules are verified as written, not flagged (lint-style shadow
   detection is out of scope).
+- **Platform layers can shadow the file** — apex `*.pages.dev` hosts are
+  canonicalized by Pages Functions before `_redirects` is consulted
+  (observed: `docs-21-dev.pages.dev/p256k` → `https://docs.21.dev/p256k`
+  — the hostname redirect, not the declared rule), and zone-level rules
+  on the custom domain can shadow declarations entirely (observed:
+  `21.dev/api` → `403` while the same deploy's preview returns the
+  declared `301`). `--base-url` is expected to be the per-deploy
+  origin, where the file is the only redirect policy in play; pointing
+  it at an apex or custom host measures those layers, not this file.
+- **`/.well-known/` has platform-reserved sub-paths** — `acme-challenge`
+  and `pki-validation` can be answered by the zone for domain-control
+  validation before user rules run; real-target probes use ordinary
+  deployed files, which sit outside those reservations.
+- **Real-target probes double-check the source** — a `200` on a source
+  path that is itself a deployed asset proves nothing (the file, not
+  the rule, answered); such rules are skipped rather than probed.
+- **Edge-cached responses** — Pages can cache negative responses, so a
+  reused hostname can shadow a rule behind a stale `404`; the
+  per-deploy `<hash>.pages.dev` origin starts with an empty cache.
 
 ## Assumptions and dependencies
 
@@ -108,3 +159,12 @@ non-zero naming the broken rule otherwise.
   external-monitoring scope, not this command.
 - The www → apex canonical redirect lives in Cloudflare Rules, not
   `_redirects` (it needs dynamic expressions); out of scope.
+- `--site` names are the known `SiteName` allowlist (`21-dev`,
+  `docs-21-dev`) — the same validation every `util` command applies;
+  arbitrary paths go through `--file`, which also serves test fixtures.
+- Real-target existence is checked under the generated output root —
+  `Websites/<site>/` for `--site` (present in the deploy job after the
+  artifact download), the `--file` parent directory otherwise. A run
+  with no output root present degrades those probes to skips — the
+  authored `Resources/` tree is not a mirror (it carries undeployed
+  config and lacks generated content).

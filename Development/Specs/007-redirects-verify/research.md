@@ -11,8 +11,11 @@ rule per line, each declaration ≤1,000 characters. **The default code
 is 302**, not 301 — an omitted status is a temporary redirect.
 Permitted codes: 200, 301, 302, 303, 307, 308 — where 200 is a *rewrite*
 (the destination's content is served under the source URL; no redirect
-is emitted). Destinations may be paths or absolute external URLs and
-may contain `:placeholder`s and splats.
+is emitted). Rewrites beyond 200 are not supported: a rule declaring
+e.g. `404` is ignored by the edge, not served (per the advanced-redirects
+table, which lists non-200 rewrites as unsupported). Destinations may be
+paths or absolute external URLs and may contain fragments, query
+strings, `:placeholder`s and splats.
 
 Matching is anchored and literal: a splat `*` compiles to `.*` (may be
 empty), a placeholder `:name` to `[^/]+` (never a slash), and the whole
@@ -64,10 +67,20 @@ Deriving checks from `_redirects` makes coverage automatic (SC-002).
 Rejected alternatives:
 
 - **Keep the curl list** — the drift it already has is the bug being
-  fixed.
+  fixed. The current blocks assert only status codes, never `Location`
+  — so they would pass even where a redirect points somewhere wrong.
 - **Parse-only validation** (`wrangler`/`parseRedirects` offline) —
   proves the file is well-formed, says nothing about whether rules
   *fire* — the silent-drop and Functions-bypass modes pass it.
+- **Warn on edge-ignored rules instead of failing** — wrangler's own
+  posture: `pages deploy` surfaces invalid rules as named warnings
+  (unsupported status, infinite loop, dynamic-limit overflow) and ships
+  anyway; Netlify's Deploy Summary does the same. Deploy tooling warns
+  because its job is to ship what it understands — a verifier's job is
+  the opposite, so the same findings are escalated to failure with the
+  refusal named. It also removes a false-pass corner: a declared `404`
+  on a path that naturally 404s would "pass" a raw status assertion
+  without the rule ever running.
 - **lychee / link checkers** — they check that referenced *pages*
   exist; redirect-rule verification (status + `Location` equality) is
   a different problem they don't solve.
@@ -86,17 +99,32 @@ Rejected alternatives:
   both source and target, request the probe source, assert `Location`
   matches the probe-expanded pattern. Works because redirects fire
   regardless of whether the probed target exists.
-- **Non-3xx wildcard rules (rewrites)** — **cannot be proven by
-  request**: a probe `/.well-known/<token>` returns 404 whether the
-  rewrite ran or not (the rewritten target doesn't exist either way).
-  Reported as *skipped* with a stated reason — honest coverage beats a
-  false pass. (FR-004.)
-- **HEAD vs GET** — HEAD suffices for status+`Location`; GET fallback
-  on 405/501 for completeness. No evidence Pages refuses HEAD.
+- **Non-3xx wildcard rules (rewrites)** — a *fixed-token* probe can't
+  prove them (`/.well-known/<token>` returns 404 whether the rewrite
+  ran or not), but a *real-target* probe can — with two guards. The
+  splat-expanded target must map to an existing file under the
+  deployed output root (`Websites/<site>/`, not `Resources/<site>/` —
+  the authored tree carries undeployed config and lacks generated
+  content; see §6), and the probed source path must not itself be a
+  deployed asset, else a `200` comes from the file and proves nothing.
+  Under both guards a `200` on the source path is reachable only
+  through the rewrite — confirmed live,
+  `preview.21-dev.pages.dev/.well-known/nostr.json` → `200`. Otherwise
+  the rule is reported as *skipped* with a stated reason — honest
+  coverage beats a false pass. (FR-004.)
+- **HEAD vs GET** — HEAD suffices for status+`Location`; confirmed live
+  on both sites (status and `Location` both returned on every probe,
+  including through docs-21-dev's middleware pass-through). GET
+  fallback on 405/501 remains for completeness.
+- **`Location` is echoed verbatim** — relative targets come back
+  relative (`/documentation/p256k/`), absolute targets absolute
+  (`https://docs.21.dev/documentation/`); no host rewriting. Observed
+  on every live probe, splat-expanded values included.
 - **Pages Functions caveat** — `_redirects` does not apply to requests
   served by Functions; if middleware owns a path the rule won't fire
   and verify reports it. That is correct behavior: the file's
-  declaration is not the deployment's behavior.
+  declaration is not the deployment's behavior. Two observed layers
+  bound where that premise holds — see §6.
 
 ## 5. What stays out
 
@@ -108,5 +136,54 @@ Rejected alternatives:
   belong to external monitoring.
 - **www → apex** — lives in Cloudflare Rules (dynamic expressions
   `_redirects` can't express); out of scope.
+- **Zone-level shadows** — WAF, redirect, and page rules configured on
+  the custom domain can override file rules entirely (observed: prod
+  `21.dev/api` → `403` while the preview returns the declared `301`).
+  Out of scope for the same reason production sweeps are — the preview
+  deploy is where the file is the only redirect policy.
 - **Chains** — only the first hop is asserted; each rule's own check
   covers the next hop.
+
+## 6. Live observations (2026-11-08 probes)
+
+Everything below was measured against the real deployments, and is the
+evidence behind FR-004's real-target probes and the `--base-url`
+guidance:
+
+- `preview.21-dev.pages.dev/api` → `301`,
+  `Location: https://docs.21.dev/documentation/` — the declared rule
+  firing; preview per-deploy and branch-alias hosts run `_redirects`
+  normally.
+- `docs-21-dev.pages.dev/p256k` → `301`,
+  `Location: https://docs.21.dev/p256k` — the apex project host is
+  canonicalized by Functions' hostname redirect *before* `_redirects`
+  is consulted. Pointing `--base-url` at an apex host fails every
+  rule's `Location` check while measuring the wrong layer.
+- `21.dev/api` → `403` across HEAD, GET, and browser UAs — a
+  zone-level rule on the custom domain shadows the file's declared
+  `301`; the same path on the preview host returns it. Real dogfood
+  evidence for §4's Functions caveat, from one level higher in the
+  stack.
+- `preview.21-dev.pages.dev/.well-known/nostr.json` → `200` —
+  proves the `/.well-known/*` rewrite: Pages doesn't serve
+  dot-directories directly (a documented platform quirk — uploads
+  drop hidden directories unless opted in), so a `200` on a dot-path
+  is reachable only through the `200` rewrite. This is the FR-004
+  real-target probe working end to end.
+- `Resources/<site>/` is a source tree, not the deployed root —
+  `SiteGenerator`'s excluded list drops `_headers.*`, `*.cjs`,
+  `blog/`, `functions/`, `packages/` from the copy, and
+  `Resources/docs-21-dev/` holds only config (`wrangler.toml`,
+  `external-archives.json`, `theme-settings.json`) with none of the
+  deployed DocC HTML. Real-target existence is therefore checked
+  under `Websites/<site>/` — the generated tree wrangler actually
+  uploads — with `--file`'s parent as the fixture escape hatch.
+- `/.well-known/` is not free real estate — Cloudflare reserves
+  `acme-challenge`/`pki-validation` sub-paths for domain-control
+  validation and advises excluding `/.well-known/*` from custom rules;
+  a fixed-token probe could land on a reserved sub-path, a real-target
+  probe cannot.
+- Edge caches responses, negative ones included — a reused hostname
+  can serve a stale `404` over a live rule; the per-deploy
+  `<hash>.pages.dev` origin starts empty, so verifying the per-deploy
+  URL avoids the whole class.
