@@ -1,0 +1,166 @@
+name: action-pins
+
+# Advisory gate — do not promote to a required check without a
+# paths-agnostic wrapper, or workflow-untouched PRs sit pending forever
+# (same constraint development-docs.yml documents).
+on:
+  push:
+    branches:
+      - 'main'
+    paths: &paths
+      - '.github/workflows/**'
+
+  pull_request:
+    branches:
+      - 'main'
+    paths: *paths
+
+  # Weekly sweep: an upstream retag/delete is a supply-chain signal worth
+  # surfacing even when no workflow file changed this week.
+  schedule:
+    - cron: '0 6 * * 1'
+
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  verify-pins:
+    name: Verify pinned action SHAs
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Verify pins resolve to their commented tags
+        run: |
+          set -euo pipefail
+          violations=0
+          infra_errors=0
+          uses_seen=0
+          verified=0
+
+          # Enumeration is YAML-aware (ruby/psych ships on GitHub runners):
+          # jobs.<id>.uses (remote reusable calls) and jobs.<id>.steps[].uses
+          # are walked structurally, so flow-style or spaced `uses :` keys
+          # can't escape, and "uses:" tokens inside run: scripts or comments
+          # can't false-positive. For each remote target:
+          #   - local reusable-workflow calls (uses: ./…) are repo-internal
+          #     and skipped;
+          #   - anything not shaped owner/repo[/path…]@<ref> is a hard error
+          #     so the gate fails closed on shapes it can't classify
+          #     (docker:// refs, future syntax) instead of passing blind;
+          #   - a full-SHA ref must carry a "# vX.Y.Z"-style comment, and the
+          #     tag named in the comment must resolve to the pinned SHA
+          #     (annotated tags dereferenced via ^{}).
+          # Zero uses: invocations is itself a failure — broken enumeration
+          # must never produce a green "all verified" no-op.
+          while IFS=$'\t' read -r wf target detail; do
+            if [ "$target" = "PARSE_ERROR" ]; then
+              echo "::error::Workflow file failed YAML parse: ${wf} (${detail})"
+              violations=$((violations + 1))
+              continue
+            fi
+            uses_seen=$((uses_seen + 1))
+            case "$target" in
+              ./*) continue ;;
+            esac
+
+            if ! [[ "$target" =~ ^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+(/[A-Za-z0-9_.-]+)*@[^[:space:]]+$ ]]; then
+              echo "::error::Unrecognised uses: target — refusing to fail open: ${target}"
+              violations=$((violations + 1))
+              continue
+            fi
+
+            ref="${target##*@}"
+            # First two path components are the repo; deeper segments are
+            # subpath actions (e.g. github/codeql-action/init) or remote
+            # reusable-workflow paths.
+            repo=$(echo "${target%@*}" | cut -d/ -f1-2)
+
+            if ! [[ "$ref" =~ ^[0-9a-f]{40}$ ]]; then
+              echo "::error::Not SHA-pinned: ${target}"
+              violations=$((violations + 1))
+              continue
+            fi
+
+            # The version tag lives in the trailing comment on the pin's own
+            # line — locate it among uses:-bearing lines by the literal
+            # target string so a stray mention in a run: block can't match.
+            tag=$(grep -E 'uses:' "$wf" | grep -F "$target" | head -1 | grep -oE '#[[:space:]]*v[0-9]+(\.[0-9]+)*([-+][0-9A-Za-z.-]+)?' | head -1 | sed -E 's/#//; s/[[:space:]]//g' || true)
+            if [ -z "${tag:-}" ]; then
+              echo "::error::SHA pin missing '# vX.Y.Z' version comment: ${target} (${wf})"
+              violations=$((violations + 1))
+              continue
+            fi
+
+            # Distinguish infra flake (ls-remote exits nonzero) from a
+            # genuinely absent tag (ls-remote exits 0 with empty output) —
+            # they have different meanings: flake is noise, a moved/deleted
+            # tag is a supply-chain signal.
+            refs=""
+            lookup_failed=1
+            for attempt in 1 2 3; do
+              if refs=$(GIT_TERMINAL_PROMPT=0 git ls-remote "https://github.com/${repo}" "refs/tags/${tag}" "refs/tags/${tag}^{}"); then
+                lookup_failed=0
+                break
+              fi
+              sleep 2
+            done
+            if [ "$lookup_failed" -eq 1 ]; then
+              echo "::error::Could not query tags for ${repo} after ${attempt} attempts — infra flake, not pin drift"
+              infra_errors=$((infra_errors + 1))
+              continue
+            fi
+
+            commit=$(echo "$refs" | awk -v t="refs/tags/${tag}^{}" '$2 == t {print $1}')
+            [ -z "$commit" ] && commit=$(echo "$refs" | awk -v t="refs/tags/${tag}" '$2 == t {print $1}')
+            if [ -z "$commit" ]; then
+              echo "::error::Tag ${tag} not found on ${repo} — upstream moved/deleted the tag, or the comment is wrong"
+              violations=$((violations + 1))
+              continue
+            fi
+            if [ "$commit" != "$ref" ]; then
+              echo "::error::${repo}@${ref} commented '${tag}' but ${tag} resolves to ${commit}"
+              violations=$((violations + 1))
+              continue
+            fi
+            verified=$((verified + 1))
+            echo "✅ ${repo}@${ref:0:7} == ${tag}"
+          done < <(ruby -ryaml -e '
+            # Psych 4+ (ubuntu runners, Ruby 3.x) disables YAML aliases by
+            # default, which would reject this repo'"'"'s &paths/*paths
+            # anchors; Psych 3 lacks the kwarg and allows them by default.
+            LOADER_OPTS = Psych::VERSION.split(".").first.to_i >= 4 ? { aliases: true } : {}
+            Dir[".github/workflows/*.{yml,yaml}"].sort.each do |f|
+              begin
+                doc = YAML.load_file(f, **LOADER_OPTS)
+              rescue StandardError => e
+                puts "#{f}\tPARSE_ERROR\t#{e.class}: #{e.message}"
+                next
+              end
+              next unless doc.is_a?(Hash)
+              (doc["jobs"] || {}).each_value do |job|
+                next unless job.is_a?(Hash)
+                puts "#{f}\t#{job["uses"]}" if job["uses"]
+                Array(job["steps"]).each do |s|
+                  puts "#{f}\t#{s["uses"]}" if s.is_a?(Hash) && s["uses"]
+                end
+              end
+            end
+          ' | sort -u || true)
+
+          if [ "$uses_seen" -eq 0 ]; then
+            echo "::error::No uses: invocations discovered — enumeration must be broken; refusing to pass vacuously"
+            exit 1
+          fi
+          if [ "$violations" -gt 0 ] || [ "$infra_errors" -gt 0 ]; then
+            echo "❌ ${violations} pin violation(s) + ${infra_errors} infra lookup failure(s) (${uses_seen} uses: invocation(s) scanned)"
+            exit 1
+          fi
+          echo "✅ All ${verified} remote action pin(s) verified (${uses_seen} uses: invocation(s) scanned)"

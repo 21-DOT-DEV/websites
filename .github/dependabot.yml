@@ -4,3 +4,10 @@ updates:
     directory: "/"
     schedule:
       interval: "weekly"
+    # Batch every action bump into a single PR — pins move together and one
+    # grouped update is cheaper to review than one noisy PR per action.
+    # Deploy previews self-skip on Dependabot PRs (deploy-cloudflare.yml).
+    groups:
+      github-actions:
+        patterns:
+          - "*"
