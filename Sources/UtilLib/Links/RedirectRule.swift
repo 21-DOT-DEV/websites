@@ -36,10 +36,14 @@ public struct RedirectRule: Sendable, Equatable {
             || source.range(of: ":[A-Za-z]", options: .regularExpression) != nil
     }
 
-    /// Whether the edge would apply this rule to a matching request.
+    /// Whether the edge would apply this rule to a matching request — for the
+    /// purposes of a link-check exemption.
     ///
-    /// A rule applies when both its declared shape is one the edge honors and
-    /// it does not re-trigger itself:
+    /// This is a checker policy, not raw edge semantics: it is `false` both
+    /// for rules the edge refuses (see ``edgeRefusal``) and for `200` proxies
+    /// that would mask every shadowed path — `/* /index.html 200`, `/* / 200`
+    /// and other canonical-rematch shapes the edge does serve, but which must
+    /// never exempt a broken link. Components:
     ///
     /// - Shape — mirrors the platform's `PERMITTED_STATUS_CODES` ({200, 301,
     ///   302, 303, 307, 308}): a rule declaring any other status is invalid and
@@ -50,18 +54,30 @@ public struct RedirectRule: Sendable, Equatable {
     /// - Self-retrigger — a redirect loops when the re-requested target, in
     ///   literal or canonicalized form, matches the source again (`/a/* /a/x`
     ///   and `/* /index.html` in the `3xx` sense both loop). A `200` proxy
-    ///   instead fetches its target without re-running `_redirects` (proxying
-    ///   is not chained), so it loops only through a *canonical* redirect
-    ///   whose destination re-matches — `/a/* /a/x` proxied is fine,
-    ///   `/a/* /a/x.html` proxied loops through `/a/x`. A catch-all proxying
-    ///   bare `/` is the SPA-shell fallback: it applies to nothing even though
-    ///   it cannot loop. A source that fails to compile (more than one `*`)
-    ///   can never match either.
+    ///   fetches its target internally — it cannot loop at the edge — so its
+    ///   canonical-rematch and root-shell shapes (`/* /index.html 200`,
+    ///   `/* / 200`, `/a/* /a/x.html 200`) are excluded here as masking
+    ///   policy, not edge refusals. A source that fails to compile (more
+    ///   than one `*`) can never match either.
     ///
     /// Evaluating this compiles the source per call; use ``RedirectMatcher``
     /// for lookups.
     public var isAppliedByEdge: Bool {
         CompiledRedirectRule(rule: self).appliedByEdge
+    }
+
+    /// Why the edge itself would refuse this rule, or `nil` when the edge
+    /// applies it — raw *runtime* semantics with no checker policy.
+    ///
+    /// Unlike ``isAppliedByEdge``, the `200` masking shapes — `/* /index.html
+    /// 200`, `/* / 200` and other canonical-rematch or catch-all proxies —
+    /// report `nil` here: a deployed edge serves them (deploy-time
+    /// validation can refuse canonical-rematch declarations before they ever
+    /// reach the edge — a different layer this type does not model). Use this
+    /// when the question is "would Cloudflare apply the declaration" rather
+    /// than "may the declaration exempt a link".
+    public var edgeRefusal: RedirectEdgeRefusal? {
+        CompiledRedirectRule(rule: self).edgeRefusal
     }
 
     /// Whether the declared status and target shape are ones the edge honors —
@@ -112,6 +128,32 @@ public struct RedirectRule: Sendable, Equatable {
         }
         return served
     }
+}
+
+/// Why Cloudflare's edge would refuse to apply a `_redirects` rule.
+///
+/// A refused declaration is broken configuration — the platform ignores it
+/// outright, so it can never serve traffic. Checked in declaration order:
+/// shape first (the line's own validity), then source compilation, then
+/// self-reference. `200` masking shapes (`/* /index.html 200`, `/* / 200`,
+/// canonical-rematch proxies) are deliberately absent: the edge serves them.
+public enum RedirectEdgeRefusal: Sendable, Equatable {
+    /// Declared status is outside `PERMITTED_STATUS_CODES` ({200, 301, 302,
+    /// 303, 307, 308}) — the edge skips the rule entirely.
+    case unsupportedStatus(Int)
+
+    /// A `200` proxy whose target is not site-relative — external proxying
+    /// is unsupported, so the edge ignores the rule.
+    case externalProxyTarget
+
+    /// The source pattern cannot compile — more than one `*` splat.
+    case uncompilableSource
+
+    /// The served target, literal or canonicalized, re-matches the source —
+    /// an infinite redirect loop the edge refuses. Applies to redirect
+    /// statuses only: a `200` proxy's internal fetch resolves its target
+    /// directly, so it cannot loop at the edge.
+    case selfReferencingTarget
 }
 
 /// Captured wildcard values from a matched `_redirects` source.
@@ -189,45 +231,74 @@ struct CompiledRedirectRule: Sendable {
             return compiled.firstMatch(in: path, range: range) != nil
         }
 
-        let refused: Bool
-        if isValid, let compiled = try? NSRegularExpression(pattern: pattern) {
-            self.regex = compiled
-            self.splatGroup = splatGroup
-            self.namedGroups = namedGroups
-            if rule.targetIsSiteRelative {
-                let literal = rule.normalizedLiteralTarget
-                let canonical = rule.servedTargetPath
-                if rule.status == 200 {
-                    // A proxy target is fetched without re-running _redirects,
-                    // so the only loop runs through a canonical redirect whose
-                    // destination re-matches the source — plus the catch-all
-                    // root proxy, which is the SPA shell the checker refuses.
-                    refused = (canonical != literal && matches(canonical, in: compiled))
-                        || (rule.isCatchAll && literal == "/")
-                } else {
-                    // A redirect loops when the re-requested target — literal
-                    // or canonicalized — matches the source again.
-                    refused = matches(literal, in: compiled) || matches(canonical, in: compiled)
-                }
+        let compiled = isValid ? try? NSRegularExpression(pattern: pattern) : nil
+        self.regex = compiled
+        self.splatGroup = compiled == nil ? nil : splatGroup
+        self.namedGroups = compiled == nil ? [:] : namedGroups
+
+        var loops = false
+        var checkerMasked = false
+        if let compiled, rule.targetIsSiteRelative {
+            let literal = rule.normalizedLiteralTarget
+            let canonical = rule.servedTargetPath
+            if rule.status == 200 {
+                // A proxy target is fetched without re-running _redirects —
+                // the internal fetch resolves the asset directly — so a `200`
+                // rule cannot observably loop: even `/* /index.html 200`, whose
+                // canonical target re-matches the catch-all, is served by a
+                // deployed edge as the SPA shell (deploy validation may refuse
+                // the shape before it deploys). The canonical-rematch and
+                // root-proxy shapes therefore stay link-checker policy (a
+                // masked gate), never edge refusals.
+                checkerMasked = (canonical != literal && matches(canonical, in: compiled))
+                    || (rule.isCatchAll && literal == "/")
             } else {
-                refused = false
+                // A redirect loops when the re-requested target — literal
+                // or canonicalized — matches the source again.
+                loops = matches(literal, in: compiled) || matches(canonical, in: compiled)
             }
-        } else {
-            self.regex = nil
-            self.splatGroup = nil
-            self.namedGroups = [:]
-            refused = false
         }
-        self.refusedLoop = refused
-        self.appliedByEdge = rule.hasApplicableShape && !refused && self.regex != nil
+        self.refusedLoop = loops
+        self.checkerMasked = checkerMasked
+
+        let edgeRefusal: RedirectEdgeRefusal?
+        if !rule.hasApplicableShape {
+            edgeRefusal = rule.status == 200 ? .externalProxyTarget : .unsupportedStatus(rule.status)
+        } else if self.regex == nil {
+            edgeRefusal = .uncompilableSource
+        } else if loops {
+            edgeRefusal = .selfReferencingTarget
+        } else {
+            edgeRefusal = nil
+        }
+        self.edgeRefusal = edgeRefusal
+        self.appliedByEdge = edgeRefusal == nil && !checkerMasked
     }
 
     /// Whether the rule's served target URL re-matches its own source — the
-    /// edge refuses such self-retriggering rules (e.g. `/* /index.html 200`).
+    /// edge refuses such self-retriggering *redirects* (e.g. `/* /index.html
+    /// 301`): the re-requested target re-enters `_redirects`. Always `false`
+    /// for `200` proxies, whose internal asset fetch re-enters nothing (see
+    /// ``checkerMasked``).
     let refusedLoop: Bool
 
-    /// Whether the edge would apply this rule — cached at compile time so a
-    /// ``RedirectMatcher`` never re-evaluates it per request path.
+    /// Whether the rule is a `200` proxy whose canonical or root-shell shape
+    /// would mask every path it shadows (`/* /index.html 200`, `/* / 200`,
+    /// `/a/* /a/x.html 200`). A deployed edge serves these — deploy-time
+    /// validation can still refuse the declaration upstream — so they are
+    /// subtracted from ``appliedByEdge`` as link-checker policy only, never
+    /// reported as ``edgeRefusal``s.
+    let checkerMasked: Bool
+
+    /// Why the edge would refuse this rule, or `nil` when the edge applies
+    /// it — cached at compile time. Mechanism only: ``checkerMasked`` is
+    /// excluded here and subtracted in ``appliedByEdge`` instead.
+    let edgeRefusal: RedirectEdgeRefusal?
+
+    /// Whether the edge would apply this rule for link-exemption purposes —
+    /// `edgeRefusal == nil` minus the ``checkerMasked`` masking policy —
+    /// cached at compile time so a ``RedirectMatcher`` never re-evaluates it
+    /// per request path.
     let appliedByEdge: Bool
 
     /// Matches a site-relative path, returning captured wildcard values on success.

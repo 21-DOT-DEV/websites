@@ -295,7 +295,7 @@ public enum InternalLinkChecker {
     /// Cloudflare Pages config files that live in the output root but are
     /// never served as assets — a link to one 404s at the edge even though
     /// the file is on disk.
-    private static let unservedRootFiles: Set<String> = [
+    static let unservedRootFiles: Set<String> = [
         "/_redirects", "/_headers", "/_routes.json", "/_worker.js",
     ]
 
@@ -401,9 +401,11 @@ public enum InternalLinkChecker {
         }
 
         var scanWarnings = loadedRedirects.warning.map { [$0] } ?? []
-        // A catch-all 200 proxy exempts every internal link it shadows — the
-        // edge really does serve it, but a masked gate must never be silent.
-        for rule in loadedRedirects.rules where rule.status == 200 && rule.isCatchAll && rule.isAppliedByEdge {
+        // A catch-all 200 proxy masks every internal link it shadows — the
+        // edge serves it whether or not checker policy honors the exemption,
+        // so the warning follows edge semantics (edgeRefusal), not
+        // isAppliedByEdge: canonical-rematch shells warn too.
+        for rule in loadedRedirects.rules where rule.status == 200 && rule.isCatchAll && rule.edgeRefusal == nil {
             scanWarnings.append(
                 "_redirects catch-all 200 proxy '\(rule.source) \(rule.target)' exempts every internal link — the gate may be masked"
             )
