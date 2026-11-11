@@ -248,9 +248,10 @@ struct InternalLinkCheckerTests {
     func refusedLoopRule() throws {
         let root = try makeFixtureSite()
         defer { try? FileManager.default.removeItem(atPath: root) }
-        // `/* /index.html 200` and `/* / 200` are refused by the edge (their
-        // served target re-matches the catch-all), so a missing path is broken
-        // even though index.html exists — the SPA-fallback the spec forbids.
+        // `/* /index.html 200` and `/* / 200` are edge-served but
+        // checker-masked — policy refuses to honor their exemption — so a
+        // missing path is broken even though index.html exists: the
+        // SPA-fallback the spec forbids.
         let refused = RedirectsParser.parse("/* /index.html 200")
         let refusedToRoot = RedirectsParser.parse("/* / 200")
         let splatSelfLoop = RedirectsParser.parse("/a/* /a/:splat 301")
@@ -347,15 +348,15 @@ struct InternalLinkCheckerTests {
     func catchAllProxyWarns() throws {
         let root = try makeFixtureSite()
         defer { try? FileManager.default.removeItem(atPath: root) }
-        try "/* /index.html 200".write(
-            toFile: "\(root)/_redirects", atomically: true, encoding: .utf8)
-        // That rule is refused (index canonicalizes into the source) — use a
-        // non-looping shell target to get an applied catch-all proxy.
-        try "/* /post 200".write(
-            toFile: "\(root)/_redirects", atomically: true, encoding: .utf8)
-
-        let report = try InternalLinkChecker.checkDirectory(at: root)
-        #expect(report.scanWarnings.contains { $0.contains("catch-all") })
+        // Every catch-all 200 the edge would serve masks the gate — whether
+        // checker policy honors the exemption (`/post`) or masks it
+        // (`/index.html`, `/` — edge-served canonical-rematch shells).
+        for shell in ["/* /post 200", "/* /index.html 200", "/* / 200"] {
+            try shell.write(
+                toFile: "\(root)/_redirects", atomically: true, encoding: .utf8)
+            let report = try InternalLinkChecker.checkDirectory(at: root)
+            #expect(report.scanWarnings.contains { $0.contains("catch-all") })
+        }
         // And it really does mask: every internal link resolves through it.
         #expect(InternalLinkChecker.exists(sitePath: "/anything", inRoot: root,
             redirects: RedirectsParser.parse("/* /post 200")))

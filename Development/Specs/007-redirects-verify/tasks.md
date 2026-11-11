@@ -36,7 +36,7 @@ is green; the index lists feature 007.
 
 ## Phase 2 — The verifier
 
-- [ ] T004 `RedirectsVerifier` — rules the edge ignores (unsupported
+- [x] T004 `RedirectsVerifier` — rules the edge ignores (unsupported
   status, uncompilable source, self-referencing target — a dedicated
   refusal reason, not `isAppliedByEdge` verbatim) fail with the named
   refusal before any request (FR-005); fetch `base-url + source`,
@@ -48,7 +48,7 @@ is green; the index lists feature 007.
   reported skipped with reason (FR-004); HEAD with GET fallback,
   per-request timeout (FR-006). Transport injected so tests need no
   server. · `Sources/UtilLib/Redirects/`
-- [ ] T005 Verifier unit tests — stubbed transport covering pass,
+- [x] T005 Verifier unit tests — stubbed transport covering pass,
   wrong-status, wrong-`Location`, probe expansion, edge-refused
   failures, real-target rewrite probes, skip reporting —
   `verifies FR-002..FR-006` · `Tests/UtilLibTests/Redirects/`
