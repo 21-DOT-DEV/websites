@@ -19,7 +19,7 @@ struct HeadersCommandTests {
     @Test("util headers validate --help shows usage")
     func helpOutput() async throws {
         let result = try await Subprocess.run(
-            .path(FilePath(".build/arm64-apple-macosx/debug/util")),
+            .path(FilePath(".build/debug/util")),
             arguments: ["headers", "validate", "--help"],
             output: .string(limit: 8192),
             error: .string(limit: 4096)
@@ -38,7 +38,7 @@ struct HeadersCommandTests {
     @Test("util headers validate requires --site and --env arguments")
     func missingRequiredArguments() async throws {
         let result = try await Subprocess.run(
-            .path(FilePath(".build/arm64-apple-macosx/debug/util")),
+            .path(FilePath(".build/debug/util")),
             arguments: ["headers", "validate"],
             output: .string(limit: 4096),
             error: .string(limit: 4096)
@@ -55,7 +55,7 @@ struct HeadersCommandTests {
     @Test("util headers validate passes for valid prod headers")
     func validateValidProdHeaders() async throws {
         let result = try await Subprocess.run(
-            .path(FilePath(".build/arm64-apple-macosx/debug/util")),
+            .path(FilePath(".build/debug/util")),
             arguments: ["headers", "validate", "--site", "21-dev", "--env", "prod"],
             output: .string(limit: 4096),
             error: .string(limit: 4096)
@@ -75,7 +75,7 @@ struct HeadersCommandTests {
     func allSiteNames() async throws {
         for siteName in ["21-dev", "docs-21-dev"] {
             let result = try await Subprocess.run(
-                .path(FilePath(".build/arm64-apple-macosx/debug/util")),
+                .path(FilePath(".build/debug/util")),
                 arguments: ["headers", "validate", "--site", siteName, "--env", "prod", "--help"],
                 output: .string(limit: 4096),
                 error: .string(limit: 4096)

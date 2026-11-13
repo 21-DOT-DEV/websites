@@ -124,8 +124,48 @@ public struct RedirectsVerifyReport: Sendable {
         }
     }
 
-    /// Whether every rule passed or was honestly skipped — no failures.
+    /// `true` when no rule failed *and* at least one rule was actually
+    /// proven — an all-skipped report verifies nothing, matching
+    /// `LinkCheckReport.isSuccess`'s nothing-checked guard.
     public var isSuccess: Bool {
-        failed.isEmpty
+        failed.isEmpty && !passed.isEmpty
+    }
+}
+
+extension RedirectRuleVerification.Failure: CustomStringConvertible {
+    /// A human-readable sentence naming the failure — printed per rule by
+    /// `util redirects verify`.
+    public var description: String {
+        switch self {
+        case .edgeRefused(let refusal):
+            return "edge would not apply this rule: \(refusal)"
+        case .statusMismatch(let expected, let observed):
+            return "expected status \(expected), got \(observed)"
+        case .locationMismatch(let expected, let observed):
+            return "expected Location \"\(expected)\", got \(observed.map { "\"\($0)\"" } ?? "none")"
+        case .transportError(let message):
+            return "probe request failed: \(message)"
+        }
+    }
+}
+
+extension RedirectRuleVerification.Skip: CustomStringConvertible {
+    /// A human-readable sentence naming why the rule could not be proven —
+    /// printed per rule by `util redirects verify`.
+    public var description: String {
+        switch self {
+        case .noDeployedRoot:
+            return "no deployed output root — cannot derive a real target or rule out SPA fallback"
+        case .noDerivableTarget:
+            return "no deployed file matches the rule's target"
+        case .probeSourceIsDeployedAsset:
+            return "probe source is itself a deployed asset — a 200 there proves nothing"
+        case .probeSourceShadowed:
+            return "an earlier rule matches the probe source first"
+        case .probeSourceUnmatchable:
+            return "the constructed probe source does not match this rule"
+        case .spaFallbackUnprovable:
+            return "no top-level 404.html — SPA fallback could answer any 200"
+        }
     }
 }

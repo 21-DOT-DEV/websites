@@ -326,7 +326,8 @@ struct RedirectsVerifierTests {
 
         #expect(report.results.map(\.outcome) == [.skipped(.noDerivableTarget)])
         #expect(stub.calls.isEmpty)
-        #expect(report.isSuccess) // skips are honest coverage, not failures
+        #expect(report.failed.isEmpty) // skips are honest coverage, not failures
+        #expect(!report.isSuccess) // but an all-skipped report proves nothing — the gate fails closed
     }
 
     @Test("Splat rewrite skips when no deployed root is present")
