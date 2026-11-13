@@ -14,7 +14,9 @@ import UtilLib
 /// CLI utilities for 21.dev websites.
 ///
 /// Provides commands for sitemap generation, headers validation,
-/// canonical URL management, and related CI/CD tooling.
+/// canonical URL management, deployment comments, Search Console
+/// submission, agent directives, internal link checking, and redirects
+/// verification.
 @main
 struct Util: AsyncParsableCommand {
     static let configuration = CommandConfiguration(
@@ -29,6 +31,7 @@ struct Util: AsyncParsableCommand {
             SearchConsoleCommand.self,
             AgentDirectiveCommand.self,
             LinksCommand.self,
+            RedirectsCommand.self,
         ]
     )
 }

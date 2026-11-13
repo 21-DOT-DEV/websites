@@ -156,6 +156,24 @@ public enum RedirectEdgeRefusal: Sendable, Equatable {
     case selfReferencingTarget
 }
 
+extension RedirectEdgeRefusal: CustomStringConvertible {
+    /// A human-readable sentence naming the refusal — reported by
+    /// `util redirects verify` instead of issuing a request.
+    public var description: String {
+        switch self {
+        case .unsupportedStatus(let status):
+            let permitted = RedirectRule.redirectStatuses.sorted().map(String.init).joined(separator: ", ")
+            return "unsupported status \(status) (permitted: 200, \(permitted))"
+        case .externalProxyTarget:
+            return "200 rewrite target must be site-relative — external proxying is unsupported"
+        case .uncompilableSource:
+            return "source cannot compile — more than one '*' splat"
+        case .selfReferencingTarget:
+            return "target loops back through the rule's own source"
+        }
+    }
+}
+
 /// Captured wildcard values from a matched `_redirects` source.
 public struct RedirectMatch: Sendable, Equatable {
     /// Value captured by the source's `*` splat, if present.

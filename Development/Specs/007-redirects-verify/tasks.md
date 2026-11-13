@@ -57,7 +57,7 @@ is green; the index lists feature 007.
 
 ## Phase 3 — The command
 
-- [ ] T006 `util redirects verify --site <site> --base-url <url>` —
+- [x] T006 `util redirects verify --site <site> --base-url <url>` —
   site reads rules from `Resources/<site>/_redirects` after `SiteName`
   validation and real-target existence from `Websites/<site>/`;
   `--file <path>` accepts an explicit `_redirects` file (existence
