@@ -3,7 +3,7 @@ feature: 007
 title: Verify _redirects rules against deployed URLs
 phase: 2 · Utilities Library Refactoring
 status: In Progress
-updated: 2026-11-09
+updated: 2026-11-12
 adrs: [0004, 0005]
 ---
 

@@ -11,7 +11,7 @@ A SwiftPM monorepo that builds static sites — `21.dev` renders from the
 generator workflows. Slipstream v2 renders pages; Tailwind compiles CSS;
 shared libraries are `DesignSystem` (UI), `UtilLib`/`util` (CI utilities:
 `sitemap`, `headers`, `canonical`, `comment`, `search-console`,
-`agent-directive`, `links`), `SchemaLib`, and `SiteIdentity`. Output goes to
+`agent-directive`, `links`, `redirects`), `SchemaLib`, and `SiteIdentity`. Output goes to
 `Websites/<SiteName>/` — git-ignored, never committed.
 
 ## Commands

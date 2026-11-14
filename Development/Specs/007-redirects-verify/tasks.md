@@ -65,10 +65,14 @@ is green; the index lists feature 007.
   (`search-console`'s `--site`/`--sitemap-url` precedent); per-rule
   pass/fail/skip reporting; non-zero exit on failure (FR-005, FR-007) ·
   `Sources/util/Commands/RedirectsCommand.swift`
-- [ ] T007 CLI integration tests — argument validation (exclusivity,
+- [x] T007 CLI integration tests — argument validation (exclusivity,
   unknown site), clean-fixture exit 0, failing-fixture exit non-zero
-  naming the rule — fixtures via `--file`, base-url on loopback —
-  `verifies FR-005, FR-007` · `Tests/UtilIntegrationTests/`
+  naming the rule — fixtures via `--file`, base-url on a loopback
+  `NWListener` edge emulator (`RedirectEdgeEmulator.swift`) answering
+  `_redirects`-syntax rules; also covers wildcard probes, the
+  deterministic 200-rewrite pass, HEAD→GET fallback, mixed skip+pass,
+  and both real site files via `--site` · `verifies FR-002..FR-007` ·
+  `Tests/UtilIntegrationTests/`
 
 **Checkpoint:** the command verifies a recorded fixture of both sites'
 rules.
