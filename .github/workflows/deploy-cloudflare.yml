@@ -185,53 +185,19 @@ jobs:
           echo "📍 Deployment URL: ${{ steps.cloudflare.outputs.deployment-url }}"
           echo "🌿 Branch: ${{ env.DEPLOYMENT_BRANCH }}"
       
-      - name: Verify redirects (docs.21.dev)
-        if: inputs.deploy-to-production == false && inputs.project-name == 'docs-21-dev'
+      - name: Verify redirects
+        if: inputs.deploy-to-production == false
+        # Checks are derived from Resources/<site>/_redirects itself, so a new
+        # rule is verified on the next preview deploy with no workflow edit
+        # (Specs/007). --site also resolves the deployed output root
+        # (Websites/<site>/, downloaded above) for real-target rewrite probes.
+        env:
+          VERIFY_SITE: ${{ inputs.project-name }}
+          VERIFY_BASE_URL: ${{ steps.cloudflare.outputs.deployment-url }}
         run: |
-          PREVIEW_URL="${{ steps.cloudflare.outputs.deployment-url }}"
-          echo "🔍 Verifying redirects on preview: $PREVIEW_URL"
-          
-          # Test root redirect
-          status=$(curl -sI -o /dev/null -w "%{http_code}" "${PREVIEW_URL}/")
-          if [ "$status" != "301" ]; then
-            echo "❌ ERROR: / expected 301, got $status"
-            exit 1
-          fi
-          echo "✅ / → 301"
-          
-          # Test /p256k redirect
-          status=$(curl -sI -o /dev/null -w "%{http_code}" "${PREVIEW_URL}/p256k")
-          if [ "$status" != "301" ]; then
-            echo "❌ ERROR: /p256k expected 301, got $status"
-            exit 1
-          fi
-          echo "✅ /p256k → 301"
-          
-          echo "✓ All docs.21.dev redirects verified on preview"
-      
-      - name: Verify redirects (21.dev)
-        if: inputs.deploy-to-production == false && inputs.project-name == '21-dev'
-        run: |
-          PREVIEW_URL="${{ steps.cloudflare.outputs.deployment-url }}"
-          echo "🔍 Verifying redirects on preview: $PREVIEW_URL"
-          
-          # Test /docs redirect
-          status=$(curl -sI -o /dev/null -w "%{http_code}" "${PREVIEW_URL}/docs")
-          if [ "$status" != "301" ]; then
-            echo "❌ ERROR: /docs expected 301, got $status"
-            exit 1
-          fi
-          echo "✅ /docs → 301"
-          
-          # Test /api redirect
-          status=$(curl -sI -o /dev/null -w "%{http_code}" "${PREVIEW_URL}/api")
-          if [ "$status" != "301" ]; then
-            echo "❌ ERROR: /api expected 301, got $status"
-            exit 1
-          fi
-          echo "✅ /api → 301"
-          
-          echo "✓ All 21.dev redirects verified on preview"
+          swift run util redirects verify \
+            --site "$VERIFY_SITE" \
+            --base-url "$VERIFY_BASE_URL"
       
       - name: Verify ETag + 304 revalidation
         if: inputs.deploy-to-production == false

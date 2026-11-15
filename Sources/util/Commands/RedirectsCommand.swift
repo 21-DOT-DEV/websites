@@ -28,9 +28,11 @@ extension RedirectsCommand {
     /// Checks are derived from the file itself (Specs/007) so a new rule
     /// cannot ship unverified: each rule is probed and its observed status
     /// and `Location` asserted against the declaration. Rules the edge would
-    /// not apply fail with the refusal named before any request fires; rules
-    /// that cannot be proven are reported skipped with a reason. Exits
-    /// non-zero when any rule fails — a deploy gate, not a lint.
+    /// not apply fail with the refusal named before any request fires —
+    /// and lines that are neither rule, comment, nor blank fail the same
+    /// way, since the edge drops them identically. Rules that cannot be
+    /// proven are reported skipped with a reason. Exits non-zero when any
+    /// rule or line fails — a deploy gate, not a lint.
     struct Verify: AsyncParsableCommand {
         static let configuration = CommandConfiguration(
             commandName: "verify",
@@ -80,20 +82,22 @@ extension RedirectsCommand {
             let location = try resolveRulesFile()
             let baseURL = try validatedBaseURL()
 
-            let rules: [RedirectRule]
+            let parsed: RedirectsParser.ParseResult
             do {
-                rules = RedirectsParser.parse(try String(contentsOfFile: location.path, encoding: .utf8))
+                parsed = RedirectsParser.parseDiagnosed(try String(contentsOfFile: location.path, encoding: .utf8))
             } catch {
                 // A read failure mid-run is a verification failure, not a
                 // usage error — name the underlying cause.
                 print("❌ Could not read _redirects file at \(location.path): \(error.localizedDescription)")
                 throw ExitCode.failure
             }
+            let rules = parsed.rules
 
-            // A file that parses to zero rules verifies nothing — fail
-            // closed rather than pass a deploy on an empty suite (the
-            // `links check` "nothing was verified" posture).
-            guard !rules.isEmpty else {
+            // A file yielding neither rules nor malformed lines verifies
+            // nothing — fail closed rather than pass a deploy on an empty
+            // suite (the `links check` "nothing was verified" posture).
+            // Malformed lines proceed: they are failures themselves.
+            guard !rules.isEmpty || !parsed.malformedLines.isEmpty else {
                 print("Result: No rules parsed from \(location.path) — nothing was verified")
                 throw ExitCode.failure
             }
@@ -104,12 +108,14 @@ extension RedirectsCommand {
                 && isDirectory.boolValue
 
             print("Verifying redirects on \(baseURL.absoluteString)...")
-            print("  Rules: \(location.path) (\(rules.count) rule\(rules.count == 1 ? "" : "s"))")
+            let malformedNote = parsed.malformedLines.isEmpty
+                ? "" : ", \(parsed.malformedLines.count) malformed"
+            print("  Rules: \(location.path) (\(rules.count) rule\(rules.count == 1 ? "" : "s")\(malformedNote))")
             print("  Deployed root: \(location.deployedRoot)\(deployedRootIsPresent ? "" : " (not found — real-target probes will skip)")")
 
             let verifier = RedirectsVerifier()
             let report = await verifier.verify(
-                rules: rules,
+                parseResult: parsed,
                 baseURL: baseURL,
                 deployedRoot: deployedRootIsPresent ? location.deployedRoot : nil
             )
@@ -129,9 +135,18 @@ extension RedirectsCommand {
                     print("   \(skip)")
                 }
             }
+
+            // Malformed lines are declarations the platform drops — failed
+            // like an edge-refused rule, with the line number named.
+            for line in report.malformedLines {
+                print("❌ line \(line.lineNumber): \(line.text)")
+                print("   \(line.reason)")
+            }
             print()
 
-            print("Passed: \(report.passed.count)  Failed: \(report.failed.count)  Skipped: \(report.skipped.count)")
+            let malformedSummary = report.malformedLines.isEmpty
+                ? "" : "  Malformed: \(report.malformedLines.count)"
+            print("Passed: \(report.passed.count)  Failed: \(report.failed.count)  Skipped: \(report.skipped.count)\(malformedSummary)")
             print()
 
             // `isSuccess` requires at least one proven rule — an all-skipped
@@ -139,11 +154,19 @@ extension RedirectsCommand {
             if report.isSuccess {
                 let skippedNote = report.skipped.isEmpty ? "" : " (\(report.skipped.count) skipped)"
                 print("Result: \(report.passed.count) redirect rule\(report.passed.count == 1 ? "" : "s") verified ✓\(skippedNote)")
-            } else if report.failed.isEmpty {
+            } else if report.failed.isEmpty && report.malformedLines.isEmpty {
                 print("Result: No rules could be verified — nothing was proven")
                 throw ExitCode.failure
             } else {
-                print("Result: \(report.failed.count) rule\(report.failed.count == 1 ? "" : "s") failed verification")
+                var clauses: [String] = []
+                if !report.failed.isEmpty {
+                    clauses.append("\(report.failed.count) rule\(report.failed.count == 1 ? "" : "s") failed verification")
+                }
+                if !report.malformedLines.isEmpty {
+                    let count = report.malformedLines.count
+                    clauses.append("\(count) line\(count == 1 ? "" : "s") ignored by the edge — invalid declaration\(count == 1 ? "" : "s")")
+                }
+                print("Result: \(clauses.joined(separator: "; "))")
                 throw ExitCode.failure
             }
         }

@@ -698,6 +698,119 @@ struct RedirectsVerifyCLITests {
         ])
     }
 
+    @Test("redirects verify fails a malformed line even when its rules pass",
+          .timeLimit(.minutes(1)))
+    func malformedLineFails() async throws {
+        // Lines 2-3 can never reach the edge — the only honest report is to
+        // name them; the passing rule still probes normally.
+        let fixture = try makeRulesFile("""
+        /docs https://docs.21.dev/documentation/ 301
+        /a /b extra fields
+        /docs /elsewhere 302
+        """)
+        defer { try? FileManager.default.removeItem(atPath: (fixture as NSString).deletingLastPathComponent) }
+        let edge = RedirectEdgeEmulator(rules: [
+            .init("/docs", status: 301, location: "https://docs.21.dev/documentation/"),
+        ])
+        let baseURL = try await edge.start()
+        defer { edge.cancel() }
+
+        let result = try await Subprocess.run(
+            .path(FilePath(".build/debug/util")),
+            arguments: ["redirects", "verify", "--file", fixture,
+                        "--base-url", baseURL.absoluteString],
+            output: .string(limit: 8192),
+            error: .string(limit: 4096)
+        )
+
+        guard case .exited(let code) = result.terminationStatus else {
+            Issue.record("Unexpected termination")
+            return
+        }
+        #expect(code != 0)
+        let output = result.standardOutput ?? ""
+        #expect(output.contains("✅ /docs → https://docs.21.dev/documentation/ (301)"))
+        #expect(output.contains("❌ line 2: /a /b extra fields"))
+        #expect(output.contains("❌ line 3: /docs /elsewhere 302"))
+        #expect(output.contains("duplicate of an earlier rule"))
+        #expect(output.contains("Malformed: 2"))
+        #expect(output.contains("invalid declarations"))
+        // Malformed lines add failures; they don't preempt verification.
+        #expect(edge.recordedRequests.map { "\($0.method) \($0.path)" } == ["HEAD /docs"])
+    }
+
+    @Test("redirects verify honors the edge's comment and numeric syntax",
+          .timeLimit(.minutes(1)))
+    func edgeSyntaxIsVerified() async throws {
+        // `/a /b 301 # note` and `/c /d 301.0` are live rules at the edge —
+        // the gate must verify them, not fail them as malformed.
+        let fixture = try makeRulesFile("""
+        /docs https://docs.21.dev/documentation/ 301 # canonical home
+        /old /new 301.0
+        /frag /here#section 301
+        """)
+        defer { try? FileManager.default.removeItem(atPath: (fixture as NSString).deletingLastPathComponent) }
+        let edge = RedirectEdgeEmulator(rules: [
+            .init("/docs", status: 301, location: "https://docs.21.dev/documentation/"),
+            .init("/old", status: 301, location: "/new"),
+            .init("/frag", status: 301, location: "/here#section"),
+        ])
+        let baseURL = try await edge.start()
+        defer { edge.cancel() }
+
+        let result = try await Subprocess.run(
+            .path(FilePath(".build/debug/util")),
+            arguments: ["redirects", "verify", "--file", fixture,
+                        "--base-url", baseURL.absoluteString],
+            output: .string(limit: 8192),
+            error: .string(limit: 4096)
+        )
+
+        guard case .exited(let code) = result.terminationStatus else {
+            Issue.record("Unexpected termination")
+            return
+        }
+        #expect(code == 0)
+        let output = result.standardOutput ?? ""
+        #expect(output.contains("✅ /docs → https://docs.21.dev/documentation/ (301)"))
+        #expect(output.contains("✅ /old → /new (301)"))
+        #expect(output.contains("✅ /frag → /here#section (301)"))
+        #expect(!output.contains("Malformed"))
+        #expect(edge.recordedRequests.map(\.path) == ["/docs", "/old", "/frag"])
+    }
+
+    @Test("redirects verify names malformed lines even when no rules parse",
+          .timeLimit(.minutes(1)))
+    func malformedOnlyFileFails() async throws {
+        // A file of only malformed lines must not collapse to the
+        // "nothing was verified" message — its lines are failures.
+        let fixture = try makeRulesFile("""
+        # notes
+        /a /b extra fields
+        /lonely
+        """)
+        defer { try? FileManager.default.removeItem(atPath: (fixture as NSString).deletingLastPathComponent) }
+
+        let result = try await Subprocess.run(
+            .path(FilePath(".build/debug/util")),
+            arguments: ["redirects", "verify", "--file", fixture,
+                        "--base-url", "http://127.0.0.1:9"],
+            output: .string(limit: 8192),
+            error: .string(limit: 4096)
+        )
+
+        guard case .exited(let code) = result.terminationStatus else {
+            Issue.record("Unexpected termination")
+            return
+        }
+        #expect(code != 0)
+        let output = result.standardOutput ?? ""
+        #expect(output.contains("❌ line 2: /a /b extra fields"))
+        #expect(output.contains("❌ line 3: /lonely"))
+        #expect(output.contains("Malformed: 2"))
+        #expect(!output.contains("No rules parsed"))
+    }
+
     /// Writes `_redirects` contents into a fresh temp directory and returns
     /// the file's path — the parent directory doubles as the deployed root.
     private func makeRulesFile(_ contents: String) throws -> String {

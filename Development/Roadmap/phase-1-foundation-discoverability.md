@@ -74,8 +74,8 @@ Ensure all content across 21.dev and docs.21.dev is discoverable, mobile-friendl
 - **Completed work:**
   - `Resources/21-dev/_redirects` ships the `/.well-known/*` rewrite plus `/docs` and `/api` aliases to the docs site
   - `Resources/docs-21-dev/_redirects` ships root and `index.html` redirects to `/documentation/`
-  - `deploy-cloudflare.yml` verifies both sites' redirects against live preview deployments (see "Verify redirects" steps)
-- **Notes:** The www → apex redirect stays in Cloudflare Rules (requires dynamic expressions `_redirects` can't express). Post-deploy verification is currently an inline curl list in the workflow; Specs/007 scopes `util redirects verify` to derive checks from `_redirects` itself.
+  - `deploy-cloudflare.yml` verifies both sites' redirects against live preview deployments (see the "Verify redirects" step)
+- **Notes:** The www → apex redirect stays in Cloudflare Rules (requires dynamic expressions `_redirects` can't express). Post-deploy verification runs `util redirects verify` (Specs/007), which derives its checks from `_redirects` itself.
 
 ## Phase Metrics
 

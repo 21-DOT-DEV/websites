@@ -26,8 +26,9 @@ import Foundation
 /// 2. Literal source — request `baseURL + source`, assert the observed status
 ///    equals the declared status and, for redirect statuses, that `Location`
 ///    equals the declared target verbatim (the edge echoes targets as
-///    written). Shadowed sources skip; `200` sources also skip unless a
-///    deployed root rules out SPA fallback.
+///    written). Shadowed sources skip; `200` sources also skip when the
+///    source is itself a deployed asset or when the deployment could
+///    SPA-fallback — a `200` either way proves nothing.
 /// 3. Wildcard + redirect status — substitute the fixed ``probeToken`` for
 ///    each `*`/`:placeholder`, request the probe source, apply the same
 ///    assertions.
@@ -143,13 +144,42 @@ public struct RedirectsVerifier: Sendable {
         return RedirectsVerifyReport(baseURL: baseURL, probeToken: probeToken, results: results)
     }
 
+    /// Verifies a diagnosed parse — rules plus the lines the edge would
+    /// silently drop.
+    ///
+    /// A malformed line is a declaration the platform ignores: it can never
+    /// fire at the edge, so the only honest report is to name it. The lines
+    /// are carried into the report's ``RedirectsVerifyReport/malformedLines``
+    /// and counted against ``RedirectsVerifyReport/isSuccess`` alongside rule
+    /// failures — the same posture FR-005 takes for refused rules.
+    /// - Parameters:
+    ///   - parseResult: Result of ``RedirectsParser/parseDiagnosed(_:)``.
+    ///   - baseURL: Deployment origin, as in ``verify(rules:baseURL:deployedRoot:)``.
+    ///   - deployedRoot: Generated output root, as in
+    ///     ``verify(rules:baseURL:deployedRoot:)``.
+    /// - Returns: A report covering rules and malformed lines alike.
+    public func verify(
+        parseResult: RedirectsParser.ParseResult,
+        baseURL: URL,
+        deployedRoot: String? = nil
+    ) async -> RedirectsVerifyReport {
+        let report = await verify(rules: parseResult.rules, baseURL: baseURL, deployedRoot: deployedRoot)
+        return RedirectsVerifyReport(
+            baseURL: report.baseURL,
+            probeToken: report.probeToken,
+            results: report.results,
+            malformedLines: parseResult.malformedLines
+        )
+    }
+
     // MARK: - Rule kinds
 
     /// FR-002: request the literal source; assert status, and `Location`
     /// verbatim for redirect statuses. Skipped when an earlier applied rule
     /// governs the source — the probe observes that rule, not this one — and,
-    /// for `200` rules, when the deployment could SPA-fallback and make a
-    /// status-only `200` unprovable (see ``siteCanProve200(inRoot:)``).
+    /// for `200` rules, when the source is itself a deployed asset or when
+    /// the deployment could SPA-fallback: a status-only `200` then proves
+    /// nothing (see ``siteCanProve200(inRoot:)``).
     private func verifyLiteral(
         _ rule: RedirectRule,
         index: Int,
@@ -163,6 +193,12 @@ public struct RedirectsVerifier: Sendable {
         if rule.status == 200 {
             guard let root = deployedRoot else {
                 return .skipped(.noDeployedRoot)
+            }
+            // The same ambiguity the wildcard probe guards against: a `200`
+            // where the source is itself a deployed asset comes from the
+            // file, not necessarily the rule.
+            guard !InternalLinkChecker.fileExists(sitePath: rule.source, inRoot: root) else {
+                return .skipped(.probeSourceIsDeployedAsset)
             }
             guard siteCanProve200(inRoot: root) else {
                 return .skipped(.spaFallbackUnprovable)

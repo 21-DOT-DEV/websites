@@ -3,7 +3,7 @@ feature: 007
 title: Verify _redirects rules against deployed URLs
 phase: 2 · Utilities Library Refactoring
 status: In Progress
-updated: 2026-11-12
+updated: 2026-11-14
 adrs: [0004, 0005]
 ---
 
@@ -28,20 +28,29 @@ rejected alternatives: [research.md](research.md); ordered work:
    `RedirectsParser`, `RedirectMatcher`), already on `main` via
    Specs/006's `util links check` (#86); it implements Cloudflare's
    documented source syntax, and its edge-semantics machinery backs the
-   verifier's dedicated refusal reason (see step 2).
+   verifier's dedicated refusal reason (see step 2). Its
+   `parseDiagnosed` variant mirrors the platform's own `parseRedirects`
+   — an inline `#` comment after whitespace, `Number()`-coerced status
+   spellings like `301.0`, and a source an edge-applied rule already
+   holds dropping later declarations — and reports each dropped line by
+   number and reason; see step 2 for why they are failures.
 2. Rules the edge would not apply — a status Cloudflare doesn't
    support, a source that can't compile, or a target looping back
    through its own source — fail with the named refusal reason before
-   any request fires (FR-005). The refusal reason is dedicated, not
-   the link checker's `isAppliedByEdge` flag: that flag also refuses
-   deliberate SPA-shell catch-all proxies as checker policy, and the
-   edge does serve those — failing them here would block a deploy over
-   valid configuration.
+   any request fires (FR-005). Lines the platform's parser drops fail
+   the same way, named by line number and reason: the edge discards
+   them identically, so silent parsing would let a typo'd rule ship
+   unverified and unfired.
+   The refusal reason is dedicated, not the link checker's
+   `isAppliedByEdge` flag: that flag also refuses deliberate SPA-shell
+   catch-all proxies as checker policy, and the edge does serve those —
+   failing them here would block a deploy over valid configuration.
 3. Static rules are verified directly: request `base-url + source`
    (HEAD, GET fallback), assert the response status equals the declared
    status and, for 3xx rules, that `Location` matches the declared
    target — the edge echoes targets verbatim, relative or absolute
-   (FR-002).
+   (FR-002). A literal `200` skips when the source is itself a deployed
+   asset — the same ambiguity FR-004's wildcard probe guards against.
 4. Wildcard rules declaring a 3xx status are verified by substituting a
    fixed probe token for each `*`/`:placeholder` and asserting status +
    `Location` on the probe response (FR-003). Wildcard rules declaring a
@@ -78,8 +87,9 @@ rejected alternatives: [research.md](research.md); ordered work:
 
 Adds assertion coverage for status and `Location` matching — probed
 splat targets, edge-refused failures with named reasons, opportunistic
-real-target rewrite probes, and skipped non-3xx rewrites with no
-derivable target.
+real-target rewrite probes, skipped non-3xx rewrites with no
+derivable target, malformed-line diagnostics, and literal `200`
+deployed-asset skips.
 
 ## Tasks
 

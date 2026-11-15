@@ -79,10 +79,41 @@ rules.
 
 ## Phase 4 — The gate
 
-- [ ] T008 Replace the two "Verify redirects" curl blocks with the
+- [x] T008 Replace the two "Verify redirects" curl blocks with the
   `util` invocation — no literal URL or status code remains in the
   workflow (SC-001, SC-002) · `.github/workflows/deploy-cloudflare.yml`
 
 **Checkpoint (owner: maintainer):** a real preview deploy runs
 `util redirects verify` and verifies every rule in under a minute
 (SC-003) — the plan's single remaining `## Tasks` item.
+
+## Phase 5 — Review hardening
+
+Post-implementation review found two declaration paths that could
+still ship silently: lines the parser drops never reach the edge at
+all, and a literal `200` on a deployed asset was unguarded where the
+wildcard probe already refused the ambiguity.
+
+- [x] T009 `RedirectsParser.parseDiagnosed` — non-rule, non-comment,
+  non-blank lines are reported by line number; `redirects verify`
+  fails them like refused declarations (FR-005) ·
+  `Sources/UtilLib/Links/RedirectRule.swift`,
+  `Sources/util/Commands/RedirectsCommand.swift`,
+  `Tests/UtilLibTests/Links/InternalLinkCheckerTests.swift`,
+  `Tests/UtilLibTests/Redirects/RedirectsVerifierTests.swift`,
+  `Tests/UtilIntegrationTests/RedirectsVerifyCLITests.swift`
+- [x] T010 Literal `200` rules skip when the probe source is itself a
+  deployed asset — FR-004's asset guard applied to literals (FR-002) ·
+  `Sources/UtilLib/Redirects/RedirectsVerifier.swift`,
+  `Tests/UtilLibTests/Redirects/RedirectsVerifierTests.swift`
+- [x] T011 Edge-parity parsing in `parseDiagnosed` — a `#` after
+  whitespace opens an inline comment (`/a /b#frag` keeps its
+  fragment), the status column reads through the platform's `Number()`
+  coercion (`301.0`, `0x12d`), and a source an edge-applied rule
+  already holds drops later declarations as `duplicateSource`
+  malformed lines — in the platform's check order, so status/loop
+  refusals free a source while a refused proxy rule still holds it —
+  `MalformedLine.reason` types the output message (FR-001, FR-005) · `Sources/UtilLib/Links/RedirectRule.swift`,
+  `Sources/util/Commands/RedirectsCommand.swift`,
+  `Tests/UtilLibTests/Links/InternalLinkCheckerTests.swift`,
+  `Tests/UtilIntegrationTests/RedirectsVerifyCLITests.swift`

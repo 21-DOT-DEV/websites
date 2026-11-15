@@ -97,10 +97,22 @@ public struct RedirectsVerifyReport: Sendable {
     /// Per-rule results in `_redirects` file order.
     public let results: [RedirectRuleVerification]
 
-    public init(baseURL: URL, probeToken: String, results: [RedirectRuleVerification]) {
+    /// Lines in the file that are neither blank, comment, nor a parseable
+    /// rule — declarations the edge silently drops. Reported alongside the
+    /// per-rule results: like an edge-refused rule, a malformed line is
+    /// broken configuration and counts against ``isSuccess``.
+    public let malformedLines: [RedirectsParser.MalformedLine]
+
+    public init(
+        baseURL: URL,
+        probeToken: String,
+        results: [RedirectRuleVerification],
+        malformedLines: [RedirectsParser.MalformedLine] = []
+    ) {
         self.baseURL = baseURL
         self.probeToken = probeToken
         self.results = results
+        self.malformedLines = malformedLines
     }
 
     /// Rules whose observed behavior matched the declaration.
@@ -124,11 +136,11 @@ public struct RedirectsVerifyReport: Sendable {
         }
     }
 
-    /// `true` when no rule failed *and* at least one rule was actually
-    /// proven — an all-skipped report verifies nothing, matching
-    /// `LinkCheckReport.isSuccess`'s nothing-checked guard.
+    /// `true` when no rule failed, no line was dropped as malformed, *and*
+    /// at least one rule was actually proven — an all-skipped report verifies
+    /// nothing, matching `LinkCheckReport.isSuccess`'s nothing-checked guard.
     public var isSuccess: Bool {
-        failed.isEmpty && !passed.isEmpty
+        failed.isEmpty && malformedLines.isEmpty && !passed.isEmpty
     }
 }
 

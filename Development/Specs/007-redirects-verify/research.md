@@ -80,7 +80,11 @@ Rejected alternatives:
   the opposite, so the same findings are escalated to failure with the
   refusal named. It also removes a false-pass corner: a declared `404`
   on a path that naturally 404s would "pass" a raw status assertion
-  without the rule ever running.
+  without the rule ever running. The same posture covers a line that
+  never becomes a rule — a wrong field count, a status that isn't a
+  whole number, or a duplicated source is dropped by the edge exactly
+  as the parser drops it, so the verifier fails it by line number
+  rather than inherit the silence.
 - **lychee / link checkers** — they check that referenced *pages*
   exist; redirect-rule verification (status + `Location` equality) is
   a different problem they don't solve.
@@ -94,7 +98,9 @@ Rejected alternatives:
 - **Literal rules** — request `base-url + source`; assert status equals
   the declared code and `Location` equals the declared target
   (normalized: relative targets resolve against the base URL, external
-  targets asserted literally).
+  targets asserted literally). A literal `200` whose source is itself a
+  deployed asset skips for the same reason a wildcard probe does — the
+  file, not necessarily the rule, answered.
 - **3xx wildcard rules** — substitute a fixed token for `*`/`:name` in
   both source and target, request the probe source, assert `Location`
   matches the probe-expanded pattern. Works because redirects fire

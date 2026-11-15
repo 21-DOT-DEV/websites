@@ -499,6 +499,35 @@ struct RedirectsVerifierTests {
         #expect(stub.calls.map(\.1) == ["https://abc123.example.pages.dev/alias"])
     }
 
+    @Test("literal 200 skips when the source is itself a deployed asset")
+    func literalRewriteOnDeployedAsset() async throws {
+        let root = try makeRoot()
+        defer { try? FileManager.default.removeItem(atPath: root) }
+        // /alias is on disk — a 200 there comes from the file, not the rule;
+        // the same ambiguity the wildcard probe guards against.
+        try write("<html>alias</html>", to: "\(root)/alias/index.html")
+        try write("", to: "\(root)/404.html")
+
+        let stub = StubTransport()
+        let rules = RedirectsParser.parse("/alias /real 200")
+        let verifier = makeVerifier(stub)
+
+        let report = await verifier.verify(
+            rules: rules, baseURL: baseURL, deployedRoot: root)
+        #expect(report.results.map(\.outcome) == [.skipped(.probeSourceIsDeployedAsset)])
+
+        // The asset reason is named even when the deployment could also
+        // fall back — it is the more specific explanation for this probe.
+        let fallbackOnly = try makeRoot()
+        defer { try? FileManager.default.removeItem(atPath: fallbackOnly) }
+        try write("<html>alias</html>", to: "\(fallbackOnly)/alias/index.html")
+        let second = await verifier.verify(
+            rules: rules, baseURL: baseURL, deployedRoot: fallbackOnly)
+        #expect(second.results.map(\.outcome) == [.skipped(.probeSourceIsDeployedAsset)])
+
+        #expect(stub.calls.isEmpty)
+    }
+
     @Test("literal rule skips when an earlier applied rule shadows its source")
     func literalProbeShadowedByCatchAll() async throws {
         let root = try makeRoot()
@@ -687,6 +716,40 @@ struct RedirectsVerifierTests {
         #expect(report.isSuccess)
         #expect(report.results.count == rules.count)
         #expect(report.results.allSatisfy { $0.outcome == .passed })
+    }
+
+    // MARK: - File diagnostics
+
+    @Test("Malformed lines are carried into the report and count against success")
+    func malformedLinesInReport() async throws {
+        let stub = StubTransport()
+        stub.responses["/docs"] = .init(status: 301, location: "/documentation/")
+        let parsed = RedirectsParser.parseDiagnosed("""
+        /docs /documentation/ 301
+        /a /b extra fields
+        """)
+
+        let report = await makeVerifier(stub).verify(parseResult: parsed, baseURL: baseURL)
+
+        #expect(report.results.map(\.outcome) == [.passed])
+        #expect(report.malformedLines == [
+            RedirectsParser.MalformedLine(lineNumber: 2, text: "/a /b extra fields"),
+        ])
+        // A passing rule does not rescue a declaration the edge drops.
+        #expect(!report.isSuccess)
+    }
+
+    @Test("A file that is only malformed lines still fails — named, not 'nothing parsed'")
+    func onlyMalformedLinesFail() async throws {
+        let stub = StubTransport()
+        let parsed = RedirectsParser.parseDiagnosed("/a /b c d")
+
+        let report = await makeVerifier(stub).verify(parseResult: parsed, baseURL: baseURL)
+
+        #expect(report.results.isEmpty)
+        #expect(report.malformedLines.count == 1)
+        #expect(!report.isSuccess)
+        #expect(stub.calls.isEmpty)
     }
 
     /// Repository-relative path resolved from this file's location —

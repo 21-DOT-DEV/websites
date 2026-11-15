@@ -21,9 +21,10 @@ preview deploy, the workflow runs `util redirects verify --site <site>
 token, and every non-3xx wildcard is probed through a deployed file its
 target expands to when one exists — skipped with a stated reason when
 none does. A rule the edge ignores outright fails with the refusal
-named, before any request fires. A disagreement — wrong status, wrong
-`Location`, unreachable host — fails the deploy with the offending
-rule named.
+named, before any request fires — and a line that parses as neither
+rule nor comment fails the same way, since the edge drops it
+identically. A disagreement — wrong status, wrong `Location`,
+unreachable host — fails the deploy with the offending rule named.
 
 **Independent test:** run the command against any deployment of either
 site; it exits 0 when the file's rules match observed behavior and
@@ -61,12 +62,26 @@ non-zero naming the broken rule otherwise.
    no deployed file, **when** verify runs, **then** the rule is reported
    as skipped with a stated reason — neither passed nor failed — covers
    FR-004, FR-005.
+9. **Given** a `_redirects` line the platform drops (e.g. four fields,
+   a `301.5` status, or a source an earlier rule already holds),
+   **when** verify runs, **then** it exits non-zero naming the line by
+   number and reason — no request is needed to know the platform drops
+   it — covers FR-005.
 
 ## Functional requirements
 
-- **FR-001** Parses `_redirects`: `source target status` columns, `#`
-  comments and blank lines ignored; targets may be site-relative paths or
-  absolute URLs.
+- **FR-001** Parses `_redirects` with the platform's own tokenization,
+  inline-comment, and status-coercion semantics (its `parseRedirects`):
+  `source target [status]` columns; blank lines and `#` comments
+  ignored — a `#` after whitespace opens an inline comment while one
+  inside a token stays literal (`/a /b#frag` keeps its fragment); the
+  status column reads through the platform's numeric coercion (`301.0`
+  spells `301`), defaulting to `302`; a source an edge-applied rule
+  already holds drops later declarations as duplicates. The platform's
+  per-file budgets (rule caps, line length) are deploy-time guards out
+  of this parser's scope — a rule the edge sheds that way still fails
+  its probe, so the gap fails closed. Targets may be site-relative
+  paths or absolute URLs.
 - **FR-002** For every edge-applied rule with a literal source, requests
   `base-url + source`, asserts the response status equals the declared
   status, and — for redirect statuses — asserts `Location` equals the
@@ -94,11 +109,16 @@ non-zero naming the broken rule otherwise.
   `*`), or a target that loops back through its own source — are
   reported failed naming the refusal, before any request is issued; a
   declaration the platform ignores is broken configuration, not
-  unverifiable coverage. The verifier exposes this as a dedicated
-  refusal reason, not the link checker's `isAppliedByEdge` flag — that
-  flag also refuses deliberate SPA-shell catch-all proxies as checker
-  policy, and the edge does serve those. All other failures report
-  expected and observed values. Exits non-zero when any rule fails.
+  unverifiable coverage. Lines the platform's own parser drops — a
+  wrong field count, a status column that isn't a whole number, or a
+  source an edge-applied rule already holds — fail the same way, named
+  by line number and reason; silent parsing would let a typo'd rule
+  ship unverified and unfired. The verifier
+  exposes refusal as a dedicated reason, not the link checker's
+  `isAppliedByEdge` flag — that flag also refuses deliberate SPA-shell
+  catch-all proxies as checker policy, and the edge does serve those.
+  All other failures report expected and observed values. Exits
+  non-zero when any rule or line fails.
 - **FR-006** Issues HEAD requests, falling back to GET on 405/501; each
   request is bounded by a per-request timeout.
 - **FR-007** The CLI accepts `--site <site>` — validated against the
@@ -144,7 +164,16 @@ non-zero naming the broken rule otherwise.
   deployed files, which sit outside those reservations.
 - **Real-target probes double-check the source** — a `200` on a source
   path that is itself a deployed asset proves nothing (the file, not
-  the rule, answered); such rules are skipped rather than probed.
+  the rule, answered); such rules are skipped rather than probed. The
+  same guard covers literal `200` rules — `/alias /real 200` on a
+  deployed `/alias` is equally unprovable.
+- **Malformed lines are never unverifiable coverage** — a line the
+  platform's parser drops fails verification with its line number and
+  reason named rather than inherit the silence. Parse parity keeps the
+  gate honest in both directions: a trailing ` # note`, a `301.0`
+  status, or a `#` inside a target token is edge syntax verified as a
+  rule, while a duplicated source is named a duplicate rather than
+  reported as merely shadowed.
 - **Edge-cached responses** — Pages can cache negative responses, so a
   reused hostname can shadow a rule behind a stale `404`; the
   per-deploy `<hash>.pages.dev` origin starts with an empty cache.
