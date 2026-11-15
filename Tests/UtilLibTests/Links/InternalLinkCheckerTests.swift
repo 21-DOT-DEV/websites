@@ -248,9 +248,10 @@ struct InternalLinkCheckerTests {
     func refusedLoopRule() throws {
         let root = try makeFixtureSite()
         defer { try? FileManager.default.removeItem(atPath: root) }
-        // `/* /index.html 200` and `/* / 200` are refused by the edge (their
-        // served target re-matches the catch-all), so a missing path is broken
-        // even though index.html exists — the SPA-fallback the spec forbids.
+        // `/* /index.html 200` and `/* / 200` are edge-served but
+        // checker-masked — policy refuses to honor their exemption — so a
+        // missing path is broken even though index.html exists: the
+        // SPA-fallback the spec forbids.
         let refused = RedirectsParser.parse("/* /index.html 200")
         let refusedToRoot = RedirectsParser.parse("/* / 200")
         let splatSelfLoop = RedirectsParser.parse("/a/* /a/:splat 301")
@@ -347,15 +348,15 @@ struct InternalLinkCheckerTests {
     func catchAllProxyWarns() throws {
         let root = try makeFixtureSite()
         defer { try? FileManager.default.removeItem(atPath: root) }
-        try "/* /index.html 200".write(
-            toFile: "\(root)/_redirects", atomically: true, encoding: .utf8)
-        // That rule is refused (index canonicalizes into the source) — use a
-        // non-looping shell target to get an applied catch-all proxy.
-        try "/* /post 200".write(
-            toFile: "\(root)/_redirects", atomically: true, encoding: .utf8)
-
-        let report = try InternalLinkChecker.checkDirectory(at: root)
-        #expect(report.scanWarnings.contains { $0.contains("catch-all") })
+        // Every catch-all 200 the edge would serve masks the gate — whether
+        // checker policy honors the exemption (`/post`) or masks it
+        // (`/index.html`, `/` — edge-served canonical-rematch shells).
+        for shell in ["/* /post 200", "/* /index.html 200", "/* / 200"] {
+            try shell.write(
+                toFile: "\(root)/_redirects", atomically: true, encoding: .utf8)
+            let report = try InternalLinkChecker.checkDirectory(at: root)
+            #expect(report.scanWarnings.contains { $0.contains("catch-all") })
+        }
         // And it really does mask: every internal link resolves through it.
         #expect(InternalLinkChecker.exists(sitePath: "/anything", inRoot: root,
             redirects: RedirectsParser.parse("/* /post 200")))
@@ -605,6 +606,156 @@ struct InternalLinkCheckerTests {
         /ok /target 301
         """)
         #expect(rules == [RedirectRule(source: "/ok", target: "/target", status: 301)])
+    }
+
+    @Test("parseDiagnosed names dropped lines by number so a gate can fail them")
+    func parseDiagnosedReportsMalformedLines() {
+        let result = RedirectsParser.parseDiagnosed("""
+        # comment
+        /a /b 301
+
+        /a /b extra fields
+        /c /d nonsense
+        /lonely
+        /ok /target
+        """)
+        #expect(result.rules == [
+            RedirectRule(source: "/a", target: "/b", status: 301),
+            RedirectRule(source: "/ok", target: "/target", status: 302),
+        ])
+        #expect(result.malformedLines == [
+            RedirectsParser.MalformedLine(lineNumber: 4, text: "/a /b extra fields"),
+            RedirectsParser.MalformedLine(
+                lineNumber: 5, text: "/c /d nonsense", reason: .invalidStatus),
+            RedirectsParser.MalformedLine(lineNumber: 6, text: "/lonely"),
+        ])
+    }
+
+    @Test("parseDiagnosed keeps blank-and-comment files clean")
+    func parseDiagnosedEmptyFile() {
+        let result = RedirectsParser.parseDiagnosed("# only a comment\n\n   \n")
+        #expect(result.rules.isEmpty)
+        #expect(result.malformedLines.isEmpty)
+    }
+
+    @Test("parseDiagnosed counts line numbers across blank lines")
+    func parseDiagnosedLineNumbers() {
+        let result = RedirectsParser.parseDiagnosed("\n\n\n/bad")
+        #expect(result.malformedLines == [
+            RedirectsParser.MalformedLine(lineNumber: 4, text: "/bad"),
+        ])
+    }
+
+    @Test("parseDiagnosed strips inline comments like the edge")
+    func parseDiagnosedInlineComments() {
+        // parseRedirects.ts strips `\s+#.*$` before tokenizing — a `#`
+        // after whitespace opens a comment; a target fragment survives.
+        let result = RedirectsParser.parseDiagnosed("""
+        /a /b 301 # migration note
+        /c /d#frag 301
+        /e /f # a comment, not a status column
+        """)
+        #expect(result.rules == [
+            RedirectRule(source: "/a", target: "/b", status: 301),
+            RedirectRule(source: "/c", target: "/d#frag", status: 301),
+            RedirectRule(source: "/e", target: "/f", status: 302),
+        ])
+        #expect(result.malformedLines.isEmpty)
+    }
+
+    @Test("parseDiagnosed reads statuses with JavaScript Number() semantics")
+    func parseDiagnosedNumericStatuses() {
+        // The edge accepts every whole-number spelling Number() parses;
+        // a non-integer spelling is invalid there exactly like garbage.
+        // Swift's Double additionally parses hex floats and signed
+        // prefixes — `0x12d.0`, `+0x12d`, `0x1p10` — that Number() calls
+        // NaN, so they must be malformed too.
+        let result = RedirectsParser.parseDiagnosed("""
+        /a /b 301.0
+        /c /d 0x12d
+        /e /f 1e2
+        /g /h 301.5
+        /i /j 0x12d.0
+        /k /l +0x12d
+        /m /n -0x12d
+        /o /p 0x1p10
+        """)
+        #expect(result.rules == [
+            RedirectRule(source: "/a", target: "/b", status: 301),
+            RedirectRule(source: "/c", target: "/d", status: 301),
+            // A whole-number status the platform doesn't permit is a rule
+            // with a refusal reason downstream — not a malformed line.
+            RedirectRule(source: "/e", target: "/f", status: 100),
+        ])
+        #expect(result.malformedLines == [
+            RedirectsParser.MalformedLine(
+                lineNumber: 4, text: "/g /h 301.5", reason: .invalidStatus),
+            RedirectsParser.MalformedLine(
+                lineNumber: 5, text: "/i /j 0x12d.0", reason: .invalidStatus),
+            RedirectsParser.MalformedLine(
+                lineNumber: 6, text: "/k /l +0x12d", reason: .invalidStatus),
+            RedirectsParser.MalformedLine(
+                lineNumber: 7, text: "/m /n -0x12d", reason: .invalidStatus),
+            RedirectsParser.MalformedLine(
+                lineNumber: 8, text: "/o /p 0x1p10", reason: .invalidStatus),
+        ])
+    }
+
+    @Test("parseDiagnosed reads refusals in the platform's check order")
+    func parseDiagnosedRefusalOrdering() {
+        // Upstream checks status, compilability, and loops before its
+        // duplicate bookkeeping but adds the source to its seen set
+        // before refusing proxy targets — an unsupported status reports
+        // as a refused rule (never a duplicate), while a refused proxy
+        // line still holds its source against a later declaration.
+        let result = RedirectsParser.parseDiagnosed("""
+        /a /x 301
+        /a /y 999
+        /b https://example.com/x 200
+        /b /z 301
+        """)
+        #expect(result.rules == [
+            RedirectRule(source: "/a", target: "/x", status: 301),
+            RedirectRule(source: "/a", target: "/y", status: 999),
+            RedirectRule(source: "/b", target: "https://example.com/x", status: 200),
+        ])
+        #expect(result.malformedLines == [
+            RedirectsParser.MalformedLine(
+                lineNumber: 4, text: "/b /z 301", reason: .duplicateSource),
+        ])
+    }
+
+    @Test("parseDiagnosed splits CRLF files")
+    func parseDiagnosedCRLF() {
+        // `"\r\n"` is a single Character — a literal `"\n"` separator
+        // would never split, collapsing the whole file into line 1.
+        let result = RedirectsParser.parseDiagnosed("/a /b 301\r\n/lonely\r\n")
+        #expect(result.rules == [
+            RedirectRule(source: "/a", target: "/b", status: 301),
+        ])
+        #expect(result.malformedLines == [
+            RedirectsParser.MalformedLine(lineNumber: 2, text: "/lonely"),
+        ])
+    }
+
+    @Test("parseDiagnosed fails a duplicate source like the edge does")
+    func parseDiagnosedDuplicateSource() {
+        let result = RedirectsParser.parseDiagnosed("""
+        /a /x 301
+        /b /y 302
+        /a /z 301
+        """)
+        #expect(result.rules == [
+            RedirectRule(source: "/a", target: "/x", status: 301),
+            RedirectRule(source: "/b", target: "/y", status: 302),
+        ])
+        #expect(result.malformedLines == [
+            RedirectsParser.MalformedLine(
+                lineNumber: 3, text: "/a /z 301", reason: .duplicateSource),
+        ])
+        // The lenient parse drops the duplicate too — edge parity.
+        #expect(RedirectsParser.parse("/a /x 301\n/a /z 301")
+            == [RedirectRule(source: "/a", target: "/x", status: 301)])
     }
 
     @Test("Parses both real site _redirects files without dropping rules")

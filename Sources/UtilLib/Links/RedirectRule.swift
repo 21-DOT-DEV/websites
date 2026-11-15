@@ -36,10 +36,14 @@ public struct RedirectRule: Sendable, Equatable {
             || source.range(of: ":[A-Za-z]", options: .regularExpression) != nil
     }
 
-    /// Whether the edge would apply this rule to a matching request.
+    /// Whether the edge would apply this rule to a matching request — for the
+    /// purposes of a link-check exemption.
     ///
-    /// A rule applies when both its declared shape is one the edge honors and
-    /// it does not re-trigger itself:
+    /// This is a checker policy, not raw edge semantics: it is `false` both
+    /// for rules the edge refuses (see ``edgeRefusal``) and for `200` proxies
+    /// that would mask every shadowed path — `/* /index.html 200`, `/* / 200`
+    /// and other canonical-rematch shapes the edge does serve, but which must
+    /// never exempt a broken link. Components:
     ///
     /// - Shape — mirrors the platform's `PERMITTED_STATUS_CODES` ({200, 301,
     ///   302, 303, 307, 308}): a rule declaring any other status is invalid and
@@ -50,18 +54,30 @@ public struct RedirectRule: Sendable, Equatable {
     /// - Self-retrigger — a redirect loops when the re-requested target, in
     ///   literal or canonicalized form, matches the source again (`/a/* /a/x`
     ///   and `/* /index.html` in the `3xx` sense both loop). A `200` proxy
-    ///   instead fetches its target without re-running `_redirects` (proxying
-    ///   is not chained), so it loops only through a *canonical* redirect
-    ///   whose destination re-matches — `/a/* /a/x` proxied is fine,
-    ///   `/a/* /a/x.html` proxied loops through `/a/x`. A catch-all proxying
-    ///   bare `/` is the SPA-shell fallback: it applies to nothing even though
-    ///   it cannot loop. A source that fails to compile (more than one `*`)
-    ///   can never match either.
+    ///   fetches its target internally — it cannot loop at the edge — so its
+    ///   canonical-rematch and root-shell shapes (`/* /index.html 200`,
+    ///   `/* / 200`, `/a/* /a/x.html 200`) are excluded here as masking
+    ///   policy, not edge refusals. A source that fails to compile (more
+    ///   than one `*`) can never match either.
     ///
     /// Evaluating this compiles the source per call; use ``RedirectMatcher``
     /// for lookups.
     public var isAppliedByEdge: Bool {
         CompiledRedirectRule(rule: self).appliedByEdge
+    }
+
+    /// Why the edge itself would refuse this rule, or `nil` when the edge
+    /// applies it — raw *runtime* semantics with no checker policy.
+    ///
+    /// Unlike ``isAppliedByEdge``, the `200` masking shapes — `/* /index.html
+    /// 200`, `/* / 200` and other canonical-rematch or catch-all proxies —
+    /// report `nil` here: a deployed edge serves them (deploy-time
+    /// validation can refuse canonical-rematch declarations before they ever
+    /// reach the edge — a different layer this type does not model). Use this
+    /// when the question is "would Cloudflare apply the declaration" rather
+    /// than "may the declaration exempt a link".
+    public var edgeRefusal: RedirectEdgeRefusal? {
+        CompiledRedirectRule(rule: self).edgeRefusal
     }
 
     /// Whether the declared status and target shape are ones the edge honors —
@@ -111,6 +127,50 @@ public struct RedirectRule: Sendable, Equatable {
             served = String(served.dropLast(".html".count))
         }
         return served
+    }
+}
+
+/// Why Cloudflare's edge would refuse to apply a `_redirects` rule.
+///
+/// A refused declaration is broken configuration — the platform ignores it
+/// outright, so it can never serve traffic. Checked in declaration order:
+/// shape first (the line's own validity), then source compilation, then
+/// self-reference. `200` masking shapes (`/* /index.html 200`, `/* / 200`,
+/// canonical-rematch proxies) are deliberately absent: the edge serves them.
+public enum RedirectEdgeRefusal: Sendable, Equatable {
+    /// Declared status is outside `PERMITTED_STATUS_CODES` ({200, 301, 302,
+    /// 303, 307, 308}) — the edge skips the rule entirely.
+    case unsupportedStatus(Int)
+
+    /// A `200` proxy whose target is not site-relative — external proxying
+    /// is unsupported, so the edge ignores the rule.
+    case externalProxyTarget
+
+    /// The source pattern cannot compile — more than one `*` splat.
+    case uncompilableSource
+
+    /// The served target, literal or canonicalized, re-matches the source —
+    /// an infinite redirect loop the edge refuses. Applies to redirect
+    /// statuses only: a `200` proxy's internal fetch resolves its target
+    /// directly, so it cannot loop at the edge.
+    case selfReferencingTarget
+}
+
+extension RedirectEdgeRefusal: CustomStringConvertible {
+    /// A human-readable sentence naming the refusal — reported by
+    /// `util redirects verify` instead of issuing a request.
+    public var description: String {
+        switch self {
+        case .unsupportedStatus(let status):
+            let permitted = RedirectRule.redirectStatuses.sorted().map(String.init).joined(separator: ", ")
+            return "unsupported status \(status) (permitted: 200, \(permitted))"
+        case .externalProxyTarget:
+            return "200 rewrite target must be site-relative — external proxying is unsupported"
+        case .uncompilableSource:
+            return "source cannot compile — more than one '*' splat"
+        case .selfReferencingTarget:
+            return "target loops back through the rule's own source"
+        }
     }
 }
 
@@ -189,45 +249,74 @@ struct CompiledRedirectRule: Sendable {
             return compiled.firstMatch(in: path, range: range) != nil
         }
 
-        let refused: Bool
-        if isValid, let compiled = try? NSRegularExpression(pattern: pattern) {
-            self.regex = compiled
-            self.splatGroup = splatGroup
-            self.namedGroups = namedGroups
-            if rule.targetIsSiteRelative {
-                let literal = rule.normalizedLiteralTarget
-                let canonical = rule.servedTargetPath
-                if rule.status == 200 {
-                    // A proxy target is fetched without re-running _redirects,
-                    // so the only loop runs through a canonical redirect whose
-                    // destination re-matches the source — plus the catch-all
-                    // root proxy, which is the SPA shell the checker refuses.
-                    refused = (canonical != literal && matches(canonical, in: compiled))
-                        || (rule.isCatchAll && literal == "/")
-                } else {
-                    // A redirect loops when the re-requested target — literal
-                    // or canonicalized — matches the source again.
-                    refused = matches(literal, in: compiled) || matches(canonical, in: compiled)
-                }
+        let compiled = isValid ? try? NSRegularExpression(pattern: pattern) : nil
+        self.regex = compiled
+        self.splatGroup = compiled == nil ? nil : splatGroup
+        self.namedGroups = compiled == nil ? [:] : namedGroups
+
+        var loops = false
+        var checkerMasked = false
+        if let compiled, rule.targetIsSiteRelative {
+            let literal = rule.normalizedLiteralTarget
+            let canonical = rule.servedTargetPath
+            if rule.status == 200 {
+                // A proxy target is fetched without re-running _redirects —
+                // the internal fetch resolves the asset directly — so a `200`
+                // rule cannot observably loop: even `/* /index.html 200`, whose
+                // canonical target re-matches the catch-all, is served by a
+                // deployed edge as the SPA shell (deploy validation may refuse
+                // the shape before it deploys). The canonical-rematch and
+                // root-proxy shapes therefore stay link-checker policy (a
+                // masked gate), never edge refusals.
+                checkerMasked = (canonical != literal && matches(canonical, in: compiled))
+                    || (rule.isCatchAll && literal == "/")
             } else {
-                refused = false
+                // A redirect loops when the re-requested target — literal
+                // or canonicalized — matches the source again.
+                loops = matches(literal, in: compiled) || matches(canonical, in: compiled)
             }
-        } else {
-            self.regex = nil
-            self.splatGroup = nil
-            self.namedGroups = [:]
-            refused = false
         }
-        self.refusedLoop = refused
-        self.appliedByEdge = rule.hasApplicableShape && !refused && self.regex != nil
+        self.refusedLoop = loops
+        self.checkerMasked = checkerMasked
+
+        let edgeRefusal: RedirectEdgeRefusal?
+        if !rule.hasApplicableShape {
+            edgeRefusal = rule.status == 200 ? .externalProxyTarget : .unsupportedStatus(rule.status)
+        } else if self.regex == nil {
+            edgeRefusal = .uncompilableSource
+        } else if loops {
+            edgeRefusal = .selfReferencingTarget
+        } else {
+            edgeRefusal = nil
+        }
+        self.edgeRefusal = edgeRefusal
+        self.appliedByEdge = edgeRefusal == nil && !checkerMasked
     }
 
     /// Whether the rule's served target URL re-matches its own source — the
-    /// edge refuses such self-retriggering rules (e.g. `/* /index.html 200`).
+    /// edge refuses such self-retriggering *redirects* (e.g. `/* /index.html
+    /// 301`): the re-requested target re-enters `_redirects`. Always `false`
+    /// for `200` proxies, whose internal asset fetch re-enters nothing (see
+    /// ``checkerMasked``).
     let refusedLoop: Bool
 
-    /// Whether the edge would apply this rule — cached at compile time so a
-    /// ``RedirectMatcher`` never re-evaluates it per request path.
+    /// Whether the rule is a `200` proxy whose canonical or root-shell shape
+    /// would mask every path it shadows (`/* /index.html 200`, `/* / 200`,
+    /// `/a/* /a/x.html 200`). A deployed edge serves these — deploy-time
+    /// validation can still refuse the declaration upstream — so they are
+    /// subtracted from ``appliedByEdge`` as link-checker policy only, never
+    /// reported as ``edgeRefusal``s.
+    let checkerMasked: Bool
+
+    /// Why the edge would refuse this rule, or `nil` when the edge applies
+    /// it — cached at compile time. Mechanism only: ``checkerMasked`` is
+    /// excluded here and subtracted in ``appliedByEdge`` instead.
+    let edgeRefusal: RedirectEdgeRefusal?
+
+    /// Whether the edge would apply this rule for link-exemption purposes —
+    /// `edgeRefusal == nil` minus the ``checkerMasked`` masking policy —
+    /// cached at compile time so a ``RedirectMatcher`` never re-evaluates it
+    /// per request path.
     let appliedByEdge: Bool
 
     /// Matches a site-relative path, returning captured wildcard values on success.
@@ -296,32 +385,188 @@ public struct RedirectMatcher: Sendable {
 /// Parses Cloudflare `_redirects` files and matches request paths against rule sources.
 ///
 /// Format: `source target [status]`, one per line; `#` starts a comment. A line
-/// that does not follow the format is ignored, mirroring the edge. Sources may
-/// contain one `*` splat (matching any characters anywhere in the path) and
-/// `:placeholder` references (each matching exactly one path segment).
+/// that does not follow the format is ignored by the edge — ``parse(_:)``
+/// mirrors that silence for the link checker's purposes, while
+/// ``parseDiagnosed(_:)`` reports such lines by number so a verification gate
+/// can name them instead of inheriting the edge's silence.
 public enum RedirectsParser {
 
-    /// Parses `_redirects` file contents into rules, skipping blank lines,
-    /// comments, and malformed lines (wrong field count or non-numeric status).
+    /// A `_redirects` line the edge drops rather than applies — a wrong
+    /// shape, a bad status column, or a duplicate source — broken
+    /// configuration, not coverage.
+    public struct MalformedLine: Sendable, Equatable {
+        /// The 1-based line number in the file.
+        public let lineNumber: Int
+
+        /// The line's content with surrounding whitespace trimmed.
+        public let text: String
+
+        /// Why the edge drops the line.
+        public let reason: Reason
+
+        /// What makes a line undeliverable at the edge.
+        public enum Reason: Sendable, Equatable {
+            /// Not a `source target [status]` declaration — the field
+            /// count is wrong.
+            case invalidShape
+
+            /// The declaration's shape is right but its status column is
+            /// not a whole number (`301.5`, `garbage`).
+            case invalidStatus
+
+            /// Same source as an earlier rule — the edge serves the first
+            /// and drops every later declaration for that source.
+            case duplicateSource
+        }
+
+        public init(
+            lineNumber: Int,
+            text: String,
+            reason: Reason = .invalidShape
+        ) {
+            self.lineNumber = lineNumber
+            self.text = text
+            self.reason = reason
+        }
+    }
+
+    /// The rules a file declares plus the lines it loses.
+    public struct ParseResult: Sendable, Equatable {
+        /// Parsed rules in file order.
+        public let rules: [RedirectRule]
+
+        /// Non-blank, non-comment lines that failed to parse — dropped by the
+        /// edge exactly like ``parse(_:)`` drops them here.
+        public let malformedLines: [MalformedLine]
+
+        public init(rules: [RedirectRule], malformedLines: [MalformedLine]) {
+            self.rules = rules
+            self.malformedLines = malformedLines
+        }
+    }
+
+    /// Parses `_redirects` file contents into rules, skipping blank lines
+    /// and `#` comments — a `#` after whitespace opens an inline comment
+    /// while one inside a token stays literal — and dropping the lines
+    /// the edge drops: a wrong field count, a status that is not a whole
+    /// number (numeric spellings like `301.0` parse; `301.5` does not),
+    /// or a source an edge-applied rule already holds.
     /// - Parameter contents: Raw file contents.
     /// - Returns: Parsed rules in file order.
     public static func parse(_ contents: String) -> [RedirectRule] {
-        contents
-            .split(separator: "\n", omittingEmptySubsequences: true)
-            .compactMap { rawLine -> RedirectRule? in
-                let line = rawLine.trimmingCharacters(in: .whitespaces)
-                guard !line.isEmpty, !line.hasPrefix("#") else { return nil }
-                let fields = line.split(whereSeparator: { $0.isWhitespace })
-                guard fields.count == 2 || fields.count == 3 else { return nil }
-                // Cloudflare defaults to 302 when no status column is present;
-                // a non-numeric column makes the line invalid.
-                guard let status = fields.count == 3 ? Int(fields[2]) : 302 else { return nil }
-                return RedirectRule(
-                    source: String(fields[0]),
-                    target: String(fields[1]),
-                    status: status
-                )
+        parseDiagnosed(contents).rules
+    }
+
+    /// Parses `_redirects` file contents, reporting the lines the edge would
+    /// silently drop.
+    ///
+    /// A malformed line never becomes a rule at the edge, so a verification
+    /// gate cannot observe it there; the only honest options are to name it
+    /// or to hide it. The link checker uses ``parse(_:)`` and inherits the
+    /// edge's silence; `util redirects verify` uses this variant and fails
+    /// the lines as broken configuration.
+    ///
+    /// Parsing shares the platform's tokenization, inline-comment, and
+    /// status-coercion semantics (its `parseRedirects` in workers-sdk):
+    /// a `#` following whitespace opens an *inline* comment — `/a /b 301
+    /// # note` is a valid `301` (`/a /b#frag` keeps its fragment); the
+    /// status column is read with JavaScript `Number()` semantics, so
+    /// `301.0`, `1e2`, or `0x12d` spell a status the edge would honor —
+    /// only non-whole results are malformed; and a source already held
+    /// by a surviving rule drops later declarations as duplicates —
+    /// upstream's own status and loop rejections happen *before* its
+    /// duplicate bookkeeping, while its proxy-target rejection happens
+    /// *after*, so only a proxy-refused rule still holds a source. The
+    /// platform's per-file budgets (rule caps, line length) are
+    /// deploy-time guards outside this parser's scope — a rule the edge
+    /// sheds that way still fails its probe, so the gap fails closed.
+    /// - Parameter contents: Raw file contents.
+    /// - Returns: Rules in file order plus dropped lines with 1-based
+    ///   line numbers and reasons.
+    public static func parseDiagnosed(_ contents: String) -> ParseResult {
+        var rules: [RedirectRule] = []
+        var malformedLines: [MalformedLine] = []
+        var seenSources: Set<String> = []
+        // `whereSeparator: \.isNewline` splits CRLF files correctly — a
+        // `"\n"` separator never matches because `"\r\n"` is a single
+        // Character. Line numbers survive empty lines via the
+        // non-omitting split.
+        for (index, rawLine) in contents.split(
+            omittingEmptySubsequences: false,
+            whereSeparator: { $0.isNewline }
+        ).enumerated() {
+            let trimmed = rawLine.trimmingCharacters(in: .whitespaces)
+            guard !trimmed.isEmpty, !trimmed.hasPrefix("#") else { continue }
+            var line = trimmed
+            if let commentStart = line.range(of: "\\s+#.*$", options: .regularExpression)?.lowerBound {
+                line = String(line[..<commentStart])
             }
+            let fields = line.split(whereSeparator: { $0.isWhitespace })
+            // Cloudflare defaults to 302 when no status column is present;
+            // a column that is not a whole number makes the line invalid.
+            guard fields.count == 2 || fields.count == 3 else {
+                malformedLines.append(MalformedLine(
+                    lineNumber: index + 1, text: trimmed, reason: .invalidShape))
+                continue
+            }
+            guard let status = fields.count == 3 ? numericStatus(fields[2]) : 302 else {
+                malformedLines.append(MalformedLine(
+                    lineNumber: index + 1, text: trimmed, reason: .invalidStatus))
+                continue
+            }
+            let rule = RedirectRule(
+                source: String(fields[0]),
+                target: String(fields[1]),
+                status: status
+            )
+            // Upstream validates status, compilability, and loops before
+            // its duplicate check — those refusals neither consume a
+            // source nor read as duplicates. Its seen-set add precedes
+            // only the proxy-target rejection, so a refused proxy rule
+            // still holds its source.
+            switch rule.edgeRefusal {
+            case .unsupportedStatus, .selfReferencingTarget, .uncompilableSource:
+                rules.append(rule)
+                continue
+            case .externalProxyTarget, .none:
+                break
+            }
+            if seenSources.contains(rule.source) {
+                malformedLines.append(MalformedLine(
+                    lineNumber: index + 1, text: trimmed, reason: .duplicateSource))
+                continue
+            }
+            seenSources.insert(rule.source)
+            rules.append(rule)
+        }
+        return ParseResult(rules: rules, malformedLines: malformedLines)
+    }
+
+    /// Reads a status column the way the edge does — JavaScript `Number()`
+    /// semantics: unsigned `0x`/`0o`/`0b` integer literals and signed
+    /// decimal/exponent forms, nothing else. The result must be a whole
+    /// number or the line is invalid (the edge drops `301.5` exactly as
+    /// it drops `garbage`). Swift's `Double` additionally accepts hex
+    /// floats (`0x1p10`) and signed prefixes (`+0x12d`) that `Number()`
+    /// calls `NaN`, so prefixed literals parse strictly by radix.
+    private static func numericStatus(_ field: Substring) -> Int? {
+        let text = String(field)
+        let lower = text.lowercased()
+        let body = lower.hasPrefix("+") || lower.hasPrefix("-")
+            ? lower.dropFirst() : lower[...]
+        for (prefix, radix) in [("0x", 16), ("0o", 8), ("0b", 2)] where body.hasPrefix(prefix) {
+            // A sign ahead of the prefix is `NaN` in `Number()` even
+            // though `Double` accepts it; `Int(_:radix:)` likewise
+            // accepts a sign the grammar rejects, so digits must be
+            // sign-free.
+            guard body.count == lower.count,
+                  let first = text.dropFirst(2).first, first != "+", first != "-" else {
+                return nil
+            }
+            return Int(text.dropFirst(2), radix: radix)
+        }
+        guard let value = Double(text), let status = Int(exactly: value) else { return nil }
+        return status
     }
 
     /// Loads and parses `_redirects` from a site output directory, if present.
@@ -395,5 +640,20 @@ public enum RedirectsParser {
             index = target.index(after: index)
         }
         return result
+    }
+}
+
+extension RedirectsParser.MalformedLine.Reason: CustomStringConvertible {
+    /// A human-readable sentence naming why the edge drops the line —
+    /// printed per line by `util redirects verify`.
+    public var description: String {
+        switch self {
+        case .invalidShape:
+            return "the edge ignores this line — expected 'source target [status]'"
+        case .invalidStatus:
+            return "the edge ignores this line — status is not a whole number"
+        case .duplicateSource:
+            return "the edge ignores this line — duplicate of an earlier rule's source"
+        }
     }
 }

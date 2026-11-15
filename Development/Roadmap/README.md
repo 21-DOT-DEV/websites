@@ -1,7 +1,7 @@
 # Product Roadmap
 
-**Version:** v1.4.0  
-**Last Updated:** 2026-11-05
+**Version:** v1.4.1  
+**Last Updated:** 2026-11-14
 
 ## Vision & Goals
 
@@ -29,7 +29,7 @@ This roadmap is now split into a **slim index** (this file) and detailed per-pha
 | Phase | Name / Goal                                | Priority          | Status       | Phase File Path                                                                 |
 |-------|--------------------------------------------|-------------------|-------------|-------------------------------------------------------------------------------|
 | 1     | Foundation & Discoverability               | High              | Completed   | `phase-1-foundation-discoverability.md`              |
-| 2     | Utilities Library Refactoring              | High (Next)       | In Progress | `phase-2-utilities-library-refactoring.md`           |
+| 2     | Utilities Library Refactoring              | High              | Completed   | `phase-2-utilities-library-refactoring.md`           |
 | 3     | Performance & Delivery Optimization        | Medium-High       | In Progress | `phase-3-performance-delivery-optimization.md`       |
 | 4     | DesignSystem Foundation & Refactoring      | Medium            | Not Started | `phase-4-designsystem-foundation-refactoring.md`     |
 | 5     | Content & Accessibility                    | Medium            | Not Started | `phase-5-content-accessibility.md`                   |
@@ -53,7 +53,7 @@ overhead, (3) private-by-design server-side analytics, (4) Swift WASM demos,
 
 | Tier | Items | Sources |
 |---|---|---|
-| **Now** — phase closure + priorities 1–2 | `util links check` (spec'd) · `util redirects verify` (closes Phase 2) · security.txt · Core Web Vitals field baseline → performance budgets (`build verify` folds in) · 21.dev asset hashing → `immutable` caching · AI/GEO readiness verification · 103 Early Hints | `Specs/006` · `Specs/007` · Phase 3 F3/F7/F8/F11 · `backlog.md` |
+| **Now** — phase closure + priorities 1–2 | `util links check` workflow gate (spec'd) · security.txt · Core Web Vitals field baseline → performance budgets (`build verify` folds in) · 21.dev asset hashing → `immutable` caching · AI/GEO readiness verification · 103 Early Hints | `Specs/006` · Phase 3 F3/F7/F8/F11 · `backlog.md` |
 | **Next** — priorities 3–5 + quick wins | Server-side edge analytics + privacy policy · WASM pipeline → P256K in-browser demo · 21.dev Pagefind (static-site search) · `util links check --external` scan · FR/SC (requirement/criterion) citation checks · actionlint · mobile-usability audit · uptime + client-error monitoring · a11y quick wins (skip-nav, reduced-motion, focus) · `development-docs.yml` required check | Phase 7 F1/F2/F7 · Phase 9 · Phase 5 F4/F6 · `backlog.md` |
 | **Later** — foundation + community | Token system → layout library (gates dark mode) · a11y audit + axe CI · RSS feed · changelog · blog tags · dark mode · documentation versioning · i18n · sitemap index · social proof metrics · Phase 8 components & community · Plausible (contingent only — see Phase 7 F1) | Phase 3 remainder · Phase 4 · Phase 5 · Phase 6 · Phase 7 remainder · Phase 8 · `backlog.md` |
 
@@ -86,7 +86,7 @@ gets a `Specs/NNN` plan before implementation.
 **Critical Path** (Phase 1):
 1. Sitemap Infrastructure Overhaul → robots.txt Standardization → Search Engine Submission Automation
 
-**Architectural Refactoring Track** (Phase 2 - NEXT PRIORITY):
+**Architectural Refactoring Track** (Phase 2 — completed):
 1. Sitemap Infrastructure (Phase 1) → Utilities Library Extraction (sitemap utilities exist to extract)
 2. Utilities Library Extraction → Workflow Migration to Utilities CLI (library must exist first)
 
@@ -257,6 +257,7 @@ gets a `Specs/NNN` plan before implementation.
 
 ## Change Log
 
+- v1.4.1 (2026-11-14): **Phase 2 Completed.** `util redirects verify` shipped and `deploy-cloudflare.yml` migrated off the hardcoded curl list (Specs/007 T008), completing Feature 2 (Workflow Migration to Utilities CLI) — all four Phase 2 features are now done, with Feature 2's live preview-deploy checkpoint (Specs/007 SC-003) still open on the maintainer. Item removed from the Now tier and Candidates; Phase 2 status flipped to Completed. — **PATCH** (factual status update, no feature changes)
 - v1.4.0 (2026-11-05): **Priority-tier ordering + three structural changes.** Added the Priority Tiers table — phase numbers are now explicitly stable identifiers (never renumbered, ADR/RFC convention); this file is the authoritative ordering, tiered by the five stated priorities (SEO/GEO → performance → server-side analytics → WASM demos → DesignSystem). Added **Phase 9 — Swift WASM Demos** (pipeline → P256K in-browser demo). Rescoped **Phase 7 Feature 1** from Plausible migration to Server-Side Edge Analytics (Plausible demoted to contingent fallback; Feature 6 annotated as likely Won't-Do — Google ignores sitemap `changefreq`/`priority`). Added **Phase 3 Feature 11 — AI/GEO Readiness Verification** (verify-first via `agent-directive audit` + Cloudflare AI Crawl Control runbook). Repaired stale pre-v1.3.2 phase numbering throughout Dependencies, Metrics, and Candidates (3.5/4/4.5/5/6 → 4/5/6/7/8). Backlog refreshed: Plausible contingent record, 103 Early Hints, CWV field baseline, 21.dev asset hashing. — **MINOR** (ordering layer + one new phase + one rescoped feature + one new feature)
 - v1.3.6 (2026-11-04): **Status reconciliation to shipped reality.** Phase 1 marked Completed (Feature 4 `_redirects` shipped and verified in `deploy-cloudflare.yml`). Phase 2 Feature 4 (architecture alignment) marked Complete; Feature 2 reduced to one scoped command (`util redirects verify`, Specs/007) with `headers select`/`build verify`/LFS decisions recorded. Phase 3 moved to In Progress: OG/Twitter cards, theme-color, brand assets, JSON-LD head hygiene, and CSP all marked Completed; DocC asset-hash [INVESTIGATE] resolved (confirmed hashed, already cached immutable). Phase 5 Feature 3 (Search) rescoped — DocC ships catalog search on docs.21.dev; 21.dev-scoped search moved to backlog. — **PATCH** (factual status corrections, no feature changes)
 - v1.3.5 (2025-12-29): **Phase 2 Feature 3 Added** — Canonical URL Management feature added to Phase 2. Provides `util canonical check` and `util canonical fix` commands for SEO validation and remediation across all generated HTML output. Site-agnostic design works on any subdomain post-generation. — **PATCH** (new feature in existing phase)
@@ -281,9 +282,6 @@ Unphased ideas live in `backlog.md`.
 
 Candidates, in tier order (see Priority Tiers above):
 
-- **Phase 2 — Utilities Library Refactoring**: `util redirects verify`
-  (Specs/007 — last remaining command; other leftovers are decided, see phase
-  file)
 - **Phase 3 — Performance & Delivery**: CWV field baseline → Core Web Vitals
   Optimization; security.txt & Vulnerability Disclosure; Performance Budgets &
   CI Enforcement; Broken Link Detection & Monitoring (spec'd — Specs/006);

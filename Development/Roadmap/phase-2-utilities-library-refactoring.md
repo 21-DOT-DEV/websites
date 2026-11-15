@@ -1,8 +1,8 @@
 # Phase 2 — Utilities Library Refactoring
 
-**Status:** In Progress
-**Priority:** High (Next Priority)
-**Last Updated:** 2026-11-04
+**Status:** Completed
+**Priority:** High
+**Last Updated:** 2026-11-14
 
 ## Phase Goal
 
@@ -13,7 +13,7 @@ Extract sitemap utilities and reusable workflow logic into a dedicated `Utilitie
 | Feature | Status | Progress |
 |---------|--------|----------|
 | Feature 1 — Utilities Library Extraction | ✅ Complete | 100% |
-| Feature 2 — Workflow Migration | 🚧 In Progress | 7 commands shipped; `redirects verify` scoped (Specs/007) |
+| Feature 2 — Workflow Migration | ✅ Complete | 100% |
 | Feature 3 — Canonical URL Management | ✅ Complete | 100% |
 | Feature 4 — Architecture Alignment | ✅ Complete | 100% |
 
@@ -37,8 +37,8 @@ Extract sitemap utilities and reusable workflow logic into a dedicated `Utilitie
 - **Dependencies:** Phase 1 — Sitemap Infrastructure Overhaul (utilities exist to extract).
 - **Notes:** Extracted from 001-sitemap-infrastructure T057. Follows subtree pattern (library + executable).
 
-### Feature 2 — Workflow Migration to Utilities CLI 🚧
-- **Status:** In Progress (one scoped command remaining)
+### Feature 2 — Workflow Migration to Utilities CLI ✅
+- **Status:** Complete — pending Specs/007's SC-003 live preview-deploy checkpoint (the spec stays `In Progress` until a real deploy verifies every rule in under a minute)
 - **Purpose & user value:** Replace inline bash scripts in workflows with type-safe `swift run util` commands, providing consistent error handling, better debugging, and reduced maintenance burden through centralized logic.
 - **Implemented:**
   - ✅ `util sitemap generate --site <site>` (generate-docc.yml)
@@ -48,10 +48,9 @@ Extract sitemap utilities and reusable workflow logic into a dedicated `Utilitie
   - ✅ `util agent-directive inject|audit` (generate-docc.yml)
   - ✅ `util search-console submit --site <site>` (deploy-cloudflare.yml — covers the former `sitemap submit` item)
   - ✅ `util comment` (deploy-cloudflare.yml PR comments)
+  - ✅ `util redirects verify --site <site> --base-url <url>` (deploy-cloudflare.yml — Specs/007; checks derive from `_redirects` itself so new rules can't ship unverified)
 - **Retired:**
   - 🗑️ `util state validate` and `util state update` — retired alongside the removal of `Resources/sitemap-state.json` and the lefthook post-checkout automation. The state file was never read by sitemap generation (the `.packageVersionState` strategy was a stub that fell through to `Date()`). docs.21.dev now emits sitemap entries without `<lastmod>` via the `.none` strategy; a future reintroduction (if warranted) should use content-hashing or a git commit date anchored to `Resources/docs-21-dev/external-archives.json`.
-- **Remaining:**
-  - ❌ `util redirects verify --site <site>` — parse `_redirects` and verify each rule against a deployed URL. Scoped in Specs/007; replaces the hardcoded curl list in `deploy-cloudflare.yml` so new redirect rules can't ship unverified.
 - **Decisions (won't be commands):**
   - `util headers select` — stays as inline bash. Selecting `_headers.<env>` is file copying with a branch conditional, inside this feature's own carve-out ("bash remains for simple operations"); the only real cost is ~10 duplicated lines across two workflows.
   - `util build verify` — folded into Phase 3 Feature 8 (Performance Budgets); output verification is the same concern as size-budget enforcement.
@@ -95,7 +94,7 @@ Extract sitemap utilities and reusable workflow logic into a dedicated `Utilitie
 
 - **Upstream dependency:** Phase 1 — Sitemap Infrastructure Overhaul (utilities must exist before extraction).
 - **Internal sequencing:**
-  1. ✅ Utilities Library Extraction → 2. 🚧 Workflow Migration → 3. ✅ Canonical URL Management → 4. ✅ Architecture Alignment
+  1. ✅ Utilities Library Extraction → 2. ✅ Workflow Migration → 3. ✅ Canonical URL Management → 4. ✅ Architecture Alignment
 
 ## Phase Metrics
 
