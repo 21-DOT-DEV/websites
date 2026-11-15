@@ -637,7 +637,7 @@ struct AgentDirectiveTests {
         #expect(action == .skipped)
     }
 
-    @Test("Allowlist has exactly 417 entries (1 globals.hub + 130 P256K + 35 Event + 28 OpenSSL + 0 ZKP + 96 Tor + 43 Bitcoin + 84 BitcoinKernel)")
+    @Test("Allowlist has exactly 437 entries (1 globals.hub + 150 P256K + 35 Event + 28 OpenSSL + 0 ZKP + 96 Tor + 43 Bitcoin + 84 BitcoinKernel)")
     func allowlistCompleteness() {
         // 2026-05-28 swift-secp256k1 0.23.1 → 0.23.2 bump: -13 stale (3 deleted
         // articles upstream + 10 thin-prose drift) +6 newly-eligible symbol
@@ -650,7 +650,12 @@ struct AgentDirectiveTests {
         // (MuSig sessionID→sessionSecretRand) +3 newly-eligible symbol pages
         // +1 new authored article (migratingtop256k) -2 ZKP pages (module
         // removed upstream; its 0.23.2 docs are frozen and noindex'd).
-        #expect(AgentDirectiveInjector.indexablePages.count == 417)
+        // 2026-11-15 swift-secp256k1 0.24.0 → 0.25.1 bump: -17 stale (7 deleted
+        // upstream — cache surface, re-signatured methods, strict-flag
+        // signature — + 10 thin-prose drift on deprecated .bytes aliases and
+        // normalize) +35 newly-eligible symbol pages +2 new authored articles
+        // (signingfixedsizemessages, derivingkeysfromsharedsecrets).
+        #expect(AgentDirectiveInjector.indexablePages.count == 437)
 
         // Spot-check globals.hubs (truly cross-cutting site root only).
         #expect(AgentDirectiveInjector.indexablePages.contains("documentation"))
@@ -686,7 +691,6 @@ struct AgentDirectiveTests {
         #expect(!AgentDirectiveInjector.indexablePages.contains("documentation/p256k/keyformats"))
         #expect(!AgentDirectiveInjector.indexablePages.contains("documentation/p256k/serializingkeys"))
         #expect(!AgentDirectiveInjector.indexablePages.contains("documentation/p256k/tweakingkeys"))
-        #expect(!AgentDirectiveInjector.indexablePages.contains("documentation/p256k/p256k/signing/publickey/isvalidsignature(_:for:)-7sttb"))
         #expect(!AgentDirectiveInjector.indexablePages.contains("documentation/p256k/sha256/hash(data:)"))
         // Removed 2026-04-30 as a skeleton stub (disc=74, well below the
         // 300-char policy threshold) once the counter was fixed to see the
@@ -701,6 +705,16 @@ struct AgentDirectiveTests {
         #expect(AgentDirectiveInjector.indexablePages.contains("documentation/p256k/p256k/musig/sessionsecretrand"))
         #expect(AgentDirectiveInjector.indexablePages.contains("documentation/p256k/p256k/musig/sessionsecretrand/init(bytes:)"))
         #expect(AgentDirectiveInjector.indexablePages.contains("documentation/p256k/migratingtop256k"))
+
+        // Newly eligible pages from the 0.25.1 archive audit — including
+        // isvalidsignature(_:for:)-7sttb, which drops back IN: removed as
+        // thin prose in the 0.23.2 audit, upstream rewrote it to disc=508.
+        #expect(AgentDirectiveInjector.indexablePages.contains("documentation/p256k/p256k/setinvariantviolationhandler(_:)"))
+        #expect(AgentDirectiveInjector.indexablePages.contains("documentation/p256k/p256k/musig/sortedpublickeys(_:)"))
+        #expect(AgentDirectiveInjector.indexablePages.contains("documentation/p256k/secp256k1error/invalidmusigcontribution(index:)"))
+        #expect(AgentDirectiveInjector.indexablePages.contains("documentation/p256k/p256k/signing/publickey/isvalidsignature(_:for:)-7sttb"))
+        #expect(AgentDirectiveInjector.indexablePages.contains("documentation/p256k/signingfixedsizemessages"))
+        #expect(AgentDirectiveInjector.indexablePages.contains("documentation/p256k/derivingkeysfromsharedsecrets"))
 
         // Spot-check Event llms.txt entries
         #expect(AgentDirectiveInjector.indexablePages.contains("documentation/event"))
@@ -841,5 +855,18 @@ struct AgentDirectiveTests {
         }
 
         #expect(missing.isEmpty, "Segments missing from knownNames: \(missing). Add entries to AgentDirectiveInjector.knownNames.")
+    }
+
+    @Test("0.25.x multi-word segments keep exact knownNames mappings")
+    func newSegmentKnownNamesMappings() {
+        // The snapshot test's compound-suffix heuristic cannot see
+        // `bytearray` (ends "array"), `derivingkeysfromsharedsecrets` (ends
+        // "secrets"), or `signingfixedsizemessages` (ends "messages") — these
+        // assertions are the only guard on their breadcrumb casing.
+        let names = AgentDirectiveInjector.knownNames
+        #expect(names["bytearray"] == "byteArray")
+        #expect(names["copyablebytes"] == "CopyableBytes")
+        #expect(names["derivingkeysfromsharedsecrets"] == "DerivingKeysFromSharedSecrets")
+        #expect(names["signingfixedsizemessages"] == "SigningFixedSizeMessages")
     }
 }

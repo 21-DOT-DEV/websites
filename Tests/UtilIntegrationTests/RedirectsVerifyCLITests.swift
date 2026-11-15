@@ -639,9 +639,11 @@ struct RedirectsVerifyCLITests {
     @Test("redirects verify proves every rule in the real docs-21-dev file against the emulated edge",
           .timeLimit(.minutes(1)))
     func realSiteFileDocs21Dev() async throws {
-        // Mirrors Resources/docs-21-dev/_redirects rule-for-rule — all 15
+        // Mirrors Resources/docs-21-dev/_redirects rule-for-rule — all 24
         // rules are literal or 3xx wildcards, so every one probes and passes
-        // on any machine.
+        // on any machine. The 0.25.x symbol-removal block is literal-only:
+        // ':'+letter inside a source is a live :placeholder, so dead method
+        // URLs that would match live sibling pages are left to 404.
         let edge = RedirectEdgeEmulator(rules: [
             .init("/", status: 301, location: "/documentation/"),
             .init("/index.html", status: 301, location: "/documentation/"),
@@ -657,6 +659,15 @@ struct RedirectsVerifyCLITests {
             .init("/zkp/*/index.html", status: 301, location: "/documentation/zkp/:splat/"),
             .init("/zkp/*/", status: 301, location: "/documentation/zkp/:splat/"),
             .init("/zkp/*", status: 301, location: "/documentation/zkp/:splat/"),
+            .init("/documentation/p256k/p256k/musig/aggregatesignatures(_:)", status: 301, location: "/documentation/p256k/p256k/musig/"),
+            .init("/documentation/p256k/p256k/musig/aggregatesignatures(_:)/", status: 301, location: "/documentation/p256k/p256k/musig/"),
+            .init("/documentation/p256k/p256k/musig/aggregatesignatures(_:)/index.html", status: 301, location: "/documentation/p256k/p256k/musig/"),
+            .init("/documentation/p256k/p256k/musig/xonlykey/cache", status: 301, location: "/documentation/p256k/p256k/musig/xonlykey/"),
+            .init("/documentation/p256k/p256k/musig/xonlykey/cache/", status: 301, location: "/documentation/p256k/p256k/musig/xonlykey/"),
+            .init("/documentation/p256k/p256k/musig/xonlykey/cache/index.html", status: 301, location: "/documentation/p256k/p256k/musig/xonlykey/"),
+            .init("/documentation/p256k/p256k/schnorr/xonlykey/cache", status: 301, location: "/documentation/p256k/p256k/schnorr/xonlykey/"),
+            .init("/documentation/p256k/p256k/schnorr/xonlykey/cache/", status: 301, location: "/documentation/p256k/p256k/schnorr/xonlykey/"),
+            .init("/documentation/p256k/p256k/schnorr/xonlykey/cache/index.html", status: 301, location: "/documentation/p256k/p256k/schnorr/xonlykey/"),
             .init("/*/index.html", status: 301, location: "/:splat/"),
         ])
         let baseURL = try await edge.start()
@@ -681,7 +692,7 @@ struct RedirectsVerifyCLITests {
         #expect(output.contains("✅ /*/index.html → /:splat/ (301)"))
         #expect(!output.contains("❌"))
         #expect(!output.contains("⏭️"))
-        #expect(output.contains("15 redirect rules verified ✓"))
+        #expect(output.contains("24 redirect rules verified ✓"))
         // Exact wire evidence: every rule probed once, in file order, with
         // the token substituted into each wildcard source.
         #expect(edge.recordedRequests.map { "\($0.method) \($0.path)" } == [
@@ -694,6 +705,15 @@ struct RedirectsVerifyCLITests {
             "HEAD /zkp/redirects-verify-probe/index.html",
             "HEAD /zkp/redirects-verify-probe/",
             "HEAD /zkp/redirects-verify-probe",
+            "HEAD /documentation/p256k/p256k/musig/aggregatesignatures(_:)",
+            "HEAD /documentation/p256k/p256k/musig/aggregatesignatures(_:)/",
+            "HEAD /documentation/p256k/p256k/musig/aggregatesignatures(_:)/index.html",
+            "HEAD /documentation/p256k/p256k/musig/xonlykey/cache",
+            "HEAD /documentation/p256k/p256k/musig/xonlykey/cache/",
+            "HEAD /documentation/p256k/p256k/musig/xonlykey/cache/index.html",
+            "HEAD /documentation/p256k/p256k/schnorr/xonlykey/cache",
+            "HEAD /documentation/p256k/p256k/schnorr/xonlykey/cache/",
+            "HEAD /documentation/p256k/p256k/schnorr/xonlykey/cache/index.html",
             "HEAD /redirects-verify-probe/index.html",
         ])
     }

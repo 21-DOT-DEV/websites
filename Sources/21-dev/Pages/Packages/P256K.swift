@@ -102,16 +102,16 @@ struct P256KPage {
                         CodeHighlight(text: "using", style: .property),
                         CodeHighlight(text: "utf8", style: .property)
                     ]),
-                    CodeLine(text: "let sig = try! priv.signature(for: msg)", style: .normal, highlights: [
+                    CodeLine(text: "let sig = try! priv.signature(customMessage: msg)", style: .normal, highlights: [
                         CodeHighlight(text: "let", style: .keyword),
                         CodeHighlight(text: "try", style: .keyword),
                         CodeHighlight(text: "signature", style: .function)
                     ]),
                     CodeLine(text: "", style: .normal),
                     CodeLine(text: "// Verify signature with public key", style: .comment),
-                    CodeLine(text: "let valid = pub.isValidSignature(sig, for: msg)", style: .normal, highlights: [
+                    CodeLine(text: "let valid = pub.xonly.isValid(sig, for: msg)", style: .normal, highlights: [
                         CodeHighlight(text: "let", style: .keyword),
-                        CodeHighlight(text: "isValidSignature", style: .function)
+                        CodeHighlight(text: "isValid", style: .function)
                     ])
                 ]
             )
@@ -124,17 +124,17 @@ struct P256KPage {
                 title: "Xcode",
                 codeSnippet: SiteIdentity.p256kRepoURL,
                 language: "text",
-                instructions: "In Xcode, go to File → Add Package Dependencies, paste the URL above, select version 0.24.0, and add to your target."
+                instructions: "In Xcode, go to File → Add Package Dependencies, paste the URL above, select the Up to Next Minor Version rule from 0.25.1, and add to your target."
             ),
             InstallationOption(
                 title: "Swift Package Manager",
-                codeSnippet: ".package(url: \"\(SiteIdentity.p256kRepoURL)\", exact: \"0.24.0\")",
+                codeSnippet: ".package(url: \"\(SiteIdentity.p256kRepoURL)\", .upToNextMinor(from: \"0.25.1\"))",
                 language: "swift",
                 instructions: "Add this line to your Package.swift dependencies array, then run `swift build` to integrate P256K into your project."
             ),
             InstallationOption(
                 title: "CocoaPods",
-                codeSnippet: "pod 'swift-secp256k1', '0.24.0'",
+                codeSnippet: "pod 'swift-secp256k1', '~> 0.25.1'",
                 language: "ruby",
                 instructions: "Add this line to your Podfile, then run `pod install` to integrate P256K into your Xcode workspace. The prebuilt XCFramework requires a Swift 6.3+ toolchain (Xcode 27); SPM source builds still work on Swift 6.1."
             )
@@ -256,7 +256,7 @@ struct P256KPage {
             Text("Yes. P256K is suitable anywhere you need secp256k1 cryptography in Swift, including Bitcoin apps and related ecosystems like Lightning, Nostr, Ecash, and Liquid.")
         },
         FAQItem(question: "Is the API stable?", includeInJSONLD: true) {
-            Text("P256K is pre-1.0.0, so APIs may change between releases. For production use, pin an exact version in Swift Package Manager to avoid unexpected breaking changes.")
+            Text("P256K is pre-1.0.0, so APIs may change between minor releases. For production use, pin with .upToNextMinor in Swift Package Manager to receive patch fixes while opting into each minor deliberately — or pin an exact version for maximum stability.")
         },
         FAQItem(question: "What happened to the ZKP module?", includeInJSONLD: true) {
             Div {

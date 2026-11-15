@@ -85,6 +85,10 @@ recoveringpublickeys
 workingwithkeys
 cryptokitp256andsecp256k1
 ecdsasigningandbitcointransactions
+bytearray
+copyablebytes
+derivingkeysfromsharedsecrets
+signingfixedsizemessages
 
 # Compound names — Event (require knownNames entries)
 eventloop
