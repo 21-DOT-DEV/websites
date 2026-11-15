@@ -104,6 +104,21 @@ struct DocsLlmsTxtTests {
         #expect(tor.contains("function signatures should accept `any TorSession`"))
     }
 
+    @Test("p256k llms.txt carries the 0.25.x security floor and new guides")
+    func p256kSecurityFloorAndGuides() throws {
+        let p256k = try read(moduleFile(.p256k))
+
+        // The security floor is the load-bearing guidance for agents asked
+        // "is 0.25.0 okay?" — the advisory names exactly that version.
+        #expect(p256k.contains("Version = 0.25.0 contains a deterministic process crash"))
+        #expect(p256k.contains("GHSA-7g3x-fj89-693j"))
+
+        // The two guides new in swift-secp256k1 0.25.x are curated into the
+        // Documentation section alongside the older authored articles.
+        #expect(p256k.contains("derivingkeysfromsharedsecrets.md"))
+        #expect(p256k.contains("signingfixedsizemessages.md"))
+    }
+
     @Test("Known bad markdown URLs are not introduced")
     func knownBadMarkdownURLsAreNotIntroduced() throws {
         for file in expectedFiles {

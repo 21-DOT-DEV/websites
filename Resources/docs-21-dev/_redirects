@@ -27,5 +27,30 @@
 /zkp/*/ /documentation/zkp/:splat/ 301
 /zkp/* /documentation/zkp/:splat/ 301
 
+# Removed in swift-secp256k1 0.25.0 -> closest 0.25.x successor (exact, trailing slash, index.html)
+# Only literal-grammar sources can be redirected: ':'+letter inside a source is a
+# live :placeholder ([^/]+), so a rule for e.g. signature(message:auxiliaryrand:strict:)
+# would also match the live signature(message:auxiliaryrand:) page — those dead
+# method URLs are left to 404 rather than shadow their successors.
+/documentation/p256k/p256k/musig/aggregatesignatures(_:) /documentation/p256k/p256k/musig/ 301
+/documentation/p256k/p256k/musig/aggregatesignatures(_:)/ /documentation/p256k/p256k/musig/ 301
+/documentation/p256k/p256k/musig/aggregatesignatures(_:)/index.html /documentation/p256k/p256k/musig/ 301
+/documentation/p256k/p256k/musig/xonlykey/cache /documentation/p256k/p256k/musig/xonlykey/ 301
+/documentation/p256k/p256k/musig/xonlykey/cache/ /documentation/p256k/p256k/musig/xonlykey/ 301
+/documentation/p256k/p256k/musig/xonlykey/cache/index.html /documentation/p256k/p256k/musig/xonlykey/ 301
+/documentation/p256k/p256k/schnorr/xonlykey/cache /documentation/p256k/p256k/schnorr/xonlykey/ 301
+/documentation/p256k/p256k/schnorr/xonlykey/cache/ /documentation/p256k/p256k/schnorr/xonlykey/ 301
+/documentation/p256k/p256k/schnorr/xonlykey/cache/index.html /documentation/p256k/p256k/schnorr/xonlykey/ 301
+
+# swift-secp256k1 0.25.1: the CopyableBytes page's conforming-type links resolve to
+# swift/array + swift/arrayslice, but upstream's archive emits no pages for them —
+# land on the swift/ namespace index (302: upstream may emit these pages later).
+/documentation/p256k/swift/array /documentation/p256k/swift/ 302
+/documentation/p256k/swift/array/ /documentation/p256k/swift/ 302
+/documentation/p256k/swift/array/index.html /documentation/p256k/swift/ 302
+/documentation/p256k/swift/arrayslice /documentation/p256k/swift/ 302
+/documentation/p256k/swift/arrayslice/ /documentation/p256k/swift/ 302
+/documentation/p256k/swift/arrayslice/index.html /documentation/p256k/swift/ 302
+
 # Strip index.html to clean trailing-slash URLs
 /*/index.html /:splat/ 301

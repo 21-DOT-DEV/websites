@@ -192,7 +192,7 @@ struct SiteGenerator {
         
         Swift Package Manager (recommended):
         ```swift
-        .package(url: "https://github.com/21-DOT-DEV/swift-secp256k1", exact: "0.24.0")
+        .package(url: "https://github.com/21-DOT-DEV/swift-secp256k1", .upToNextMinor(from: "0.25.1"))
         ```
         
         ## FAQ
@@ -216,7 +216,7 @@ struct SiteGenerator {
         Yes. P256K is suitable anywhere you need secp256k1 cryptography in Swift, including Bitcoin apps and related ecosystems like Lightning, Nostr, Ecash, and Liquid.
         
         **Is the API stable?**
-        P256K is pre-1.0.0, so APIs may change between releases. For production use, pin an exact version in Swift Package Manager to avoid unexpected breaking changes.
+        P256K is pre-1.0.0, so APIs may change between minor releases. For production use, pin with .upToNextMinor in Swift Package Manager to receive patch fixes while opting into each minor deliberately — or pin an exact version for maximum stability.
         
         **What happened to the ZKP module?**
         The ZKP module was removed from swift-secp256k1 in 0.24.0 and no longer ships with the package — its documentation remains online, frozen at the 0.23.2 release. See https://docs.21.dev/documentation/p256k/migratingtop256k/ for how to move to current APIs.
