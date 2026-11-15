@@ -639,7 +639,7 @@ struct RedirectsVerifyCLITests {
     @Test("redirects verify proves every rule in the real docs-21-dev file against the emulated edge",
           .timeLimit(.minutes(1)))
     func realSiteFileDocs21Dev() async throws {
-        // Mirrors Resources/docs-21-dev/_redirects rule-for-rule — all 24
+        // Mirrors Resources/docs-21-dev/_redirects rule-for-rule — all 30
         // rules are literal or 3xx wildcards, so every one probes and passes
         // on any machine. The 0.25.x symbol-removal block is literal-only:
         // ':'+letter inside a source is a live :placeholder, so dead method
@@ -668,6 +668,12 @@ struct RedirectsVerifyCLITests {
             .init("/documentation/p256k/p256k/schnorr/xonlykey/cache", status: 301, location: "/documentation/p256k/p256k/schnorr/xonlykey/"),
             .init("/documentation/p256k/p256k/schnorr/xonlykey/cache/", status: 301, location: "/documentation/p256k/p256k/schnorr/xonlykey/"),
             .init("/documentation/p256k/p256k/schnorr/xonlykey/cache/index.html", status: 301, location: "/documentation/p256k/p256k/schnorr/xonlykey/"),
+            .init("/documentation/p256k/swift/array", status: 302, location: "/documentation/p256k/swift/"),
+            .init("/documentation/p256k/swift/array/", status: 302, location: "/documentation/p256k/swift/"),
+            .init("/documentation/p256k/swift/array/index.html", status: 302, location: "/documentation/p256k/swift/"),
+            .init("/documentation/p256k/swift/arrayslice", status: 302, location: "/documentation/p256k/swift/"),
+            .init("/documentation/p256k/swift/arrayslice/", status: 302, location: "/documentation/p256k/swift/"),
+            .init("/documentation/p256k/swift/arrayslice/index.html", status: 302, location: "/documentation/p256k/swift/"),
             .init("/*/index.html", status: 301, location: "/:splat/"),
         ])
         let baseURL = try await edge.start()
@@ -692,7 +698,7 @@ struct RedirectsVerifyCLITests {
         #expect(output.contains("✅ /*/index.html → /:splat/ (301)"))
         #expect(!output.contains("❌"))
         #expect(!output.contains("⏭️"))
-        #expect(output.contains("24 redirect rules verified ✓"))
+        #expect(output.contains("30 redirect rules verified ✓"))
         // Exact wire evidence: every rule probed once, in file order, with
         // the token substituted into each wildcard source.
         #expect(edge.recordedRequests.map { "\($0.method) \($0.path)" } == [
@@ -714,6 +720,12 @@ struct RedirectsVerifyCLITests {
             "HEAD /documentation/p256k/p256k/schnorr/xonlykey/cache",
             "HEAD /documentation/p256k/p256k/schnorr/xonlykey/cache/",
             "HEAD /documentation/p256k/p256k/schnorr/xonlykey/cache/index.html",
+            "HEAD /documentation/p256k/swift/array",
+            "HEAD /documentation/p256k/swift/array/",
+            "HEAD /documentation/p256k/swift/array/index.html",
+            "HEAD /documentation/p256k/swift/arrayslice",
+            "HEAD /documentation/p256k/swift/arrayslice/",
+            "HEAD /documentation/p256k/swift/arrayslice/index.html",
             "HEAD /redirects-verify-probe/index.html",
         ])
     }
