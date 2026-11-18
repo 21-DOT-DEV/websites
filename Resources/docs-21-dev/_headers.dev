@@ -34,11 +34,18 @@
   Cache-Control: public, max-age=86400
   Vary: Accept-Encoding
 
-# /.well-known/* — short TTL with stale-while-revalidate
+# /.well-known/* — no-store, matching 21.dev and the Specs/003 quickstart checks
+# Cloudflare concatenates all matching rules: never place .json files under
+# well-known/ — /**/*.json's Cache-Control would merge with no-store into a
+# contradictory header, and _headers cannot express an exclusion or removal.
 /.well-known/*
-  Cache-Control: public, max-age=300, stale-while-revalidate=86400
-  Vary: Accept-Encoding
-  X-Robots-Tag: noindex
+  Cache-Control: no-store
+  Pragma: no-cache
+
+# security.txt (RFC 9116) — explicit text/plain, defensive against MIME-mapping drift
+/.well-known/security.txt
+  Content-Type: text/plain; charset=utf-8
+  X-Content-Type-Options: nosniff
 
 # DocC data directory (symbol JSON)
 /data/*

@@ -34,4 +34,5 @@ between the markers is rewritten, not edited by hand.
 | 005 | Sticky deployment comments on pull requests | 2 · Utilities Library Refactoring | Implemented | [plan.md](005-pr-deployment-comments/plan.md) |
 | 006 | Internal link checking for generated HTML output | 3 · Performance &amp; Delivery Optimization | Implemented | [plan.md](006-internal-link-check/plan.md) |
 | 007 | Verify _redirects rules against deployed URLs | 2 · Utilities Library Refactoring | In Progress | [plan.md](007-redirects-verify/plan.md) |
+| 008 | RFC 9116 security.txt for both sites | 3 · Performance &amp; Delivery Optimization | Implemented | [plan.md](008-security-txt/plan.md) |
 <!-- END GENERATED INDEX -->

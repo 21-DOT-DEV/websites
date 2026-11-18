@@ -1,0 +1,13 @@
+# security.txt for 21.dev — RFC 9116 (https://www.rfc-editor.org/rfc/rfc9116)
+# Report security vulnerabilities to the contacts below, in order of preference.
+# Expires freshness is enforced by Tests/IntegrationTests/SecurityTxtTests.swift,
+# which fails once the date is under 60 days out — renew on that signal.
+# Field set is kept identical across site copies; update both files together.
+
+Contact: mailto:security@21.dev
+Contact: https://github.com/21-DOT-DEV/websites/security/advisories/new
+Expires: 2027-11-10T00:00:00Z
+Policy: https://github.com/21-DOT-DEV/websites/security/policy
+Preferred-Languages: en
+Canonical: https://21.dev/.well-known/security.txt
+Canonical: https://docs.21.dev/.well-known/security.txt
