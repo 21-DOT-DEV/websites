@@ -760,8 +760,8 @@ struct InternalLinkCheckerTests {
 
     @Test("Parses both real site _redirects files without dropping rules")
     func realSiteFiles() throws {
-        // 21-dev: 3 rules — one 200 splat proxy, two external 301s.
-        // docs-21-dev: 15 rules — mid-path splats and a catch-all.
+        // 21-dev: 4 rules — one 200 splat proxy, one local 301, two external 301s.
+        // docs-21-dev: 32 rules — well-known rewrite, security.txt, root, mid-path splats, catch-all.
         let resources = URL(fileURLWithPath: #filePath)
             .deletingLastPathComponent() // Tests/UtilLibTests/Links/
             .deletingLastPathComponent() // Tests/UtilLibTests/
@@ -782,7 +782,10 @@ struct InternalLinkCheckerTests {
             #expect(RedirectsParser.loadRules(from: resources + "/\(site)").rules.count == ruleLines)
         }
         #expect(dev.contains(RedirectRule(source: "/.well-known/*", target: "/well-known/:splat", status: 200)))
-        #expect(docs.first == RedirectRule(source: "/", target: "/documentation/", status: 301))
+        #expect(docs.first == RedirectRule(source: "/.well-known/*", target: "/well-known/:splat", status: 200))
+        #expect(docs.contains(RedirectRule(source: "/", target: "/documentation/", status: 301)))
+        #expect(dev.contains(RedirectRule(source: "/security.txt", target: "/.well-known/security.txt", status: 301)))
+        #expect(docs.contains(RedirectRule(source: "/security.txt", target: "/.well-known/security.txt", status: 301)))
         #expect(docs.last == RedirectRule(source: "/*/index.html", target: "/:splat/", status: 301))
     }
 

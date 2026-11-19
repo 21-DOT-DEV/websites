@@ -92,7 +92,7 @@ Optimize caching, delivery, and site structure to achieve excellent Core Web Vit
 
 ### Feature 7 — security.txt & Vulnerability Disclosure
 - **Name:** security.txt & Vulnerability Disclosure
-- **Status:** Not Started
+- **Status:** Completed
 - **Purpose & user value:** Provide RFC 9116 compliant security.txt file for responsible vulnerability disclosure, enabling security researchers to report issues properly.
 - **Success metrics:**
   - security.txt deployed at /.well-known/security.txt
@@ -101,7 +101,7 @@ Optimize caching, delivery, and site structure to achieve excellent Core Web Vit
   - Security researchers can find disclosure process easily
   - File renewed annually (expires field updated)
 - **Dependencies:** None.
-- **Notes:** Industry best practice for open source projects; GitHub, Cloudflare, Mozilla all have this.
+- **Notes:** Shipped via `Specs/008-security-txt` — `well-known/security.txt` on both sites, `SECURITY.md` at the repo root, `/security.txt` legacy-path redirect, `no-store` caching, and `SecurityTxtTests` enforcing the annual `Expires` renewal in CI. PGP signing deferred to `backlog.md`.
 
 ### Feature 8 — Performance Budgets & CI Enforcement
 - **Name:** Performance Budgets & CI Enforcement

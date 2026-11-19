@@ -34,11 +34,18 @@
   Cache-Control: public, max-age=86400
   Vary: Accept-Encoding
 
-# /.well-known/* — short TTL with stale-while-revalidate
+# /.well-known/* — no-store for the whole namespace, matching 21.dev and the
+# Specs/003 quickstart checks. _headers can't remove a header it set (Pages
+# does not honor `!` detaches — see functions/_handlers/html.ts), so a future
+# cacheable well-known (e.g. jwks.json) needs a Pages Function.
 /.well-known/*
-  Cache-Control: public, max-age=300, stale-while-revalidate=86400
-  Vary: Accept-Encoding
-  X-Robots-Tag: noindex
+  Cache-Control: no-store
+  Pragma: no-cache
+
+# security.txt (RFC 9116) — explicit text/plain, defensive against MIME-mapping drift
+/.well-known/security.txt
+  Content-Type: text/plain; charset=utf-8
+  X-Content-Type-Options: nosniff
 
 # DocC data directory (symbol JSON)
 /data/*
@@ -49,14 +56,14 @@
 # Explicit Content-Type for DocC markdown assets — defensive against MIME-mapping
 # drift (NGINX-style defaults historically lacked .md; combined with the catch-all's
 # X-Content-Type-Options: nosniff, an incorrect type would silently block crawlers).
-/data/documentation/**/*.md
+# One splat matches any depth — a second `*` would make the rule match nothing.
+# cfpages-ignore: glob-content-type (DocC emits .md at unbounded depth; explicit paths impractical — 404s under this prefix also serve text/markdown, accepted)
+/data/documentation/*.md
   Content-Type: text/markdown; charset=utf-8
 
-# JSON data (DocC linkable-entities, metadata, symbol JSON)
-/**/*.json
-  Cache-Control: public, max-age=300, stale-while-revalidate=86400
-  Vary: Accept-Encoding
-  X-Robots-Tag: noindex
+# No catch-all .json rule: `/**/*.json` uses more than one `*` — invalid on
+# Pages, it silently matched nothing. /data/* above covers DocC JSON;
+# root/index .json files keep Cloudflare's max-age=0 default, right for config.
 
 # Serve plain text files with correct content-type
 # Using explicit paths instead of /*.txt glob to avoid Content-Type mismatch on 404 pages

@@ -48,6 +48,11 @@
   Cache-Control: no-store
   Pragma: no-cache
 
+# security.txt (RFC 9116) — explicit text/plain, defensive against MIME-mapping drift
+/.well-known/security.txt
+  Content-Type: text/plain; charset=utf-8
+  X-Content-Type-Options: nosniff
+
 # cfpages-ignore: glob-content-type (blog posts grow over time; explicit paths impractical)
 /data/blog/*.md
   Content-Type: text/markdown; charset=utf-8

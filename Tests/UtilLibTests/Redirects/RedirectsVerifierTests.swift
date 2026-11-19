@@ -664,7 +664,14 @@ struct RedirectsVerifierTests {
 
     @Test("docs-21-dev's real rules verify end-to-end on a stubbed edge")
     func realFileEndToEnd() async throws {
-        // The real file: literals, splat redirects, the index.html catch-all.
+        // The real file: literals, splat redirects, the well-known rewrite,
+        // the index.html catch-all. The rewrite probes through a real
+        // deployed target — well-known/security.txt ships on docs.21.dev.
+        let root = try makeRoot()
+        defer { try? FileManager.default.removeItem(atPath: root) }
+        try write("security", to: "\(root)/well-known/security.txt")
+        try write("", to: "\(root)/404.html")
+
         let docsRules = RedirectsParser.parse(try String(
             contentsOfFile: repositoryPath("Resources/docs-21-dev/_redirects"),
             encoding: .utf8))
@@ -682,7 +689,7 @@ struct RedirectsVerifierTests {
             return RedirectsVerifier.ProbeResponse(status: 404, location: nil)
         }
 
-        let report = await verifier.verify(rules: docsRules, baseURL: baseURL)
+        let report = await verifier.verify(rules: docsRules, baseURL: baseURL, deployedRoot: root)
 
         #expect(report.isSuccess)
         #expect(report.results.count == docsRules.count)

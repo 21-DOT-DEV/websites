@@ -7,6 +7,12 @@
 # Status codes: 301 (permanent), 302 (temporary)
 # Docs: https://developers.cloudflare.com/pages/configuration/redirects/
 
+# Cloudflare Pages doesn't serve dot-directories; rewrite to non-dot path
+/.well-known/* /well-known/:splat 200
+
+# Legacy top-level security.txt path redirects to the well-known location (RFC 9116 §3)
+/security.txt /.well-known/security.txt 301
+
 # Root -> docs landing (canonical)
 / /documentation/ 301
 /index.html /documentation/ 301

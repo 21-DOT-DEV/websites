@@ -606,6 +606,7 @@ struct RedirectsVerifyCLITests {
         // mirror lacks fails loudly (the emulator 404s unmatched probes).
         let edge = RedirectEdgeEmulator(rules: [
             .init("/.well-known/*", status: 200),
+            .init("/security.txt", status: 301, location: "/.well-known/security.txt"),
             .init("/docs", status: 301, location: "https://docs.21.dev/documentation/"),
             .init("/api", status: 301, location: "https://docs.21.dev/documentation/"),
         ])
@@ -626,12 +627,14 @@ struct RedirectsVerifyCLITests {
         }
         #expect(code == 0)
         let output = result.standardOutput ?? ""
+        #expect(output.contains("✅ /security.txt → /.well-known/security.txt (301)"))
         #expect(output.contains("✅ /docs → https://docs.21.dev/documentation/ (301)"))
         #expect(output.contains("✅ /api → https://docs.21.dev/documentation/ (301)"))
         #expect(!output.contains("❌"))
         // The /.well-known rewrite passes where Websites/21-dev exists and
         // skips where it doesn't — only the exit code is stable across both.
         let requests = edge.recordedRequests.map { "\($0.method) \($0.path)" }
+        #expect(requests.contains("HEAD /security.txt"))
         #expect(requests.contains("HEAD /docs"))
         #expect(requests.contains("HEAD /api"))
     }
@@ -639,12 +642,16 @@ struct RedirectsVerifyCLITests {
     @Test("redirects verify proves every rule in the real docs-21-dev file against the emulated edge",
           .timeLimit(.minutes(1)))
     func realSiteFileDocs21Dev() async throws {
-        // Mirrors Resources/docs-21-dev/_redirects rule-for-rule — all 30
-        // rules are literal or 3xx wildcards, so every one probes and passes
-        // on any machine. The 0.25.x symbol-removal block is literal-only:
-        // ':'+letter inside a source is a live :placeholder, so dead method
-        // URLs that would match live sibling pages are left to 404.
+        // Mirrors Resources/docs-21-dev/_redirects rule-for-rule — literal
+        // and 3xx wildcard rules all probe and pass on any machine; the
+        // /.well-known rewrite probes only where Websites/docs-21-dev exists
+        // (the docs site assembles in CI — there is no local equivalent).
+        // The 0.25.x symbol-removal block is literal-only: ':'+letter inside
+        // a source is a live :placeholder, so dead method URLs that would
+        // match live sibling pages are left to 404.
         let edge = RedirectEdgeEmulator(rules: [
+            .init("/.well-known/*", status: 200),
+            .init("/security.txt", status: 301, location: "/.well-known/security.txt"),
             .init("/", status: 301, location: "/documentation/"),
             .init("/index.html", status: 301, location: "/documentation/"),
             .init("/p256k", status: 301, location: "/documentation/p256k/"),
@@ -693,15 +700,18 @@ struct RedirectsVerifyCLITests {
         }
         #expect(code == 0)
         let output = result.standardOutput ?? ""
+        #expect(output.contains("✅ /security.txt → /.well-known/security.txt (301)"))
         #expect(output.contains("✅ / → /documentation/ (301)"))
         #expect(output.contains("✅ /p256k/* → /documentation/p256k/:splat/ (301)"))
         #expect(output.contains("✅ /*/index.html → /:splat/ (301)"))
         #expect(!output.contains("❌"))
-        #expect(!output.contains("⏭️"))
-        #expect(output.contains("30 redirect rules verified ✓"))
-        // Exact wire evidence: every rule probed once, in file order, with
-        // the token substituted into each wildcard source.
-        #expect(edge.recordedRequests.map { "\($0.method) \($0.path)" } == [
+
+        // Exact wire evidence: every rule probes once, in file order, with
+        // the token substituted into each wildcard source — except the
+        // /.well-known rewrite, which probes through a real deployed file
+        // and therefore only fires where Websites/docs-21-dev exists.
+        let deterministicProbes: [String] = [
+            "HEAD /security.txt",
             "HEAD /", "HEAD /index.html",
             "HEAD /p256k", "HEAD /p256k/", "HEAD /p256k/index.html",
             "HEAD /p256k/redirects-verify-probe/index.html",
@@ -727,7 +737,22 @@ struct RedirectsVerifyCLITests {
             "HEAD /documentation/p256k/swift/arrayslice/",
             "HEAD /documentation/p256k/swift/arrayslice/index.html",
             "HEAD /redirects-verify-probe/index.html",
-        ])
+        ]
+
+        let requests = edge.recordedRequests.map { "\($0.method) \($0.path)" }
+        if requests.first == "HEAD /.well-known/security.txt" {
+            // CI: the docs site is built, well-known/security.txt is deployed,
+            // and the rewrite is probed through it — all 32 rules pass.
+            #expect(requests == ["HEAD /.well-known/security.txt"] + deterministicProbes)
+            #expect(!output.contains("⏭️"))
+            #expect(output.contains("32 redirect rules verified ✓"))
+        } else {
+            // No built docs site here — the rewrite is the file's single
+            // honest skip (no deployed target to prove it through).
+            #expect(requests == deterministicProbes)
+            #expect(output.contains("⏭️ /.well-known/* → /well-known/:splat (200)"))
+            #expect(output.contains("31 redirect rules verified ✓ (1 skipped)"))
+        }
     }
 
     @Test("redirects verify fails a malformed line even when its rules pass",
