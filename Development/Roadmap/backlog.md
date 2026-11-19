@@ -40,6 +40,15 @@ plan first (copy `../Specs/_template/` to `../Specs/NNN-slug/`) and set its
   and add an `Encryption:` field pointing at it. Unsigned ships now — RFC 9116
   recommends but doesn't require a signature, and a signature only helps once
   the key is distributed somewhere researchers already trust.
+- **`util headers validate`: reject multi-splat patterns** (left over from
+  `Specs/008-security-txt`): Cloudflare Pages allows one `*` per `_headers`
+  pattern — `/**/*.json` and `/**/*.md` shipped as rules that silently
+  matched nothing. The test-side guard lives in
+  `SecurityTxtTests.headerPatternsStaySingleSplat`; the validator should
+  reject multi-splat patterns at `headers validate` time too. The
+  `HeadersValidatorTests` fixture at :213 (`/data/documentation/**/*.md`,
+  expected `isValid`) must be updated when the check lands. Emit it as an
+  **error**, not a warning — `HeadersCommand` only gates on `ValidationError`.
 - **FR/SC citation checks in `Development/Tools`**: port the sibling repos'
   cross-reference validation — every `FR-NNN` a `spec.md` defines cited in
   `plan.md`/`tasks.md`, every `SC-NNN` cited in the plan's Verification, no

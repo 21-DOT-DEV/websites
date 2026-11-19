@@ -162,8 +162,9 @@ struct SecurityTxtTests {
                 #expect(
                     !wellKnown.isEmpty && wellKnown.allSatisfy {
                         $0.headers.contains { $0.name == "cache-control" && $0.value == "no-store" }
+                            && $0.headers.contains { $0.name == "pragma" && $0.value == "no-cache" }
                     },
-                    "\(site.directory)/_headers.\(environment) must serve /.well-known/* with Cache-Control: no-store"
+                    "\(site.directory)/_headers.\(environment) must serve /.well-known/* with Cache-Control: no-store + Pragma: no-cache"
                 )
                 let securityTxt = rules.filter { $0.pattern == "/.well-known/security.txt" }
                 #expect(
@@ -176,20 +177,71 @@ struct SecurityTxtTests {
         }
     }
 
-    @Test("docs-21-dev well-known never ships .json — header rules would contradict")
-    func docsWellKnownAvoidsJson() throws {
-        // /.well-known/* sets Cache-Control: no-store while /**/*.json sets
-        // max-age=300 — a .json under docs' well-known/ would emit both,
-        // concatenated into a contradictory header (see _headers comment).
-        let url = repositoryRoot
-            .appendingPathComponent("Resources")
-            .appendingPathComponent("docs-21-dev")
-            .appendingPathComponent("well-known")
-        let contents = try FileManager.default.subpathsOfDirectory(atPath: url.path)
-        #expect(
-            !contents.contains { $0.hasSuffix(".json") },
-            "docs-21-dev well-known/ must not contain .json files — its Cache-Control would concatenate with /**/*.json's"
-        )
+    @Test("_headers patterns stay within Cloudflare's single-splat limit")
+    func headerPatternsStaySingleSplat() throws {
+        // Cloudflare allows one `*` per pattern — a second silently matches
+        // nothing, which is how `/**/*.json` and `/**/*.md` shipped as dead
+        // rules. The splat also matches across `/`, so one is always enough.
+        for site in sites {
+            for environment in ["dev", "prod"] {
+                let rules = try headerRules(in: String(
+                    contentsOf: headerFileURL(for: site, environment: environment), encoding: .utf8
+                ))
+                for rule in rules {
+                    let splats = rule.pattern.filter { $0 == "*" }.count
+                    #expect(
+                        splats <= 1,
+                        "\(site.directory)/_headers.\(environment) pattern `\(rule.pattern)` uses \(splats) splats — Cloudflare supports one per rule; extras make it silently match nothing"
+                    )
+                }
+            }
+        }
+    }
+
+    /// True when a pattern can reach a path under `/.well-known/`. Either the
+    /// literal prefix before the first `*`/`:` already sits inside the
+    /// namespace, or it's a prefix of `/.well-known/` that a wildcard then
+    /// expands across (`/*`, `/.w*`, `/.well-known*`, `/:x/*`…). A
+    /// conservative approximation — it may over-flag a lone placeholder —
+    /// which is the safe direction for a guard.
+    private func reachesWellKnown(_ pattern: String) -> Bool {
+        var path = pattern
+        if let scheme = path.range(of: "://"),
+           let slash = path[scheme.upperBound...].firstIndex(of: "/") {
+            path = String(path[slash...])
+        }
+        let wildcard = path.firstIndex { $0 == "*" || $0 == ":" } ?? path.endIndex
+        let literalPrefix = path[path.startIndex..<wildcard]
+        return literalPrefix.hasPrefix("/.well-known/")
+            || (literalPrefix.count < path.count && "/.well-known/".hasPrefix(literalPrefix))
+    }
+
+    @Test("No broad-reach rule carries Cache-Control onto /.well-known/*")
+    func broadPatternsCarryNoCacheControl() throws {
+        // A pattern whose path part starts with a splat or placeholder also
+        // matches `/.well-known/…` — Cache-Control there concatenates with the
+        // well-known no-store. Legal single-splat forms like `/*.json`
+        // recreate the contradiction the removed /**/*.json guard covered.
+        // Exemptions: `/.well-known/*` itself (the other test pins its value
+        // to no-store) and 21-dev's dev `/*` catch-all — it sets Cache-Control
+        // by design (preview-only trade-off; prod omits it).
+        for site in sites {
+            for environment in ["dev", "prod"] {
+                let rules = try headerRules(in: String(
+                    contentsOf: headerFileURL(for: site, environment: environment), encoding: .utf8
+                ))
+                for rule in rules where reachesWellKnown(rule.pattern) {
+                    if rule.pattern == "/.well-known/*"
+                        || (site.directory == "21-dev" && environment == "dev" && rule.pattern == "/*") {
+                        continue
+                    }
+                    #expect(
+                        !rule.headers.contains { $0.name == "cache-control" },
+                        "\(site.directory)/_headers.\(environment) pattern `\(rule.pattern)` reaches /.well-known/* — its Cache-Control would concatenate with no-store"
+                    )
+                }
+            }
+        }
     }
 
     @Test("Policy and Preferred-Languages are present")

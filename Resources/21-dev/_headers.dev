@@ -1,7 +1,7 @@
 # Cloudflare Pages Headers Configuration — 21.dev (Preview/Development)
 # https://developers.cloudflare.com/pages/platform/headers/
 
-# Specific patterns must appear before the catch-all `/*` rules because Cloudflare applies the first match. Add new patterns above the HTML fallback sections below.
+# Cloudflare Pages applies ALL matching rules (first-match does not win) and concatenates repeated header keys in file order; keep specific asset patterns above the catch-all /* sections below.
 
 # Static assets — daily caching until filenames are hashed
 /static/*
@@ -36,6 +36,12 @@
   X-Robots-Tag: noindex
 
 # No-store endpoints (well-known configs)
+# Responses here also carry the /* catch-all's max-age=300 — concatenated
+# no-store+max-age is contradictory but harmless (no-store is the restrictive
+# directive). Prod emits clean no-store: prod's /* omits Cache-Control by
+# design. _headers can't remove a header it set (Pages does not honor `!`
+# detaches — see docs' functions/_handlers/html.ts), so a clean value would
+# need the /* rule restructured or a Pages Function.
 /.well-known/*
   Cache-Control: no-store
   Pragma: no-cache

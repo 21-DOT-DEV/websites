@@ -3,7 +3,7 @@ feature: 008
 title: RFC 9116 security.txt for both sites
 phase: 3 · Performance & Delivery Optimization
 status: Implemented
-updated: 2026-11-17
+updated: 2026-11-18
 adrs: [5]
 ---
 
@@ -24,8 +24,9 @@ Security researchers find a working disclosure channel on either site:
   `Expires` ~1 year out, `Policy` → this repo's `SECURITY.md`,
   `Preferred-Languages: en`, and both hosts' `Canonical` URIs. RFC 9116 §3.1
   gives no subdomain inheritance, so each host serves its own copy; §2.5.2
-  requires the fetch URI to appear in a Canonical field, so both URIs are
-  listed in both files.
+  requires the fetch URI to appear in a Canonical field — both URIs are
+  listed in each file, which also keeps the field sets identical so the drift
+  test can compare them.
 - `SECURITY.md` at the repo root adapts the `swift-secp256k1` policy format —
   `security@21.dev` or GitHub Security Advisories, no public issues, 7-day
   acknowledgement — with a scope section covering the two sites and this
@@ -38,32 +39,51 @@ Security researchers find a working disclosure channel on either site:
   `max-age=300, stale-while-revalidate` to `no-store`/`no-cache`, matching
   21-dev and the Specs/003 quickstart expectations; both sites pin
   `Content-Type: text/plain; charset=utf-8` on the file defensively.
+  On preview builds of 21.dev the `/*` HTML cache rule also matches, so
+  well-known responses emit `no-store, public, max-age=300…` — contradictory
+  but harmless (`no-store` is the restrictive directive; prod's `/*` omits
+  `Cache-Control` by design, so production emits a clean `no-store`). Pages
+  does not honor `!` header detaches (repo-verified Apr 2026 — see
+  `functions/_handlers/html.ts`), so a clean preview value would need a
+  Pages Function; left as an accepted trade-off. The docs
+  files also drop `/**/*.json` — an invalid multi-splat pattern that silently
+  matched nothing (Pages allows one `*` per rule; `/data/*` and Cloudflare's
+  default already cover its intent) — and fix `/data/documentation/**/*.md`
+  to the legal single-splat `/data/documentation/*.md`.
 - `Tests/IntegrationTests/SecurityTxtTests.swift` parses both files and fails
   when `Expires` is under 60 days or over ~400 days out — the "renewed
   annually" success metric enforced by CI rather than a calendar note, with
   the far bound catching year typos. The suite also pins the `_headers`
-  policy (`text/plain`, `no-store`) and blocks `.json` under docs'
-  `well-known/`, where `/**/*.json` would contradict the no-store rule.
+  policy (`text/plain`, `no-store`/`Pragma`), enforces the single-splat
+  pattern limit — a second `*` silently dead-matches, the failure that hid
+  `/**/*.json` — and bars any rule that reaches `/.well-known/*` (splat,
+  placeholder, or literal `/.well-known/` prefix) from carrying
+  `Cache-Control` — the routes back to the same contradiction (21-dev's dev
+  catch-all is the documented exception).
 - The file ships unsigned; OpenPGP clearsigning is deferred to
   `Roadmap/backlog.md` — a signature only helps once a verifiable 21.dev key
   is published somewhere researchers already trust.
 
 ## Verification
 
-- `nocorrect swift test --filter SecurityTxtTests` — +9 tests.
+- `nocorrect swift test --filter SecurityTxtTests` — +10 tests.
 - `nocorrect swift run 21-dev` → `Websites/21-dev/well-known/security.txt`
   present alongside `nostr.json`.
 - Post-deploy curls (Specs/003 quickstart): both hosts return 200,
   `text/plain`, `Cache-Control: no-store`; securitytxt.org validates.
+  Exact-match `no-store` applies to production — 21.dev previews serve the
+  documented concatenated value instead.
 
 ## Test summary
 
-+9 tests in `Tests/IntegrationTests/SecurityTxtTests.swift`: file existence,
++10 tests in `Tests/IntegrationTests/SecurityTxtTests.swift`: file existence,
 Contact URI schemes, exactly-once Expires bounded below (60-day freshness
 gate) and above (year-typo guard), Canonical coverage of the fetch URI,
-https-only web-URI fields, presence of `Policy` and `Preferred-Languages`,
-`_headers` pinning of `text/plain` and `no-store`, no `.json` under docs'
-`well-known/`, and identical field sets across the two site copies.
+https-only web-URI fields, presence of `Policy`, `Preferred-Languages`, and a
+`mailto:` Contact,
+`_headers` pinning of `text/plain` and `no-store`/`no-cache`, single-splat
+`_headers` patterns, no broad-reach `Cache-Control` rule reaching
+`/.well-known/*`, and identical field sets across the two site copies.
 
 ## Tasks
 
