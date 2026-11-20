@@ -64,6 +64,37 @@ struct XMLEscapeTests {
     }
 }
 
+@Suite("XML Unescape Tests")
+struct XMLUnescapeTests {
+
+    @Test("xmlUnescape decodes all five entities")
+    func unescapeAllEntities() {
+        let input = "&lt;tag attr=&quot;value&quot;&gt;A &amp; B&apos;s&lt;/tag&gt;"
+        let expected = "<tag attr=\"value\">A & B's</tag>"
+        #expect(xmlUnescape(input) == expected)
+    }
+
+    @Test("xmlUnescape decodes &amp; last — &amp;lt; round-trips to &lt;")
+    func ampersandDecodesLast() {
+        // "&amp;lt;" was produced by escaping the literal text "&lt;".
+        // Decoding "&amp;" first would double-unescape it to "<".
+        #expect(xmlUnescape("&amp;lt;") == "&lt;")
+        #expect(xmlUnescape("&amp;amp;") == "&amp;")
+    }
+
+    @Test("xmlUnescape round-trips xmlEscape output")
+    func roundTrip() {
+        let original = "https://21.dev/?a=1&b=2<c>'\"end"
+        #expect(xmlUnescape(xmlEscape(original)) == original)
+    }
+
+    @Test("xmlUnescape leaves unescaped text unchanged")
+    func unescapedUnchanged() {
+        #expect(xmlUnescape("https://21.dev/packages/") == "https://21.dev/packages/")
+        #expect(xmlUnescape("") == "")
+    }
+}
+
 @Suite("Sitemap XML Header/Footer Tests")
 struct SitemapXMLTests {
     

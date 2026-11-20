@@ -3,7 +3,7 @@ feature: 009
 title: Core Web Vitals baseline via synthetic + edge measurement
 phase: 3 · Performance & Delivery Optimization
 status: In Progress
-updated: 2026-11-19
+updated: 2026-11-20
 adrs: [0004]
 ---
 
@@ -53,9 +53,10 @@ assumed.
 4. `--dry-run` emits the pending-structure artifacts with no network calls
    and refuses to overwrite a non-pending baseline — the CI-verifiable
    slice; the credentialed run is the maintainer step.
-5. Page set: top N URLs per site from the generated `sitemap.xml`
-   (default 10, `--max-pages`, `--url` overrides, `--site` restricts).
-   Observatory one-off quota is plan-limited — N is deliberately small.
+5. Page set: origin root + top sitemap URLs per site in document order
+   (default 10 total, `--max-pages`, `--url` overrides, `--site` restricts;
+   an unusable sitemap falls back to the root alone). Observatory one-off
+   quota is plan-limited — N is deliberately small.
 
 ## Design
 
