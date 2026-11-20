@@ -1,0 +1,11 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": null,
+  "status": "pending",
+  "origins": ["https://21.dev", "https://docs.21.dev"],
+  "fieldData": { "crux": [], "edgeTtfb": [] },
+  "lab": { "observatory": [], "pagespeed": [] },
+  "pageSet": [],
+  "gaps": ["crux", "gsc-cwv", "inp-field"],
+  "notes": ["Pending first credentialed run — see Development/Specs/009-cwv-baseline/plan.md"]
+}

@@ -1,16 +1,27 @@
-# ai-jury panel: three `devin -p` seats, one pinned model each.
-# `vendor` holds a synthetic diversity token per seat — the schema's vendor
-# enum doesn't name the real providers behind these models, so
+# ai-jury panel: three devin seats plus one real Claude Code seat — the
+# exact binary and session Xcode's coding assistant uses (see the `claude`
+# seat below). `vendor` holds a synthetic diversity token per seat — the
+# schema's vendor enum doesn't name the real providers behind the devin
+# models (KNOWN_VENDORS has no "deepseek" — that string would silently fold
+# into the generic "cli" identity and cost panel diversity), so
 # protocol-shaped labels stand in and min_vendors measures the model
-# diversity that exists. `adapter = "cli"` is the protocol that builds the
-# argv, so extra_args pass through untouched (an unlabeled-vendor seat would
-# get agy's --sandbox mangling).
+# diversity that exists. `adapter = "cli"` is the protocol that builds
+# the argv, so extra_args pass through untouched (an unlabeled-vendor seat
+# would get agy's --sandbox mangling). The `deepseek` seat points `command`
+# at devin-stdin, which pipes stdin into
+# `devin -p --prompt-file <mktemp>` so the review prompt stays off the
+# process list (CWE-214); the kimi/swe seats still pass it via argv
+# (`prompt_mode = "arg"`) — a known argv-visibility wart, not load-bearing.
+# Wrapper scripts live in-repo under .jury/bin/ and reach PATH via symlink:
+#   ln -sf "$PWD"/.jury/bin/{devin-stdin,xcode-claude} ~/.local/bin/
+# (jury.toml rejects cwd-relative command paths by design — #293 — so the
+# committed copies are installed once as ~/.local/bin symlinks.)
 # Reference: https://ai-jury.dev + docs/configuration.md in that repo.
 
 [jury]
 rounds = 2            # ceiling; auto_depth shrinks this on small diffs
 auto_depth = true     # risk-aware: docs-only -> shallow, security-touching -> full
-chair = "opus"        # the opus seat verifies findings and synthesizes the verdict
+chair = "claude"      # the claude seat verifies findings and synthesizes the verdict
 verify = true
 decision = "chair"
 timeout = 1500        # per-agent wall clock — devin sessions are slower than API calls
@@ -31,11 +42,11 @@ fail_on = ["critical", "major"]
 # skips verify on shallow diffs, which would make this gate dead code on the
 # small per-item diffs it exists for (ai_jury/ci.py evaluate_ci).
 ignore_unverified = false
-# min_vendors defaults to 2; the seats below carry three distinct vendor
+# min_vendors defaults to 2; the four seats below carry three distinct vendor
 # identities (anthropic / openai-compatible / cli), so the gate is satisfied.
 
 [jury.context]
-# All three seats are `devin` sessions against the same backend that already
+# The three devin seats are sessions against the same backend that already
 # reads this tree, and no vocabulary in this repo trips the scrubber's
 # secret-assignment patterns — so the default secret redaction stays ON and
 # no scripted preflight is needed (the crypto sibling repos disable it; we
@@ -43,23 +54,53 @@ ignore_unverified = false
 # redact_secrets defaults to true.
 
 [[agent]]
-name = "opus"
+name = "claude"
 vendor = "anthropic"
-adapter = "cli"
-command = "devin"
-model = "claude-opus-5-high"  # provenance for reports; --model in argv does the pinning
-prompt_mode = "arg"           # whole prompt appended as one argv element, after the "--"
-extra_args = ["-p", "--model", "claude-opus-5-high", "--sandbox", "--"]
+# vendor = "anthropic" selects the shipped ClaudeAdapter: `command -p --model
+# <m>` argv, the prompt on stdin (not ps-visible), and the read-only lockdown
+# (--tools "", deny list, --safe-mode, dontAsk, --no-session-persistence)
+# auto-injected by privilege.enforce_read_only — no hand-maintained deny list.
+command = "xcode-claude"  # canonical copy .jury/bin/xcode-claude, on PATH as a
+                          # ~/.local/bin symlink (see header). Resolves the
+                          # claude binary the selected Xcode's coding
+                          # assistant uses
+                          # (XcodeVersions/<build>/claude,
+                          # newest-download fallback) and exports
+                          # CLAUDE_CONFIG_DIR=
+                          # ~/Library/Developer/Xcode/CodingAssistant/
+                          # ClaudeAgentConfig so it runs under
+                          # Xcode's session.
+model = "claude-opus-5-5"  # Xcode's "Opus 5.5" — the resolvedModel id from
+                           # Xcode's claude-code model menu; devin-style ids
+                           # (claude-opus-5-high) are NOT entitled here.
+# --effort is the binary's own flag (low/medium/high/xhigh/max); jury's
+# `effort` spec field only maps for the HTTP API vendors and is ignored on
+# this CLI adapter.
+extra_args = ["--effort", "high", "--output-format", "text"]
 
 [[agent]]
 name = "kimi"
 vendor = "openai-compatible"
 adapter = "cli"
 command = "devin"
-model = "kimi-k3-max"  # -high ended a real review mid-investigation (14s, no
-                       # verdict); -max is the top effort tier at the same price
+model = "kimi-k3-1-pro-max"  # Kimi K3.1 Pro — newer and cheaper than K3
+                            # ($2/1M in vs $3) at the same top effort tier;
+                            # -max is deliberate: a -high seat once ended a
+                            # real review mid-investigation with no verdict
 prompt_mode = "arg"
-extra_args = ["-p", "--model", "kimi-k3-max", "--sandbox", "--"]
+extra_args = ["-p", "--model", "kimi-k3-1-pro-max", "--sandbox", "--"]
+
+[[agent]]
+name = "deepseek"
+vendor = "openai-compatible"  # NOT "deepseek" — absent from KNOWN_VENDORS,
+                              # it would fold into the generic "cli" identity
+adapter = "cli"
+command = "devin-stdin"  # canonical copy .jury/bin/devin-stdin, on PATH as a
+                         # ~/.local/bin symlink (see header). stdin →
+                         # `devin -p --prompt-file` — see header
+model = "deepseek-v4-1-flash-1017-max"  # dated-snapshot ID verified against
+                                        # `devin models`; -max per the kimi note
+extra_args = ["--model", "deepseek-v4-1-flash-1017-max", "--sandbox"]
 
 [[agent]]
 name = "swe"
