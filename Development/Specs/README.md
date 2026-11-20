@@ -35,4 +35,5 @@ between the markers is rewritten, not edited by hand.
 | 006 | Internal link checking for generated HTML output | 3 · Performance &amp; Delivery Optimization | Implemented | [plan.md](006-internal-link-check/plan.md) |
 | 007 | Verify _redirects rules against deployed URLs | 2 · Utilities Library Refactoring | In Progress | [plan.md](007-redirects-verify/plan.md) |
 | 008 | RFC 9116 security.txt for both sites | 3 · Performance &amp; Delivery Optimization | Implemented | [plan.md](008-security-txt/plan.md) |
+| 009 | Core Web Vitals baseline via synthetic + edge measurement | 3 · Performance &amp; Delivery Optimization | In Progress | [plan.md](009-cwv-baseline/plan.md) |
 <!-- END GENERATED INDEX -->
