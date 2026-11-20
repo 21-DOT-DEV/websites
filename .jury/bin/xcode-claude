@@ -1,0 +1,19 @@
+#!/bin/zsh
+# Resolve and exec the Claude Code binary Xcode's coding assistant uses,
+# with Xcode's own agent config home as CLAUDE_CONFIG_DIR.
+set -u
+agents_root="${XCODE_CLAUDE_AGENTS_ROOT:-$HOME/Library/Developer/Xcode/CodingAssistant/Agents}"
+config_dir="${XCODE_CLAUDE_CONFIG_DIR:-$HOME/Library/Developer/Xcode/CodingAssistant/ClaudeAgentConfig}"
+build="${XCODE_CLAUDE_XCODE_BUILD:-$(xcodebuild -version 2>/dev/null | awk '/^Build version/ {print $3}')}"
+binary="$agents_root/XcodeVersions/$build/claude/claude"
+if [[ ! -x "$binary" ]]; then
+    # Fallback: newest downloaded version dir (numeric sort, ascending).
+    newest_dir=$(print -rl -- "$agents_root"/claude/*(N-/n) 2>/dev/null | tail -1)
+    [[ -n "$newest_dir" ]] && binary="$newest_dir/claude"
+fi
+if [[ ! -x "$binary" ]]; then
+    echo "xcode-claude: no usable claude binary under $agents_root" >&2
+    exit 127
+fi
+export CLAUDE_CONFIG_DIR="$config_dir"
+exec "$binary" "$@"

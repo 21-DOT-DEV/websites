@@ -1,0 +1,12 @@
+#!/bin/sh
+# devin-stdin — read the prompt on stdin and hand it to `devin -p` via
+# --prompt-file. `devin -p` cannot take its prompt from stdin, and passing
+# it as an argv element puts the whole payload in the process list
+# (CWE-214). ai-jury's cli adapter defaults to prompt_mode = "stdin", so
+# seats point `command` here and stay off argv.
+set -eu
+
+tmp=$(mktemp "${TMPDIR:-/tmp}/devin-stdin.XXXXXX")
+trap 'rm -f "$tmp"' EXIT
+cat > "$tmp"
+devin -p --prompt-file "$tmp" "$@"
