@@ -40,19 +40,18 @@ document set lands together — named in the PR description.)
 
 ## The artifact model — ~250 authored lines
 
-- [ ] T003 [P] `VitalsModels.swift` — `LabMetrics` / `PageLabResult` /
-  `ObservatoryPageResult` / `CruxOriginResult` / `EdgeTtfbResult` /
-  `VitalsBaseline` Codable types matching
+- [x] T003 [P] Vitals artifact models — `LabMetrics` / `FormFactorResult` /
+  `PageLabResult` / `ObservatoryPageResult` / `CruxOriginResult` /
+  `EdgeTtfbResult` / `VitalsBaseline` Codable types matching
   `contracts/baseline-schema.md` (FR-006); `null` for failed metrics,
   never zero; both instruments carry per-form-factor `{metrics, error}`
   so a failed call/report is attributable ·
-  `Sources/UtilLib/Vitals/VitalsModels.swift`
+  `Sources/UtilLib/Vitals/Models/` (one file per type)
 - [ ] T004 [P] `SitemapPageSet` — `<loc>` extractor for the top-N page
   set (FR-008; same regex approach as `SitemapValidator`) ·
   `Sources/UtilLib/Vitals/SitemapPageSet.swift`
-- [ ] T005 Model + extractor tests — baseline fixture round-trip,
-  pending-state encode, sitemap `<loc>` order and cap ·
-  `Tests/UtilLibTests/Vitals/VitalsModelsTests.swift`,
+- [ ] T005 Extractor tests — sitemap `<loc>` order and cap (model
+  suites landed with T003 under `Tests/UtilLibTests/Vitals/`) ·
   `Tests/UtilLibTests/Vitals/SitemapPageSetTests.swift`
 
 **Checkpoint:** `nocorrect swift test --filter Vitals` green; the committed
