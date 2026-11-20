@@ -26,6 +26,22 @@ public func xmlEscape(_ text: String) -> String {
         .replacingOccurrences(of: "\"", with: "&quot;")
 }
 
+/// Reverses `xmlEscape`, decoding the five XML entities back to their
+/// characters.
+///
+/// `&amp;` decodes last: an escaped ampersand preceding another entity
+/// (`&amp;lt;`) must round-trip to `&lt;`, not `<`.
+/// - Parameter text: The XML-escaped string to decode
+/// - Returns: String with entities restored (`&lt;` → `<`, `&amp;` → `&`, etc.)
+public func xmlUnescape(_ text: String) -> String {
+    return text
+        .replacingOccurrences(of: "&lt;", with: "<")
+        .replacingOccurrences(of: "&gt;", with: ">")
+        .replacingOccurrences(of: "&apos;", with: "'")
+        .replacingOccurrences(of: "&quot;", with: "\"")
+        .replacingOccurrences(of: "&amp;", with: "&")
+}
+
 // MARK: - Sitemap XML Generation
 
 /// Generates the standard XML header for a sitemap conforming to protocol 0.9.

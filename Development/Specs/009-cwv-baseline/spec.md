@@ -45,10 +45,13 @@ Defines WHAT the feature delivers. Mechanism lives in `plan.md`; evidence in
   report status and the Ahrefs Site Audit configuration state are recorded
   in `baseline.md` as maintainer-maintained fields — neither exposes a
   usable API.
-- **FR-008 — Page set.** Default page set is the first `--max-pages`
-  (default 10) URLs per site from the site's generated `sitemap.xml`,
-  falling back to the origin root when the file is absent; `--url` replaces
-  the set; `--site` restricts to one site.
+- **FR-008 — Page set.** Default page set per site is the origin root
+  followed by the sitemap's remaining URLs in document order, capped at
+  `--max-pages` (default 10) total — the root is promoted because it must
+  always be measured and sitemaps need not list it. Any unusable sitemap
+  (absent, unreadable, or yielding no `<url>` entries) falls back to the
+  origin root alone. `--url` replaces the set; `--site` restricts to one
+  site.
 
 ## Success criteria
 

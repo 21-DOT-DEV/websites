@@ -47,10 +47,10 @@ document set lands together — named in the PR description.)
   never zero; both instruments carry per-form-factor `{metrics, error}`
   so a failed call/report is attributable ·
   `Sources/UtilLib/Vitals/Models/` (one file per type)
-- [ ] T004 [P] `SitemapPageSet` — `<loc>` extractor for the top-N page
+- [x] T004 [P] `SitemapPageSet` — `<loc>` extractor for the top-N page
   set (FR-008; same regex approach as `SitemapValidator`) ·
   `Sources/UtilLib/Vitals/SitemapPageSet.swift`
-- [ ] T005 Extractor tests — sitemap `<loc>` order and cap (model
+- [x] T005 Extractor tests — sitemap `<loc>` order and cap (model
   suites landed with T003 under `Tests/UtilLibTests/Vitals/`) ·
   `Tests/UtilLibTests/Vitals/SitemapPageSetTests.swift`
 
