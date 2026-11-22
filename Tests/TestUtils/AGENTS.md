@@ -12,6 +12,8 @@ Shared test helpers for every test target. Root `AGENTS.md` rules apply.
   ad-hoc `#expect` assertions; grep for `#expect(html.contains(` to find
   legacy patterns worth migrating.
 - Helpers must stay generic and site-agnostic — no 21.dev-specific fixtures
-  here; those live in that site's test target.
+  here; those live in that site's test target. Domain-specific helpers get a
+  `*TestSupport.swift` beside that domain's suites (e.g.
+  `UtilLibTests/Vitals/CredentialStore/`), not this target.
 - All tests are `swift-testing` (`#expect`, `@Test`) — never XCTest; keep them
   deterministic and independent.

@@ -59,6 +59,12 @@ git diff --cached | jury --diff-file -               # AI-jury panel review (sta
   (`DesignSystemTests`, `UtilLibTests`, `SchemaLibTests`, `SiteIdentityTests`,
   `MiddlewareTests`); site-level integration in `IntegrationTests` /
   `UtilIntegrationTests`.
+- **One `@Suite` per file** — split a test file by domain when it outgrows
+  ~500 lines; group related suites in a directory (`CanonicalTests/`,
+  `Vitals/CredentialStore/`) with a local `*TestSupport.swift` for
+  domain helpers. Suite type names carry the filter tokens
+  (`VitalsCredentialStore…`) — `swift test --filter` matches the type
+  name, not the `@Suite` display string.
 - **Monorepo migration rule** — move code directly; `grep -r` all consumers in
   `Sources/` and `Tests/` before deleting; update imports first.
 - **Public APIs get `///` doc comments**; file/type names stay descriptive.

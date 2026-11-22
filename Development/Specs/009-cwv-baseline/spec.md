@@ -29,12 +29,15 @@ Defines WHAT the feature delivers. Mechanism lives in `plan.md`; evidence in
   the reason — never a hard failure.
 - **FR-005 — Credential resolution.** Secrets resolve in order: explicit
   `--…-file` flag (e.g., `--cloudflare-api-token-file`) → environment
-  variable → file store
+  variable → macOS Keychain
+  (`dev.21.websites.util` service) → file store
   (`~/.config/util/credentials.json` — file enforced mode 0600, containing
-  directory enforced mode 0700) → macOS Keychain
-  (`dev.21.websites.util` service). `util vitals credentials store|show|delete`
-  manages both stores; secret values are never accepted as command-line
-  arguments (stdin/`--from-file`/prompt only) and never printed.
+  directory enforced mode 0700). The encrypted store outranks the
+  plaintext one; a Keychain that can't answer — locked on a headless run —
+  degrades to the file layer rather than failing. `util vitals credentials
+  store|show|delete` manages both stores; secret values are never accepted
+  as command-line arguments (stdin/`--from-file`/prompt only) and never
+  printed.
 - **FR-006 — Artifacts.** The command writes `baseline.json`
   (`schemaVersion`-stamped) and `baseline.md` to `--out-dir` (default: this
   spec folder); `--json` additionally prints the JSON to stdout.
