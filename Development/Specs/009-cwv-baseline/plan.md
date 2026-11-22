@@ -3,7 +3,7 @@ feature: 009
 title: Core Web Vitals baseline via synthetic + edge measurement
 phase: 3 · Performance & Delivery Optimization
 status: In Progress
-updated: 2026-11-20
+updated: 2026-11-21
 adrs: [0004]
 ---
 
@@ -40,9 +40,9 @@ assumed.
      (`edgeTimeToFirstByteMs` + `originResponseDurationMs` quantiles, 28-day
      window clamped to the dataset's plan limits) per host; the one
      vitals-adjacent metric observable at the edge. Degrades gracefully where the plan doesn't expose timing fields.
-2. Credentials resolve flag → env → file (`~/.config/util/credentials.json`
-   — file 0600, containing directory 0700) → macOS Keychain;
-   `util vitals credentials store|show|delete`
+2. Credentials resolve flag → env → macOS Keychain → file
+   (`~/.config/util/credentials.json` — file 0600, containing directory
+   0700); `util vitals credentials store|show|delete`
    manages both stores. Secrets are never accepted as command-line values
    (shell history/process listing leak) — store reads from `--from-file`,
    piped stdin, or an interactive prompt.
@@ -75,7 +75,7 @@ flowchart TD
         -->|"secret value"| F
     IN -->|"secret value"| K
 
-    FLAG["--…-file flag"] -->|"secret value (file contents)"| R["<code>resolve()</code><br/>flag → env → file → Keychain"]
+    FLAG["--…-file flag"] -->|"secret value (file contents)"| R["<code>resolve()</code><br/>flag → env → Keychain → file"]
     ENV["env vars<br/>CLOUDFLARE_API_TOKEN · GOOGLE_API_KEY · CLOUDFLARE_ZONE_ID"] -->|"secret value"| R
     F -->|"secret value"| R
     K -->|"secret value"| R
@@ -102,7 +102,7 @@ that every source degrades to a *recorded* gap rather than a failure.
 
 - +~25 tests covering: request builders (Observatory REST, GraphQL, PSI,
   CrUX), response parsers (success + error + insufficient-data paths),
-  credential resolution precedence (flag → env → file → Keychain), file
+  credential resolution precedence (flag → env → Keychain → file), file
   store permission enforcement, and JSON/markdown report rendering.
 
 ## Tasks

@@ -59,19 +59,32 @@ document set lands together — named in the PR description.)
 
 ## The credential store — ~260 authored lines
 
-- [ ] T006 [P] `CredentialStore` — `resolve()` chain explicit-file → env →
-  file store → Keychain (FR-005); `~/.config/util/credentials.json` with
-  0600 enforced (containing directory 0700) and insecure-permission
-  refusal; generic-password
-  Keychain CRUD under `#if canImport(Security)`; `notFound` error names
-  the provisioning path · `Sources/UtilLib/Vitals/CredentialStore.swift`
-- [ ] T007 Store tests — each layer wins over the next, env override
-  injection, file permissions refused, malformed file, missing key error
-  text (SC-004); the Keychain read sits behind an injectable seam so unit
-  tests fake it and prove file-over-Keychain precedence (a manual
-  real-Keychain check covers what a fake can't — unsigned `swift run`
-  binaries re-prompt, documented) ·
-  `Tests/UtilLibTests/Vitals/CredentialStoreTests.swift`
+- [x] T006 [P] `CredentialStore` — `resolve()` chain explicit-file → env →
+  Keychain → file store (FR-005, order re-derived: the `security(1)`
+  subprocess backend makes Keychain reads prompt-free from unsigned
+  binaries, retiring the file-first rationale);
+  `~/.config/util/credentials.json` with 0600 enforced (containing
+  directory 0700) and
+  insecure-permission refusal — refused on read; the containing directory
+  self-heals on store (a loose file itself still refuses);
+  `KeychainBackend` protocol seam (read/store/delete/exists) backed by
+  `security(1)` generic-password CRUD under `#if os(macOS)` — writes via
+  `security -i` stdin so secrets never enter argv; `notFound` error names
+  the provisioning path · `Sources/UtilLib/Vitals/CredentialStore.swift`,
+  `Sources/UtilLib/Vitals/KeychainBackend.swift`,
+  `Sources/UtilLib/Vitals/SecurityCLIKeychainBackend.swift`
+- [x] T007 Store tests — each layer wins over the next, env override
+  injection, file permissions refused (file 0600 and directory 0700),
+  malformed file, missing key error text (SC-004); the `KeychainBackend`
+  protocol lets unit tests fake a hit and prove Keychain-over-file
+  precedence plus couldn't-answer degradation (the env-gated
+  `liveKeychainRoundTrip` check covers the `security(1)` subprocess path
+  against a throwaway keychain — run with
+  `RUN_LIVE_KEYCHAIN_CHECK=1 swift test --filter liveKeychainRoundTrip`;
+  verified: store→exists→read→delete→exists all pass; a failed `add`
+  inside `security -i` can't be trusted to report its status, which is
+  why `store` verifies post-write) ·
+  `Tests/UtilLibTests/Vitals/CredentialStore/`
 
 **Checkpoint:** precedence proven layer by layer; no secret ever logged;
 non-0600 file refused.
@@ -126,7 +139,10 @@ maintainer-maintained `baseline.md` fields survive regeneration.
   arguments (FR-005–FR-008) · `Sources/util/Commands/VitalsCommand.swift`,
   `Sources/util/Util.swift`
 - [ ] T015 `credentials store|show|delete` subcommands — separate file,
-  `show` masks values · `Sources/util/Commands/VitalsCredentialsCommand.swift`
+  `show` masks values; deleting one store leaves any copy in the other
+  still resolving, and storing to the file is shadowed by a stale
+  Keychain item — surface both (all-stores delete and/or a shadowed
+  warning) · `Sources/util/Commands/VitalsCredentialsCommand.swift`
 - [ ] T016 CLI validation tests — invalid site/keys, missing-credential
   error names `credentials store`, `--dry-run` writes schema-valid
   pending artifacts entirely offline and refuses to overwrite a
