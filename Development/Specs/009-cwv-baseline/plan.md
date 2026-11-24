@@ -3,7 +3,7 @@ feature: 009
 title: Core Web Vitals baseline via synthetic + edge measurement
 phase: 3 · Performance & Delivery Optimization
 status: In Progress
-updated: 2026-11-21
+updated: 2026-11-24
 adrs: [0004]
 ---
 
@@ -100,7 +100,7 @@ that every source degrades to a *recorded* gap rather than a failure.
 
 ## Test summary
 
-- +~25 tests covering: request builders (Observatory REST, GraphQL, PSI,
+- +~150 tests covering: request builders (Observatory REST, GraphQL, PSI,
   CrUX), response parsers (success + error + insufficient-data paths),
   credential resolution precedence (flag → env → Keychain → file), file
   store permission enforcement, and JSON/markdown report rendering.

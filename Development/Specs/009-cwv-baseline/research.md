@@ -167,4 +167,4 @@ Evidence behind the decisions in `plan.md`. Each entry: Decision / Rationale
 | No real-user LCP/INP/CLS | No CrUX eligibility, no new first-party JS | Quarterly, via `util vitals baseline` CrUX probe |
 | INP is a TBT proxy | Passive lab can't measure interaction | WebPageTest scripted run if a page becomes interactive |
 | Search Console CWV | No API | Maintainer quarterly dashboard check |
-| Edge TTFB | Plan-gated fields (`edgeTimeToFirstByteMs`) | Verify on first credentialed run |
+| Edge TTFB | Timing fields are Pro+ only; the data query's own refusal is the verdict (no field-list gate) | Verify on first credentialed run |

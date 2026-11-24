@@ -89,17 +89,18 @@ document set lands together — named in the PR description.)
 **Checkpoint:** precedence proven layer by layer; no secret ever logged;
 non-0600 file refused.
 
-## Cloudflare services — ~285 authored lines
+## Cloudflare services — ~930 authored lines
 
-- [ ] T008 `ObservatoryService` — availabilities / start-test / poll
+- [x] T008 `ObservatoryService` — availabilities / start-test / poll
   request builders, test-result and error-envelope parsers, GraphQL
   `httpRequestsAdaptiveGroups` edge-TTFB query + parse with graceful
-  `unavailable` on plan-gated fields (FR-001, FR-004) ·
-  `Sources/UtilLib/Vitals/ObservatoryService.swift`
-- [ ] T009 Service tests — builders emit the wire shapes pinned in
+  `unavailable` on plan-gated datasets (FR-001, FR-004) ·
+  `Sources/UtilLib/Vitals/ObservatoryService.swift` +
+  `ObservatoryService+EdgeAnalytics.swift`
+- [x] T009 Service tests — builders emit the wire shapes pinned in
   `contracts/api.md`; parse success / `FAILED` / error-envelope /
   plan-gated fixtures; zero network ·
-  `Tests/UtilLibTests/Vitals/ObservatoryServiceTests.swift`
+  `Tests/UtilLibTests/Vitals/Observatory/`
 
 **Checkpoint:** every built request matches `contracts/api.md`; FAILED
 tests surface as per-page errors, not thrown failures.

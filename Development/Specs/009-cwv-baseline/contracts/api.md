@@ -28,15 +28,41 @@ Each `*Report` is a `LighthouseReport`: `cls`, `fcp`, `lcp`, `performanceScore`,
 
 ## Cloudflare GraphQL — `POST https://api.cloudflare.com/client/v4/graphql`
 
+Plan limits are read first via the `settings` node — zone-scoped, once
+per host's data query — since `maxDuration`/`notOlderThan` are plan- and
+token-relative and no static table exists; `availableFields` is fetched
+in the same call but only as diagnostics:
+
+```graphql
+query($zone: string!) {
+  viewer { zones(filter: {zoneTag: $zone}) {
+    settings { httpRequestsAdaptiveGroups {
+      enabled availableFields maxDuration notOlderThan
+    } }
+  } }
+}
+```
+
+Three outcomes skip the data query with `unavailable`: a requested
+window below one day (guarded before the probe), `enabled: false`,
+or a plan window below one day (`date_geq` can't express sub-day
+windows). `availableFields` is recorded for diagnostics but never
+gates — a plan lacking the timing fields still sends the query and
+records Cloudflare's own refusal in `detail`, trailed only by the
+report's timing-field names ("none" when it reports none). A settings
+call that can't answer likewise proceeds at the requested window and
+records the probe failure in `detail`.
+
 Edge field timing, zone-scoped, per host, trailing window:
 
 ```graphql
-query($zone: String!, $since: Date!, $host: String!) {
+query($zone: string!, $since: Date!, $host: string!) {
   viewer { zones(filter: {zoneTag: $zone}) {
     httpRequestsAdaptiveGroups(limit: 1, filter: {
       date_geq: $since,
       clientRequestHTTPHost_in: [$host],
-      edgeResponseContentTypeName: "html"
+      edgeResponseContentTypeName: "html",
+      requestSource: "eyeball"
     }) {
       count
       quantiles {
@@ -51,7 +77,11 @@ query($zone: String!, $since: Date!, $host: String!) {
 Timing fields are plan-gated; absent permission/plan → recorded
 `unavailable` with the error text, never a hard failure. The 28-day
 window clamps to the dataset's per-plan `maxDuration`/`notOlderThan`
-limits — the artifact's `windowDays` records the window actually queried.
+limits — the artifact's `windowDays` records the window actually queried
+(`0` when the settings gate meant no data query was sent).
+Under a one-day plan window the UTC-aligned `since` is today's midnight,
+so a run just after midnight measures only the elapsed minutes — a small
+honest window, not a missing one.
 
 ## PageSpeed Insights — `GET https://www.googleapis.com/pagespeedonline/v5/runPagespeed`
 

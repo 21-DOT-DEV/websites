@@ -17,7 +17,7 @@ Machine-readable twin of `baseline.md`; emitted by `util vitals baseline`
         "detail": "…" }
     ],
     "edgeTtfb": [                            // one per host
-      { "host": "…", "windowDays": 28, "sampleCount": 0,  // windowDays: queried window; < 28 when plan-clamped
+      { "host": "…", "windowDays": 28, "sampleCount": 0,  // windowDays: queried window; < 28 when plan-clamped, 0 when skipped
         "status": "available | unavailable",
         "p50Ms": 0, "p95Ms": 0, "p99Ms": 0,
         "originP50Ms": 0, "originP95Ms": 0, "originP99Ms": 0,
