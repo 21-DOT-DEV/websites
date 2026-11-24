@@ -12,11 +12,12 @@
 public struct EdgeTtfbResult: Codable, Equatable, Sendable {
     /// The measured host.
     public let host: String
-    /// The window actually queried — less than 28 when plan limits clamp it.
+    /// The window actually queried — less than 28 when plan limits
+    /// clamp it; `0` when the query was skipped.
     public let windowDays: Int
     /// Requests contributing to the quantiles; `null` when unreported.
     public let sampleCount: Int?
-    /// Whether the dataset exposed the timing fields.
+    /// Whether a usable measurement was recorded.
     public let status: Status
     /// Edge-observed TTFB, 50th percentile, milliseconds.
     public let p50Ms: Double?
@@ -33,11 +34,12 @@ public struct EdgeTtfbResult: Codable, Equatable, Sendable {
     /// The recorded finding (plan gate, token scope) or failure detail.
     public let detail: String?
 
-    /// Whether the dataset exposed the timing fields.
+    /// Whether a usable measurement was recorded.
     public enum Status: String, Codable, Sendable {
-        /// The plan/token exposed the timing fields.
+        /// A usable measurement was recorded.
         case available
-        /// Plan or token scope doesn't expose the fields.
+        /// No usable measurement — plan gate, token scope, or a
+        /// refused, empty, or malformed response.
         case unavailable
     }
 
